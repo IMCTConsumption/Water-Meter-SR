@@ -931,16 +931,16 @@ i svg{
 
 /* ───────── นิยามคอลัมน์รายงาน (กลุ่มหลัก 11 shop) ───────── */
 const REPORT_MAIN = [
-  { key:'BODY', name:'Body Shop', ids:['WM-15','WM-16','WM-17','WM-18','WM-43','WM-46','WM-55'], minus:[] },
+  { key:'BODY', name:'Body Shop', ids:['WM-15','WM-16','WM-17','WM-18','WM-43'], minus:[] },
   { key:'PT78', name:'PT7-8', ids:['WM-13','WM-33','WM-41','WM-42'], minus:[] },
-  { key:'PAINT', name:'Paint Shop', ids:['WM-05','WM-08','WM-50'], minus:[] },
-  { key:'CANTEEN', name:'Canteen', ids:['WM-11','WM-12'], minus:[] },
-  { key:'LA', name:'LA', ids:['WM-10','WM-51','WM-54'], minus:[] },
-  { key:'FRAME', name:'Frame', ids:['WM-23','WM-29','WM-34','WM-44','WM-56'], minus:[] },
+  { key:'PAINT', name:'Paint Shop', ids:['WM-05','WM-08'], minus:['WM-29','WM-24'] },
+  { key:'CANTEEN', name:'Canteen', ids:['WM-60','WM-11','WM-12'], minus:[] },
+  { key:'LA', name:'LA', ids:['WM-10','WM-51'], minus:['WM-29','WM-24'] },
+  { key:'FRAME', name:'Frame', ids:['WM-23','WM-34','WM-44'], minus:[] },
   { key:'UA', name:'UA', ids:['WM-09','WM-14','WM-52'], minus:[] },
-  { key:'OFFICE', name:'Office', ids:['WM-07','WM-25','WM-47'], minus:[] },
-  { key:'FR', name:'FR Shop', ids:['WM-24','WM-26','WM-53','WM-57'], minus:[] },
-  { key:'POWERZONE', name:'Power Zone', ids:['WM-58'], minus:[] }
+  { key:'OFFICE', name:'Office', ids:['WM-07','WM-25'], minus:[] },
+  { key:'FR', name:'FR Shop', ids:['WM-24','WM-26','WM-29'], minus:[] },
+  { key:'POWERZONE', name:'Power Zone', ids:['WM-6','WM-19','WM-22','WM-49'], minus:[] }
 ];
 /* utility แยกย่อย — ท่อประปาต้นทาง / โรงบำบัดน้ำ / cooling / ห้องน้ำ-septic */
 const REPORT_UTIL = [
