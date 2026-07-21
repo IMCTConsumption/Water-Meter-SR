@@ -115,7 +115,7 @@ body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;backgro
 /* ZONES */
 .zone-block{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;margin-bottom:8px}
 .zone-title{font-size:var(--fs-sm);font-weight:700;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:5px}
-.sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px;}
 .sub-card{background:var(--surface-3);border:1.5px solid var(--border);border-radius:var(--r-md);padding:12px 11px;cursor:pointer;text-align:left;transition:var(--trans);position:relative;min-height:64px;display:flex;flex-direction:column;justify-content:center;user-select:none}
 .sub-card:active{transform:scale(.93)}
 .sub-card.sel{border-color:var(--accent);background:var(--accent-dim);box-shadow:0 0 0 1px var(--accent-border)}
@@ -281,7 +281,7 @@ tr:hover td{background:var(--surface-2)}
   .stats-row{gap:6px}
 }
 @media(min-width:600px){
-  .sub-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+  .sub-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}
   .stats-row{grid-template-columns:repeat(4,1fr)}
   .qr-grid{grid-template-columns:repeat(3,1fr)}
   .f-3col{grid-template-columns:1fr 1fr 1fr}
@@ -292,7 +292,7 @@ tr:hover td{background:var(--surface-2)}
    ไม่ขยายตามจอเลย เพิ่ม breakpoint นี้เพื่อ override เป็นค่าคงที่ที่ใหญ่ขึ้นบนจอคอมพิวเตอร์ */
 @media(min-width:900px){
   :root{
-    --fs-xs:15px;
+    --fs-xs:14px;
     --fs-sm:16px;
     --fs-md:18px;
     --fs-lg:20px;
@@ -346,9 +346,7 @@ i svg{
   vertical-align:-3px;
   margin-right:2px;
 }
-/* ── placeholder Controls ── */
-.f-input::placeholder{font-size:12px;color:var(--text-3);opacity:.8;}
-.f-input.kwh-input::placeholder{font-size:14px;letter-spacing:0;}
+   
 
 /* ── ApexCharts Controls ── */
 .chart-ctrl{display:flex;gap:6px;flex-wrap:wrap;padding:8px 10px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);margin-bottom:8px;align-items:center}
@@ -368,6 +366,19 @@ i svg{
 .apexcharts-menu{background:var(--surface-2)!important;border-color:var(--border)!important}
 .apexcharts-menu-item:hover{background:var(--surface-3)!important}
 
+/* ── Place Holder ── */
+.f-input::placeholder{
+    font-size:12px;
+    color:var(--text-3);
+    opacity:.8;
+}
+
+.f-input.kwh-input::placeholder{
+    font-size:14px;   /* ปรับเป็น 12px ถ้ายังใหญ่ */
+    letter-spacing:0;
+}
+
+   
 </style>
 </head>
 <body>
@@ -930,63 +941,65 @@ i svg{
    ════════════════════════════════════════════════════════════ */
 
 /* ───────── นิยามคอลัมน์รายงาน (กลุ่มหลัก 11 shop) ───────── */
-const REPORT_MAIN = [
-  { key:'BODY', name:'Body Shop', ids:['WM-15','WM-16','WM-17','WM-18','WM-43'], minus:[] },
-  { key:'PT78', name:'PT7-8', ids:['WM-13','WM-33','WM-41','WM-42'], minus:[] },
-  { key:'PAINT', name:'Paint Shop', ids:['WM-05','WM-08'], minus:['WM-29','WM-24'] },
-  { key:'CANTEEN', name:'Canteen', ids:['WM-60','WM-11','WM-12'], minus:[] },
-  { key:'LA', name:'LA', ids:['WM-10','WM-51'], minus:['WM-29','WM-24'] },
-  { key:'FRAME', name:'Frame', ids:['WM-23','WM-34','WM-44'], minus:[] },
-  { key:'UA', name:'UA', ids:['WM-09','WM-14','WM-52'], minus:[] },
-  { key:'OFFICE', name:'Office', ids:['WM-07','WM-25'], minus:[] },
-  { key:'FR', name:'FR Shop', ids:['WM-24','WM-26','WM-29'], minus:[] },
-  { key:'POWERZONE', name:'Power Zone', ids:['WM-6','WM-19','WM-22','WM-49'], minus:[] }
-];
-/* utility แยกย่อย — ท่อประปาต้นทาง / โรงบำบัดน้ำ / cooling / ห้องน้ำ-septic */
-const REPORT_UTIL = [
-  { key:'RAWWATER', name:'Raw Water Supply', ids:['WM-01','WM-02','WM-03','WM-04','WM-28','WM-39','WM-60'] },
-  { key:'ROWWT', name:'RO/WWT/DI Plant', ids:['WM-06','WM-19','WM-22','WM-36','WM-37','WM-38','WM-45','WM-48','WM-49'] },
-  { key:'UTILCOOL', name:'Utility/Cooling', ids:['WM-20','WM-21','WM-27','WM-30','WM-31','WM-32','WM-59'] },
-  { key:'SEPTIC', name:'Toilet/Septic', ids:['WM-35','WM-40'] }
+/* ═══════════ ZONE_GROUPS — แหล่งข้อมูลเดียวสำหรับหมวดหมู่ทั้งหมด ═══════════
+   รวม REPORT_MAIN / REPORT_UTIL / ZONE_CATEGORY_MAP / LOAD_CATEGORIES / GROUP_COLORS
+   ที่เคยแยกเป็น 5 ก้อน (แก้ที่นึงต้องจำไปแก้อีกที่ ถึงจะไม่ค้าง) ให้เหลือแก้ที่เดียวพอ
+
+   ids ของแต่ละกลุ่ม "ไม่ hardcode" อีกต่อไป — ดึงสดจาก subs.filter(s => s.zone === key)
+   ทุกครั้งที่เข้าถึง (ดู getGroupIds() + getter ด้านล่าง) ดังนั้นถ้าไปแก้ zone ของ Meter ใน
+   หน้าตั้งค่า รายงาน/กราฟจะตามทันทีโดยไม่ต้องแก้โค้ดตรงนี้เลย — แก้ปัญหาที่เคยเจอ (Canteen/
+   Power Zone หลุดจาก ids ที่ hardcode ไว้ตอนแก้ zone ทีหลัง) ได้ที่ต้นตอ
+
+   ข้อยกเว้นคือ "minus" — เป็น override พิเศษที่ zone เดียวไม่พอจะสื่อได้ เช่น WM-24/WM-29
+   ต้องถูกหักออกจาก Paint Shop และ LA เพราะ WM-08 (header รวมของ Paint Shop) วัดรวมค่าของ
+   สาขาย่อยเหล่านั้นไปแล้วในตัว ถ้าไม่หักจะนับซ้ำ — กรณีนี้ทำเป็น zone ไม่ได้เพราะ WM-24/WM-29
+   มี zone หลักของตัวเองอยู่แล้ว (FR Shop / Frame ตามลำดับ) จึงต้องระบุ minus ไว้ตรงนี้ต่อไป */
+const ZONE_GROUPS = [
+  // ── main: กลุ่ม shop หลัก (ขึ้นคอลัมน์แยกในตารางรายงาน) ──
+  { key:'BODY',      name:'Body Shop',        icon:'🏭', color:'#00D4FF', type:'main', minus:[] },
+  { key:'PT78',      name:'PT7-8',            icon:'🏗️', color:'#a78bfa', type:'main', minus:[] },
+  { key:'PAINT',     name:'Paint Shop',       icon:'🎨', color:'#22C55E', type:'main', minus:['WM-29','WM-24'] },
+  { key:'CANTEEN',   name:'Canteen',          icon:'🍽️', color:'#FACC15', type:'main', minus:[] },
+  { key:'LA',        name:'LA',               icon:'🔧', color:'#fb923c', type:'main', minus:['WM-29','WM-24'] },
+  { key:'FRAME',     name:'Frame',            icon:'🔩', color:'#f472b6', type:'main', minus:[] },
+  { key:'UA',        name:'UA',               icon:'⚙️', color:'#38bdf8', type:'main', minus:[] },
+  { key:'OFFICE',    name:'Office',           icon:'🏢', color:'#818cf8', type:'main', minus:[] },
+  { key:'FR',        name:'FR Shop',          icon:'🚧', color:'#fb7185', type:'main', minus:[] },
+  { key:'POWERZONE', name:'Power Zone',       icon:'⚡', color:'#f59e0b', type:'main', minus:[] },
+  // ── util: กลุ่มระบบ utility (รวมเป็นคอลัมน์ UTILITY PLANT เดียวในรายงาน) ──
+  { key:'RAWWATER',  name:'Raw Water Supply', icon:'🚰', color:null, type:'util', minus:[] },
+  { key:'ROWWT',     name:'RO/WWT/DI Plant',  icon:'♻️', color:null, type:'util', minus:[] },
+  { key:'UTILCOOL',  name:'Utility/Cooling',  icon:'❄️', color:null, type:'util', minus:[] },
+  { key:'SEPTIC',    name:'Toilet/Septic',    icon:'🚻', color:null, type:'util', minus:[] }
 ];
 
+/* Meter ที่ zone ตรงกับ key นี้ — เรียกสดทุกครั้ง (ไม่ cache) เพื่อให้เห็นการแก้ zone ล่าสุดเสมอ */
+function getGroupIds(key){
+  return subs.filter(s => s.zone === key).map(s => s.id);
+}
+
+/* generate REPORT_MAIN/REPORT_UTIL จาก ZONE_GROUPS — โค้ดส่วนอื่นที่อ้าง .ids ของแต่ละ group
+   ยังใช้งานได้เหมือนเดิมทุกที่ เพราะ .ids เป็น getter ที่เรียก getGroupIds() สดทุกครั้งที่เข้าถึง
+   ไม่ใช่ค่าที่ freeze ไว้ตอนสร้าง object (ตอนนี้ subs ยังว่างอยู่ด้วยซ้ำ เพราะยังโหลดจาก backend
+   ไม่เสร็จตอน script รันบรรทัดนี้) */
+const REPORT_MAIN = ZONE_GROUPS.filter(g => g.type === 'main').map(g => ({
+  key: g.key, name: g.name, minus: g.minus,
+  get ids(){ return getGroupIds(g.key); }
+}));
+const REPORT_UTIL = ZONE_GROUPS.filter(g => g.type === 'util').map(g => ({
+  key: g.key, name: g.name,
+  get ids(){ return getGroupIds(g.key); }
+}));
+
 /* ───────── หมวดตามสถานที่ / ประเภทน้ำ (หน้าเลือก Meter) ───────── */
-/* อิงจากฟิลด์ zone ของแต่ละ Meter (มาจาก _SUBS sheet) แทนการ hardcode รายชื่อ id
-   ข้อดี: Meter ใหม่ที่เพิ่มเข้ามาทีหลังจะถูกจัดหมวดอัตโนมัติตาม zone ที่ตั้งไว้
-   หมวดที่ zone ไม่ตรงกับรายการด้านล่าง จะตกไปอยู่ใน "อื่นๆ" (กันไม่ให้ Meter หายไปจากหน้าจอ) */
-const ZONE_CATEGORY_MAP = {
-  'BODY': 'Body Shop',
-  'PT78': 'PT7-8',
-  'PAINT': 'Paint Shop',
-  'CANTEEN': 'Canteen',
-  'LA': 'LA',
-  'FRAME': 'Frame',
-  'UA': 'UA',
-  'OFFICE': 'Office',
-  'FR': 'FR Shop',
-  'POWERZONE': 'Power Zone',
-  'RAWWATER': 'Raw Water Supply',
-  'ROWWT': 'RO/WWT/DI Plant',
-  'UTILCOOL': 'Utility/Cooling',
-  'SEPTIC': 'Toilet/Septic'
-};
-const LOAD_CATEGORIES = [
-  { name:'Body Shop', icon:'🏭' },
-  { name:'PT7-8', icon:'🏗️' },
-  { name:'Paint Shop', icon:'🎨' },
-  { name:'Canteen', icon:'🍽️' },
-  { name:'LA', icon:'🔧' },
-  { name:'Frame', icon:'🔩' },
-  { name:'UA', icon:'⚙️' },
-  { name:'Office', icon:'🏢' },
-  { name:'FR Shop', icon:'🚧' },
-  { name:'Power Zone', icon:'⚡' },
-  { name:'Raw Water Supply', icon:'🚰' },
-  { name:'RO/WWT/DI Plant', icon:'♻️' },
-  { name:'Utility/Cooling', icon:'❄️' },
-  { name:'Toilet/Septic', icon:'🚻' },
-  { name:'อื่นๆ', icon:'📦' }
-];
+/* อิงจากฟิลด์ zone ของแต่ละ Meter (มาจาก _SUBS sheet) — หมวดที่ zone ไม่ตรงกับ ZONE_GROUPS
+   จะตกไปอยู่ใน "อื่นๆ" (กันไม่ให้ Meter หายไปจากหน้าจอ) */
+const ZONE_CATEGORY_MAP = {};
+ZONE_GROUPS.forEach(g => { ZONE_CATEGORY_MAP[g.key] = g.name; });
+
+const LOAD_CATEGORIES = ZONE_GROUPS.map(g => ({ name: g.name, icon: g.icon }));
+LOAD_CATEGORIES.push({ name:'อื่นๆ', icon:'📦' });
+
 function getCategoryOf(sub){
   const zone = sub && sub.zone;
   return ZONE_CATEGORY_MAP[zone] || 'อื่นๆ';
@@ -995,8 +1008,8 @@ function getCategoryOf(sub){
 /* ───────── CONFIG ─────────
    ⚠️ ต้องสร้าง Google Sheet + Apps Script Web App ใหม่แยกต่างหากจากแอปไฟฟ้า
    (คนละระบบ คนละชีท) แล้วนำ URL ที่ deploy ได้มาแทนที่ค่าด้านล่างนี้ก่อนใช้งานจริง */
-const API_URL     = 'https://script.google.com/macros/s/AKfycbwEGIHbjLJ99bKS_X7OaAAZ6McPQfErxkpId4S5ibYnozR_4Fj6pAR6rU9plvuZCjbO1A/exec';
-const QR_BASE_URL = 'https://imctconsumption.github.io/Water-Meter-SR/';
+const API_URL     = 'https://script.google.com/macros/s/AKfycbzdNkZejx4sRq9QZHZes12uC95dbI9iXjAJNy7nOiN_xnNNtiP0JKDWR-usdwrAA18MWw/exec';
+const QR_BASE_URL = 'https://ramesimct.github.io/Water-Meter-SR/';
 const ABNORMAL_MULTIPLIER = 5;
 
 /* ───────── STATE ───────── */
@@ -1018,11 +1031,9 @@ let reportComputed         = null;
 let compareMode            = 'day';
 
 /* สีประจำ 11 กลุ่มหลัก */
-const GROUP_COLORS = {
-  'Body Shop':'#00D4FF','PT7-8':'#a78bfa','Paint Shop':'#22C55E','Canteen':'#FACC15',
-  'LA':'#fb923c','Frame':'#f472b6','UA':'#38bdf8',
-  'Office':'#818cf8','FR Shop':'#fb7185','Power Zone':'#f59e0b'
-};
+/* สีประจำแต่ละกลุ่มหลัก — ดึงจาก ZONE_GROUPS เดียวกัน (util groups ไม่มีสีเพราะไม่ได้ขึ้นเป็นแท่งแยกสีในกราฟ) */
+const GROUP_COLORS = {};
+ZONE_GROUPS.forEach(g => { if(g.color) GROUP_COLORS[g.name] = g.color; });
    
 /* ───────── UTILITIES ───────── */
 function jLoad(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
