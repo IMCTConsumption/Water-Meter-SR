@@ -6,11 +6,7 @@
 <title>💧 ระบบจดบันทึกมิเตอร์น้ำ Water Meter SR Plant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
-<!-- CDN โหลดแบบ lazy เมื่อใช้งานจริง (qrcode/xlsx/apexcharts) — ดู loadScript() -->
 <style>
-/* ══════════════════════════════════════════════════════
-   DESIGN TOKENS
-══════════════════════════════════════════════════════ */
 :root {
   --font-body:'IBM Plex Sans Thai',sans-serif;
   --font-mono:'IBM Plex Mono',monospace;
@@ -50,15 +46,11 @@
   --btn-pri-bg:linear-gradient(135deg,#0284c7,#0369a1);--btn-pri-text:#fff;
   --btn-save-bg:linear-gradient(135deg,#059669,#047857);--btn-save-text:#fff;
 }
-
-/* BASE */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden}
 body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;background:var(--bg);color:var(--text-1);display:flex;flex-direction:column;transition:background .25s,color .25s}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-
-/* HEADER */
 .hdr{flex:0 0 auto;display:flex;align-items:center;padding:0 12px;gap:10px;height:52px;background:var(--surface-1);border-bottom:1px solid var(--border);z-index:50}
 .hdr-logo{width:34px;height:34px;background:var(--btn-pri-bg);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .hdr-text{flex:1;min-width:0;overflow:hidden}
@@ -67,14 +59,11 @@ body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;backgro
 .hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .theme-btn{width:32px;height:32px;background:var(--surface-3);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:var(--trans);flex-shrink:0}
 .theme-btn:hover{background:var(--surface-4)}
-.btn-admin{font-size:var(--fs-xs);font-weight:600;padding:5px 9px;border-radius:7px;cursor:pointer;border:1px solid var(--border);background:var(--surface-3);color:var(--text-2);white-space:nowrap;transition:var(--trans)}
-.btn-admin.on{background:var(--red-dim);border-color:var(--red);color:var(--red)}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s}
 .sync-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
 .sync-dot.err{background:var(--red);box-shadow:0 0 6px var(--red)}
 .sync-dot.busy{background:var(--yellow);animation:blink 1s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-/* Card hover/active polish */
 .card{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
 .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--border-hi)}
 .sub-card{transition:var(--trans),transform .12s ease}
@@ -82,37 +71,27 @@ body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;backgro
 .stat{transition:transform .2s ease,box-shadow .2s ease}
 .stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .btn{transition:var(--trans),transform .1s ease}
-/* SYNC BANNER */
 .sync-banner{flex:0 0 auto;display:none;align-items:center;gap:8px;padding:6px 14px;font-size:var(--fs-xs);font-weight:600;border-bottom:1px solid var(--border)}
 .sync-banner.show{display:flex}
 .sync-banner.loading{background:var(--yellow-dim);color:var(--yellow)}
 .sync-banner.error{background:var(--red-dim);color:var(--red)}
 .sync-banner.success{background:var(--green-dim);color:var(--green)}
-
-/* ══ FIX #2: TABS — clean, scrollable, consistent ══ */
 .tabs{flex:0 0 auto;background:var(--surface-1);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:0 0 auto;min-width:68px;padding:9px 10px 8px;text-align:center;font-size:var(--fs-xs);font-weight:700;color:var(--text-3);cursor:pointer;border-bottom:2px solid transparent;transition:var(--trans);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px;user-select:none}
-/* basic tabs fill full width */
 .tabs.basic-mode .tab{flex:1}
 .tab i{display:block;font-size:15px;margin-bottom:2px;font-style:normal}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .tab:hover:not(.active){color:var(--text-2);background:var(--surface-2)}
 .tab.admin-tab{display:none}
 .tabs.admin-mode .tab.admin-tab{display:block}
-
-/* BODY & PANELS */
 .body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .panel{display:none;padding:14px 12px 90px}
 .panel.active{display:block}
-
-/* CARDS */
 .card{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:12px;position:relative}
 .card-title{font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .card-title::after{content:'';flex:1;height:1px;background:var(--border)}
 .rec-badge{position:absolute;top:14px;right:14px;background:var(--surface-3);border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-size:var(--fs-xs);color:var(--text-3);font-weight:600}
-
-/* ZONES */
 .zone-block{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;margin-bottom:8px}
 .zone-title{font-size:var(--fs-sm);font-weight:700;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:5px}
 .sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px;}
@@ -124,8 +103,6 @@ body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;backgro
 .sc-id{font-size:10px;font-weight:600;color:var(--text-3);font-family:var(--font-mono);letter-spacing:.2px}
 .sc-dot{width:5px;height:5px;border-radius:50%;background:var(--border);position:absolute;top:8px;right:8px;transition:var(--trans)}
 .sub-card.has-data .sc-dot{background:var(--green);box-shadow:0 0 5px var(--green)}
-
-/* BUTTONS */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 16px;border:none;border-radius:var(--r-md);font-size:var(--fs-md);font-weight:700;cursor:pointer;transition:var(--trans);font-family:var(--font-body);letter-spacing:.2px;min-height:44px}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.45;pointer-events:none}
@@ -140,8 +117,6 @@ body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;backgro
 .btn-row .btn{width:auto}
 .back-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);font-size:var(--fs-md);font-weight:600;cursor:pointer;transition:var(--trans);margin-bottom:12px;font-family:var(--font-body);min-height:40px}
 .back-btn:hover{background:var(--surface-3)}
-
-/* FORMS */
 .f-row{margin-bottom:11px}
 .f-label{font-size:var(--fs-xs);color:var(--text-3);font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:.5px}
 .f-input{width:100%;background:var(--surface-3);border:1.5px solid var(--border);border-radius:var(--r-sm);color:var(--text-1);padding:11px 12px;font-size:var(--fs-md);outline:none;transition:var(--trans);font-family:var(--font-body);-webkit-appearance:none;min-height:44px}
@@ -151,8 +126,6 @@ body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;backgro
 select.f-input option{background:var(--surface-2)}
 .f-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .f-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-
-/* ENTRY SECTION */
 #entry-section{display:none;position:fixed;top:52px;left:0;right:0;bottom:0;background:var(--bg);z-index:100;padding:12px 12px 90px;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:fadeIn .18s ease-out}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .sub-banner{background:var(--accent-dim);border:1.5px solid var(--accent-border);border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
@@ -160,8 +133,6 @@ select.f-input option{background:var(--surface-2)}
 .sb-label{font-size:var(--fs-xs);color:var(--text-3);text-transform:uppercase;letter-spacing:.5px}
 .sb-name{font-size:var(--fs-lg);font-weight:700;color:var(--text-1);display:block;line-height:1.3}
 .sb-id{font-size:var(--fs-xs);color:var(--accent);margin-top:3px;font-family:var(--font-mono);font-weight:600;display:block}
-
-/* METER */
 .meter-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:12px}
 .meter-row{display:flex;gap:8px;margin-bottom:12px}
 .meter-box{flex:1;background:var(--surface-1);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;text-align:center}
@@ -174,8 +145,6 @@ select.f-input option{background:var(--surface-2)}
 .chip-green{background:var(--green-dim);color:var(--green);border:1px solid var(--green-border)}
 .chip-orange{background:var(--orange-dim);color:var(--orange);border:1px solid rgba(251,146,60,.3)}
 .chip-center{text-align:center;display:flex;justify-content:center}
-
-/* TABLE */
 .tbl-wrap{overflow-x:auto;border-radius:var(--r-md);-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse}
 th{background:var(--surface-3);color:var(--text-2);padding:8px 9px;text-align:left;border-bottom:1px solid var(--border);font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;font-weight:700}
@@ -186,51 +155,16 @@ tr:hover td{background:var(--surface-2)}
 .td-kwh{color:var(--text-1);font-family:var(--font-mono)}
 .td-used{color:var(--green);font-weight:700;font-family:var(--font-mono)}
 .td-act{display:flex;gap:4px}
-
-/* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
 .stat{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;text-align:center;box-shadow:var(--shadow-sm)}
 .stat-val{font-size:var(--fs-xl);font-weight:700;color:var(--accent);font-family:var(--font-mono)}
 .stat-lbl{font-size:var(--fs-xs);color:var(--text-3);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
-
-/* ══ FIX #3: VERTICAL BAR CHART ══ */
-.vbar-scroll{overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
-.vbar-scroll::-webkit-scrollbar{height:3px}
-.vbar-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.vbar-chart{display:flex;align-items:flex-end;gap:6px;min-width:max-content;padding:8px 4px 0}
-.vbar-col{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:52px}
-.vbar-val{font-size:9px;color:var(--green);font-weight:700;font-family:var(--font-mono);text-align:center;line-height:1.2}
-.vbar-space{display:flex;align-items:flex-end;height:200px;width:100%}
-@media (orientation:portrait){
-  .vbar-space{height:280px}
-}
-@media (orientation:landscape) and (max-width:900px){
-  .vbar-space{height:200px}
-}
-@media (min-width:900px){
-  .vbar-space{height:300px}
-}
-.vbar-bar{width:100%;background:linear-gradient(180deg,var(--green),var(--accent));border-radius:5px 5px 0 0;transition:height .55s cubic-bezier(.4,0,.2,1);min-height:3px}
-.vbar-label{font-size:8px;color:var(--text-3);text-align:center;line-height:1.5;font-family:var(--font-mono);word-break:keep-all;white-space:nowrap}
-.vbar-axis{display:flex;justify-content:space-between;align-items:center;padding:6px 4px 0;border-top:1px solid var(--border);margin-top:4px}
-.vbar-axis-label{font-size:var(--fs-xs);color:var(--text-3)}
-
-/* ALL-SUB horizontal bar */
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.bar-label{font-size:var(--fs-xs);color:var(--text-3);width:55px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono)}
-.bar-track{flex:1;background:var(--surface-3);border-radius:5px;height:18px;overflow:hidden}
-.bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:5px;transition:width .5s cubic-bezier(.4,0,.2,1)}
-.bar-val{font-size:var(--fs-xs);color:var(--green);width:65px;flex-shrink:0;font-weight:700;font-family:var(--font-mono)}
-
-/* QR */
 .qr-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .qr-item{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;text-align:center}
 .qi-name{font-size:var(--fs-xs);font-weight:600;color:var(--text-1);margin-bottom:4px;line-height:1.35}
 .qi-id{font-size:10px;font-weight:700;color:var(--accent);font-family:var(--font-mono);margin-bottom:6px}
 .qi-qr{display:inline-block;background:#fff;padding:7px;border-radius:7px;margin-bottom:6px}
 .qi-url{font-size:7px;color:var(--text-3);word-break:break-all;line-height:1.4;font-family:var(--font-mono)}
-
-/* ══ FIX #1: SUB LIST in Settings ══ */
 .sub-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
 .sub-row:last-child{border-bottom:none}
 .sub-row-info{flex:1;min-width:0}
@@ -240,11 +174,7 @@ tr:hover td{background:var(--surface-2)}
 .sub-row-meta{font-size:11px;color:var(--text-3);margin-top:2px;line-height:1.4}
 .sub-row-dec{display:inline-block;background:var(--surface-3);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:10px;color:var(--yellow);font-weight:700;margin-top:3px}
 .sub-row-actions{display:flex;gap:5px;flex-shrink:0}
-
-/* FILTER ACTIVE BADGE */
 .filter-badge{display:inline-flex;align-items:center;gap:4px;background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:12px;padding:3px 9px;font-size:var(--fs-xs);color:var(--accent);font-weight:700;margin-left:8px}
-
-/* MODAL */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-end;justify-content:center}
 .modal-bg.open{display:flex}
 .modal{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--r-xl) var(--r-xl) 0 0;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;padding:18px 14px 32px;box-shadow:var(--shadow-lg);animation:slideUp .22s cubic-bezier(.4,0,.2,1)}
@@ -253,23 +183,17 @@ tr:hover td{background:var(--surface-2)}
 .modal-head{font-size:var(--fs-lg);font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
 .modal-close{background:var(--surface-3);border:1px solid var(--border);color:var(--text-2);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:var(--trans)}
 .modal-close:hover{background:var(--red-dim);border-color:var(--red);color:var(--red)}
-
-/* TOAST */
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface-1);border:1px solid var(--border);color:var(--text-1);padding:10px 18px;border-radius:28px;font-size:var(--fs-md);font-weight:600;opacity:0;transition:opacity .22s,transform .22s;z-index:999;white-space:nowrap;pointer-events:none;max-width:88vw;text-align:center;box-shadow:var(--shadow-lg)}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 #toast.ok{background:var(--green-dim);border-color:var(--green-border);color:var(--green)}
 #toast.err{background:var(--red-dim);border-color:var(--red);color:var(--red)}
 #toast.warn{background:var(--yellow-dim);border-color:rgba(251,191,36,.3);color:var(--yellow)}
-
-/* UTILITY */
 .info-box{background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px;font-size:var(--fs-sm);color:var(--text-2);line-height:1.7}
 .info-box strong{color:var(--accent)}
 .warn-box{background:var(--orange-dim);border:1px solid rgba(251,146,60,.3);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px;font-size:var(--fs-sm);color:var(--orange);line-height:1.7}
 .empty{text-align:center;padding:28px;color:var(--text-3)}
 .empty i{font-size:28px;display:block;margin-bottom:6px;font-style:normal}
 .section-empty{padding:14px;text-align:center;color:var(--text-3);font-size:var(--fs-sm)}
-.gcmp-mode-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
-
 @media(max-width:480px){
   .panel{padding:10px 10px 90px}
   .f-2col,.f-3col{grid-template-columns:1fr;gap:8px}
@@ -286,23 +210,11 @@ tr:hover td{background:var(--surface-2)}
   .qr-grid{grid-template-columns:repeat(3,1fr)}
   .f-3col{grid-template-columns:1fr 1fr 1fr}
 }
-/* ── ไซส์ตัวอักษรสำหรับจอคอมพิวเตอร์ ──
-   ค่า --fs-* เดิมใช้ clamp(min, Nvw, max) ซึ่งออกแบบมาสำหรับมือถือ — บนจอกว้าง
-   (เช่น 1920px) ค่า Nvw จะเกิน max เสมอ ทำให้ตัวอักษรค้างอยู่ที่ค่า max (ตัวเล็กสุด)
-   ไม่ขยายตามจอเลย เพิ่ม breakpoint นี้เพื่อ override เป็นค่าคงที่ที่ใหญ่ขึ้นบนจอคอมพิวเตอร์ */
 @media(min-width:900px){
-  :root{
-    --fs-xs:14px;
-    --fs-sm:16px;
-    --fs-md:18px;
-    --fs-lg:20px;
-    --fs-xl:28px;
-    --fs-2xl:40px;
-  }
+  :root{ --fs-xs:14px; --fs-sm:16px; --fs-md:18px; --fs-lg:20px; --fs-xl:28px; --fs-2xl:40px; }
   .sub-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
   .sc-id{font-size:12px}
   .mb-label,.mb-unit{font-size:12px}
-  .vbar-val,.vbar-label{font-size:12px}
   .qi-id{font-size:12px}
   .sub-row-idtag{font-size:12px}
   .sub-row-meta{font-size:13px}
@@ -310,45 +222,14 @@ tr:hover td{background:var(--surface-2)}
   .chart-ctrl-label{font-size:12px}
   .ctrl-btn,.ctrl-date{font-size:13px}
 }
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%       { transform: translateX(-8px); }
-  40%       { transform: translateX(8px); }
-  60%       { transform: translateX(-5px); }
-  80%       { transform: translateX(5px); }
-}
-.cmp-mode-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
-   
-.tabs.admin-mode .tab{flex:1}
-.tab i svg{
-  width:18px;
-  height:18px;
-  display:block;
-  margin:0 auto 2px;
-}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+.tab i svg{ width:18px; height:18px; display:block; margin:0 auto 2px; }
 .hdr-logo svg{width:18px;height:18px;color:var(--btn-pri-text)}
 .theme-btn svg{width:16px;height:16px;display:block}
 .hdr-sub svg{width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:2px}
-i svg{
-  width:1em;
-  height:1em;
-  display:inline-block;
-  vertical-align:-0.12em;
-}
-.modal-head i svg,.card-title i svg{
-  width:18px;
-  height:18px;
-  vertical-align:-3px;
-  margin-right:2px;
-}
-   
-
-/* ── ApexCharts Controls ── */
+i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
+.modal-head i svg,.card-title i svg{ width:18px; height:18px; vertical-align:-3px; margin-right:2px; }
 .chart-ctrl{display:flex;gap:6px;flex-wrap:wrap;padding:8px 10px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);margin-bottom:8px;align-items:center}
 .chart-ctrl-label{font-size:11px;color:var(--text-3);margin-right:4px;white-space:nowrap}
 .ctrl-btn{padding:6px 11px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-3);transition:all .15s;white-space:nowrap;font-family:var(--font-body)}
@@ -365,24 +246,11 @@ i svg{
 .apexcharts-tooltip{font-family:var(--font-mono)!important;font-size:12px!important}
 .apexcharts-menu{background:var(--surface-2)!important;border-color:var(--border)!important}
 .apexcharts-menu-item:hover{background:var(--surface-3)!important}
-
-/* ── Place Holder ── */
-.f-input::placeholder{
-    font-size:12px;
-    color:var(--text-3);
-    opacity:.8;
-}
-
-.f-input.kwh-input::placeholder{
-    font-size:14px;   /* ปรับเป็น 12px ถ้ายังใหญ่ */
-    letter-spacing:0;
-}
-
-   
+.f-input::placeholder{ font-size:12px; color:var(--text-3); opacity:.8; }
+.f-input.kwh-input::placeholder{ font-size:14px; letter-spacing:0; }
 </style>
 </head>
 <body>
-<!-- ════════ LOGIN GATE (2 ทาง) ════════ -->
 <div id="login-gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0b1220;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'IBM Plex Sans Thai',sans-serif;color:#e8f0ff;padding:20px;">
   <div style="background:#111827;border:1px solid #1e2e45;padding:32px 26px;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5);width:100%;max-width:380px;text-align:center;">
     <div style="font-size:38px;margin-bottom:6px;">💧</div>
@@ -390,16 +258,34 @@ i svg{
     <p style="font-size:13px;color:#8fa8c8;margin:0 0 26px;">เลือกรูปแบบการใช้งาน</p>
 
     <div id="login-choose">
-      <button onclick="enterBasic()"
+      <button onclick="showRecorderLogin()"
         style="width:100%;padding:16px;margin-bottom:12px;border:none;border-radius:11px;background:linear-gradient(135deg,#34d399,#059669);color:#04231a;font-weight:700;cursor:pointer;font-size:16px;">
         📝 เข้าใช้งานบันทึก
-        <div style="font-size:11px;font-weight:400;margin-top:3px;opacity:0.8;">สำหรับผู้จดมิเตอร์ — เข้าได้ทันที</div>
+        <div style="font-size:11px;font-weight:400;margin-top:3px;opacity:0.8;">สำหรับผู้จดมิเตอร์ — ใช้รหัสผ่านทีม</div>
       </button>
       <button onclick="showAdminLogin()"
         style="width:100%;padding:16px;border:1px solid #2a3f60;border-radius:11px;background:#1a2336;color:#8fa8c8;font-weight:700;cursor:pointer;font-size:16px;">
         🔐 เข้าใช้งานแอดมิน
         <div style="font-size:11px;font-weight:400;margin-top:3px;opacity:0.7;">ต้องใส่รหัสผ่าน</div>
       </button>
+    </div>
+
+    <div id="login-recorder" style="display:none;">
+      <div style="text-align:left;margin-bottom:20px;">
+        <label style="font-size:12px;display:block;margin-bottom:5px;color:#8fa8c8;">รหัสผ่านทีมจดมิเตอร์</label>
+        <input type="password" id="recorder-pass" autocomplete="current-password"
+          style="width:100%;padding:11px;border:1px solid #2a3f60;border-radius:8px;background:#1a2336;color:#fff;box-sizing:border-box;font-size:15px;" placeholder="••••••••">
+      </div>
+      <button id="recorder-login-btn" onclick="handleRecorderLogin()"
+        style="width:100%;padding:13px;border:none;border-radius:9px;background:linear-gradient(135deg,#34d399,#059669);color:#04231a;font-weight:700;cursor:pointer;font-size:15px;">
+        เข้าสู่ระบบ 🔓
+      </button>
+      <button onclick="backToChoose()"
+        style="width:100%;padding:10px;margin-top:10px;border:none;border-radius:9px;background:transparent;color:#4e6a8a;cursor:pointer;font-size:13px;">
+        ← กลับ
+      </button>
+      <div id="recorder-login-err" style="color:#f87171;font-size:13px;margin-top:12px;display:none;"></div>
+      <p style="font-size:11px;color:#4e6a8a;margin-top:14px;">เข้าสู่ระบบครั้งเดียว ใช้งานได้ 4 ชั่วโมง แม้ปิดแล้วสแกน QR ใหม่</p>
     </div>
 
     <div id="login-admin" style="display:none;">
@@ -426,7 +312,10 @@ i svg{
   </div>
 </div>
 
-<!-- HEADER -->
+<div id="session-expired-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99998;background:#3a2416;border-bottom:1px solid #92400e;color:#fbbf24;padding:9px 14px;font-size:13px;font-weight:600;text-align:center;">
+  ⚠️ เซสชันหมดอายุแล้ว ข้อมูลที่กรอกยังอยู่ — <button onclick="showRecorderLogin(true)" style="background:#fbbf24;color:#1a1206;border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;font-size:12px;margin-left:4px;">เข้าสู่ระบบใหม่</button>
+</div>
+
 <div class="hdr">
   <div class="hdr-logo">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -435,7 +324,6 @@ i svg{
   </div>
   <div class="hdr-text">
     <div class="hdr-title">Water Meter SR Plant</div>
-    <!-- [1] มงกุฎ 👑 → SVG (จะถูกใส่/เอาออกโดย applyAppMode) -->
     <div class="hdr-sub" id="hdr-small">กำลังโหลด...</div>
   </div>
   <div class="hdr-right">
@@ -450,7 +338,6 @@ i svg{
     <div class="sync-dot" id="sync-dot"></div>
   </div>
 </div>
-   
 
 <div class="sync-banner" id="sync-banner">
   <span id="sync-icon">⏳</span>
@@ -479,7 +366,6 @@ i svg{
 </div>
 
 <div class="body">
-  <!-- ENTRY -->
   <div class="panel active" id="panel-entry">
     <div id="sub-list-screen">
       <div class="card">
@@ -569,7 +455,6 @@ i svg{
     </div>
   </div>
 
-  <!-- DATA -->
   <div class="panel" id="panel-data">
     <div class="stats-row" id="stats-row"></div>
     <div class="card">
@@ -641,7 +526,6 @@ i svg{
     </div>
   </div>
 
-  <!-- CHART -->
   <div class="panel" id="panel-chart">
     <div class="card">
       <div class="card-title"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 4-6"/></svg></i> การใช้น้ำรายวัน (m³)</div>
@@ -680,7 +564,6 @@ i svg{
       <div id="sub-chart-summary" style="margin-top:8px"></div>
     </div>
 
-    <!-- ── เทียบการใช้น้ำ 11 กลุ่มหลัก (ย้ายมาจากหน้าสรุป) ── -->
     <div class="card">
       <div class="card-title">เทียบการใช้น้ำ 11 กลุ่มหลัก</div>
       <div class="chart-ctrl">
@@ -709,7 +592,6 @@ i svg{
       <div id="g9-chart-summary" style="margin-top:8px"></div>
     </div>
 
-    <!-- ── กราฟเทียบต่อกลุ่ม (ย้ายมาจากหน้าสรุป) ── -->
     <div class="card">
       <div class="card-title">กราฟเทียบการใช้น้ำแต่ละกลุ่ม</div>
       <div class="f-row">
@@ -747,40 +629,12 @@ i svg{
     </div>
   </div>
 
-<!-- ════════════════════════════════════════════════════════════
-     PHASE 3 — หน้าสรุป + ปฏิทิน + กราฟระบายสี
-     ════════════════════════════════════════════════════════════ -->
-
-<!-- ──────────── SUMMARY PANEL ──────────── -->
 <div class="panel" id="panel-summary">
-
-  <!-- ⏸️ ปิดชั่วคราวตามคำขอ — รอปรับรูปแบบรายงานใหม่ (รูปแบบเดิมยกมาจากแอปไฟฟ้า ไม่เข้ากับข้อมูลน้ำ)
-       แท็บ "สรุป" ถูกซ่อนไว้แล้ว (display:none) เข้าหน้านี้ไม่ได้จากเมนูปกติ
-       การ์ดรายงานเดิมเก็บไว้เป็น HTML comment ด้านล่าง (unwrap comment นั้นออก แล้วเอา
-       style display:none ออกจากปุ่มแท็บ "สรุป" ด้านบน เพื่อคืนของเดิมได้ทันทีถ้าต้องการ) -->
   <div class="card">
     <div class="card-title">⏸️ หน้าสรุป — ปิดชั่วคราว</div>
     <div class="info-box">รูปแบบรายงานเดิมถูกปิดไว้ก่อน รอปรับรูปแบบใหม่ให้เหมาะกับข้อมูลน้ำ</div>
   </div>
-
-  <!--REPORT_CARD_DISABLED_START
-  <div class="card">
-    <div class="card-title">📋 รายงานการใช้น้ำรายเดือน</div>
-    <div class="f-2col">
-      <div class="f-row">
-        <label class="f-label">เลือกเดือน</label>
-        <select class="f-input" id="rep-month" onchange="loadReport()"></select>
-      </div>
-      <div class="f-row" style="display:flex;align-items:flex-end">
-        <button class="btn btn-yellow btn-full" onclick="exportReportExcel()">📥 Export Excel</button>
-      </div>
-    </div>
-    <div id="report-area"><div class="section-empty">📋 เลือกเดือนเพื่อดูรายงาน</div></div>
-  </div>
-  REPORT_CARD_DISABLED_END-->
-
 </div>
-  <!-- QR -->
   <div class="panel" id="panel-qr">
     <div class="card">
       <div class="card-title"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h.01M17 21h4v-4"/></svg></i> QR Code ทุก Meter</div>
@@ -794,14 +648,10 @@ i svg{
             <option value="">ทั้งหมด</option>
          </select>
       </div>
-       
-       
       <div class="qr-grid" id="qr-grid"></div>
     </div>
-     
   </div>
 
-  <!-- SETTINGS -->
   <div class="panel" id="panel-settings">
     <div class="card">
       <div class="card-title">☁️ Google Sheets API</div>
@@ -812,7 +662,7 @@ i svg{
         <button class="btn btn-yellow btn-sm" onclick="loadFromServer()">🔄 โหลด</button>
       </div>
     </div>
-     
+
     <div class="card" style="border-color:rgba(248,113,113,.3)">
       <div class="card-title" style="color:var(--orange)">⚠️ Backup</div>
       <div class="btn-row">
@@ -823,7 +673,7 @@ i svg{
       </div>
       <input type="file" id="import-inp" accept=".json" style="display:none" onchange="doImport(event)">
     </div>
-     
+
     <div class="card">
       <div class="card-title">➕ เพิ่ม Meter</div>
       <div class="f-3col">
@@ -849,7 +699,7 @@ i svg{
       <div class="info-box" style="margin-bottom:8px">กด <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></i> เพื่อแก้ไขชื่อ, Zone, ทศนิยม และตัวคูณ</div>
       <div id="sub-list"></div>
     </div>
-     
+
     <div class="card">
       <div class="card-title">📅 ปฏิทินวันทำงาน</div>
       <div class="info-box" style="margin-bottom:8px">
@@ -873,7 +723,6 @@ i svg{
   </div>
 </div>
 
-<!-- EDIT RECORD MODAL -->
 <div class="modal-bg" id="edit-modal" onclick="closeEditIf(event)">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -894,7 +743,6 @@ i svg{
   </div>
 </div>
 
-<!-- EDIT SUBSTATION MODAL -->
 <div class="modal-bg" id="edit-sub-modal" onclick="closeEditSubIf(event)">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -936,26 +784,23 @@ i svg{
 
 <script>
 /* ════════════════════════════════════════════════════════════
-   WATER METER LOGGER V1 — Frontend (รายงานรายเดือน + กราฟเทียบ)
-   ดัดแปลงจาก Substation (ไฟฟ้า) Logger — โครงสร้างเดียวกันทั้งหมด
+   WATER METER LOGGER V2 — Frontend
+   Aug 2026 patch: ports the full session-token auth + scoped-read
+   architecture from the Electric (Substation) sister app.
    ════════════════════════════════════════════════════════════ */
 
-/* ───────── นิยามคอลัมน์รายงาน (กลุ่มหลัก 11 shop) ───────── */
 /* ═══════════ ZONE_GROUPS — แหล่งข้อมูลเดียวสำหรับหมวดหมู่ทั้งหมด ═══════════
    รวม REPORT_MAIN / REPORT_UTIL / ZONE_CATEGORY_MAP / LOAD_CATEGORIES / GROUP_COLORS
-   ที่เคยแยกเป็น 5 ก้อน (แก้ที่นึงต้องจำไปแก้อีกที่ ถึงจะไม่ค้าง) ให้เหลือแก้ที่เดียวพอ
-
-   ids ของแต่ละกลุ่ม "ไม่ hardcode" อีกต่อไป — ดึงสดจาก subs.filter(s => s.zone === key)
-   ทุกครั้งที่เข้าถึง (ดู getGroupIds() + getter ด้านล่าง) ดังนั้นถ้าไปแก้ zone ของ Meter ใน
-   หน้าตั้งค่า รายงาน/กราฟจะตามทันทีโดยไม่ต้องแก้โค้ดตรงนี้เลย — แก้ปัญหาที่เคยเจอ (Canteen/
-   Power Zone หลุดจาก ids ที่ hardcode ไว้ตอนแก้ zone ทีหลัง) ได้ที่ต้นตอ
-
-   ข้อยกเว้นคือ "minus" — เป็น override พิเศษที่ zone เดียวไม่พอจะสื่อได้ เช่น WM-24/WM-29
-   ต้องถูกหักออกจาก Paint Shop และ LA เพราะ WM-08 (header รวมของ Paint Shop) วัดรวมค่าของ
-   สาขาย่อยเหล่านั้นไปแล้วในตัว ถ้าไม่หักจะนับซ้ำ — กรณีนี้ทำเป็น zone ไม่ได้เพราะ WM-24/WM-29
-   มี zone หลักของตัวเองอยู่แล้ว (FR Shop / Frame ตามลำดับ) จึงต้องระบุ minus ไว้ตรงนี้ต่อไป */
+   ที่เคยแยกเป็น 5 ก้อน ให้เหลือแก้ที่เดียวพอ
+   ids ของแต่ละกลุ่ม "ไม่ hardcode" — ดึงสดจาก subs.filter(s => s.zone === key)
+   "minus" คือ override พิเศษที่ zone เดียวไม่พอจะสื่อได้ — WM-24/WM-29 ต้องถูกหักออก
+   จาก Paint Shop และ LA เพราะ WM-08 (header รวมของ Paint Shop) วัดรวมค่าของสาขาย่อย
+   เหล่านั้นไปแล้วในตัว ถ้าไม่หักจะนับซ้ำ
+   หมายเหตุ (Aug 2026): มีเคสเพิ่มเติมที่ minus แบบ static list ยังไม่ครอบคลุม — ถ้ามิเตอร์
+   ลูก (sub-meter) อยู่ใน "โซนเดียวกัน" กับมิเตอร์แม่ (header) การรวม ids ตรงๆ จะนับซ้ำทันที
+   เพราะค่ามิเตอร์แม่รวมค่าของลูกไว้อยู่แล้ว — เรื่องนี้อยู่ระหว่างออกแบบกลไก parentId ทั่วไป
+   (แทน minus แบบเขียนมือ) ยังไม่ implement ในรอบนี้ ดูบทสนทนาที่เกี่ยวข้อง */
 const ZONE_GROUPS = [
-  // ── main: กลุ่ม shop หลัก (ขึ้นคอลัมน์แยกในตารางรายงาน) ──
   { key:'BODY',      name:'Body Shop',        icon:'🏭', color:'#00D4FF', type:'main', minus:[] },
   { key:'PT78',      name:'PT7-8',            icon:'🏗️', color:'#a78bfa', type:'main', minus:[] },
   { key:'PAINT',     name:'Paint Shop',       icon:'🎨', color:'#22C55E', type:'main', minus:['WM-29','WM-24'] },
@@ -966,22 +811,16 @@ const ZONE_GROUPS = [
   { key:'OFFICE',    name:'Office',           icon:'🏢', color:'#818cf8', type:'main', minus:[] },
   { key:'FR',        name:'FR Shop',          icon:'🚧', color:'#fb7185', type:'main', minus:[] },
   { key:'POWERZONE', name:'Power Zone',       icon:'⚡', color:'#f59e0b', type:'main', minus:[] },
-  // ── util: กลุ่มระบบ utility (รวมเป็นคอลัมน์ UTILITY PLANT เดียวในรายงาน) ──
   { key:'RAWWATER',  name:'Raw Water Supply', icon:'🚰', color:null, type:'util', minus:[] },
   { key:'ROWWT',     name:'RO/WWT/DI Plant',  icon:'♻️', color:null, type:'util', minus:[] },
   { key:'UTILCOOL',  name:'Utility/Cooling',  icon:'❄️', color:null, type:'util', minus:[] },
   { key:'SEPTIC',    name:'Toilet/Septic',    icon:'🚻', color:null, type:'util', minus:[] }
 ];
 
-/* Meter ที่ zone ตรงกับ key นี้ — เรียกสดทุกครั้ง (ไม่ cache) เพื่อให้เห็นการแก้ zone ล่าสุดเสมอ */
 function getGroupIds(key){
   return subs.filter(s => s.zone === key).map(s => s.id);
 }
 
-/* generate REPORT_MAIN/REPORT_UTIL จาก ZONE_GROUPS — โค้ดส่วนอื่นที่อ้าง .ids ของแต่ละ group
-   ยังใช้งานได้เหมือนเดิมทุกที่ เพราะ .ids เป็น getter ที่เรียก getGroupIds() สดทุกครั้งที่เข้าถึง
-   ไม่ใช่ค่าที่ freeze ไว้ตอนสร้าง object (ตอนนี้ subs ยังว่างอยู่ด้วยซ้ำ เพราะยังโหลดจาก backend
-   ไม่เสร็จตอน script รันบรรทัดนี้) */
 const REPORT_MAIN = ZONE_GROUPS.filter(g => g.type === 'main').map(g => ({
   key: g.key, name: g.name, minus: g.minus,
   get ids(){ return getGroupIds(g.key); }
@@ -991,9 +830,6 @@ const REPORT_UTIL = ZONE_GROUPS.filter(g => g.type === 'util').map(g => ({
   get ids(){ return getGroupIds(g.key); }
 }));
 
-/* ───────── หมวดตามสถานที่ / ประเภทน้ำ (หน้าเลือก Meter) ───────── */
-/* อิงจากฟิลด์ zone ของแต่ละ Meter (มาจาก _SUBS sheet) — หมวดที่ zone ไม่ตรงกับ ZONE_GROUPS
-   จะตกไปอยู่ใน "อื่นๆ" (กันไม่ให้ Meter หายไปจากหน้าจอ) */
 const ZONE_CATEGORY_MAP = {};
 ZONE_GROUPS.forEach(g => { ZONE_CATEGORY_MAP[g.key] = g.name; });
 
@@ -1005,39 +841,36 @@ function getCategoryOf(sub){
   return ZONE_CATEGORY_MAP[zone] || 'อื่นๆ';
 }
 
-/* ───────── CONFIG ─────────
-   ⚠️ ต้องสร้าง Google Sheet + Apps Script Web App ใหม่แยกต่างหากจากแอปไฟฟ้า
-   (คนละระบบ คนละชีท) แล้วนำ URL ที่ deploy ได้มาแทนที่ค่าด้านล่างนี้ก่อนใช้งานจริง */
-const API_URL     = 'https://script.google.com/macros/s/AKfycbzdNkZejx4sRq9QZHZes12uC95dbI9iXjAJNy7nOiN_xnNNtiP0JKDWR-usdwrAA18MWw/exec';
-const QR_BASE_URL = 'https://ramesimct.github.io/Water-Meter-SR/';
+/* ───────── CONFIG ───────── */
+const API_URL     = 'https://script.google.com/macros/s/AKfycbwWwB0nz478TGH-3nQv9P_eiRh7YE2llDKfonjRTEqlg-AE8XoY2D6c9EO4i1ukH85EVw/exec';
+const QR_BASE_URL = 'https://github.com/IMCTConsumption/Water-Meter-SR/';
 const ABNORMAL_MULTIPLIER = 5;
+const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours — matches SESSION_TTL_SECONDS in Code.gs
 
 /* ───────── STATE ───────── */
 let subs                   = Array.isArray(jLoad('subs'))     ? jLoad('subs')     : [];
-let records                = Array.isArray(jLoad('records'))  ? jLoad('records')  : [];
+let records                = [];  // never hydrated from localStorage — admin-session-only
 let workCalendar           = Array.isArray(jLoad('calendar')) ? jLoad('calendar') : [];
 let filteredRecords        = [];
 let currentPage            = 1;
-let pageSize               = 15;
+let pageSize                = 15;
 let activeFilter           = { sub:'', user:'', from:'', to:'' };
 let appMode                = 'basic';
-let activeSub              = null;
-let editSubIndex           = null;
+let activeSub               = null;
+let editSubIndex            = null;
 let isConnected             = false;
 let currentEditingRecordId = null;
 let currentUser            = '';
-let reportRaw              = [];
+let sessionToken            = null;
+let reportRaw               = [];
 let reportComputed         = null;
 let compareMode            = 'day';
 
-/* สีประจำ 11 กลุ่มหลัก */
-/* สีประจำแต่ละกลุ่มหลัก — ดึงจาก ZONE_GROUPS เดียวกัน (util groups ไม่มีสีเพราะไม่ได้ขึ้นเป็นแท่งแยกสีในกราฟ) */
 const GROUP_COLORS = {};
 ZONE_GROUPS.forEach(g => { if(g.color) GROUP_COLORS[g.name] = g.color; });
-   
+
 /* ───────── UTILITIES ───────── */
 function jLoad(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
-// escape HTML กัน XSS — ใช้ครอบทุกค่าที่ผู้ใช้กรอกก่อนใส่ innerHTML
 function esc(str){
   if(str == null) return '';
   return String(str)
@@ -1049,7 +882,6 @@ function esc(str){
 }
 function persist(){
   localStorage.setItem('subs',     JSON.stringify(subs));
-  localStorage.setItem('records',  JSON.stringify(records));
   localStorage.setItem('calendar', JSON.stringify(workCalendar));
 }
 function fmtDate(d){
@@ -1098,34 +930,129 @@ function getSubRecs(subId){
     .sort((a,b) => (`${a.date} ${a.time||'00:00'}`).localeCompare(`${b.date} ${b.time||'00:00'}`));
 }
 
+/* ════════════ SESSION PERSISTENCE ════════════ */
+let sessionExpiresAt = null;
+let pendingQrSub = null;
+let sessionExpiryWarned = false;
+
+function persistSession(token, role, name){
+  sessionExpiresAt = Date.now() + SESSION_TTL_MS;
+  localStorage.setItem('authSession', JSON.stringify({ token, role, name, expiresAt: sessionExpiresAt }));
+  sessionExpiryWarned = false;
+  hideSessionExpiredBanner();
+}
+function clearSessionStorage(){
+  localStorage.removeItem('authSession');
+  sessionExpiresAt = null;
+}
+function restoreSession(){
+  let saved;
+  try{ saved = JSON.parse(localStorage.getItem('authSession')); }catch(e){ saved = null; }
+  if(!saved || !saved.token || !saved.expiresAt) return false;
+  if(Date.now() >= saved.expiresAt){ clearSessionStorage(); return false; }
+  sessionToken     = saved.token;
+  currentUser      = saved.name || '';
+  sessionExpiresAt = saved.expiresAt;
+  applyAppMode(saved.role === 'admin' ? 'admin' : 'basic');
+  closeLoginGate();
+  return true;
+}
+function showSessionExpiredBanner(){
+  document.getElementById('session-expired-banner').style.display = 'block';
+}
+function hideSessionExpiredBanner(){
+  document.getElementById('session-expired-banner').style.display = 'none';
+}
+function checkSessionExpiry(){
+  if(!sessionExpiresAt || sessionExpiryWarned) return;
+  if(Date.now() >= sessionExpiresAt){
+    sessionExpiryWarned = true;
+    showSessionExpiredBanner();
+  }
+}
+setInterval(checkSessionExpiry, 60000);
+
 /* ════════════ LOGIN ════════════ */
 function logout(){
   if(!confirm('ออกจากระบบและกลับไปหน้าเลือกโหมด?')) return;
+  if(sessionToken){
+    const tokenToRevoke = sessionToken;
+    apiPost({ action:'logout', token: tokenToRevoke }).catch(() => {});
+  }
   localStorage.removeItem('loginMode');
+  clearSessionStorage();
   currentUser = '';
-  document.getElementById('login-admin').style.display  = 'none';
-  document.getElementById('login-choose').style.display = 'block';
-  document.getElementById('login-err').style.display    = 'none';
+  sessionToken = null;
+  records = [];
+  localStorage.removeItem('records');
+  hideSessionExpiredBanner();
+  document.getElementById('login-admin').style.display    = 'none';
+  document.getElementById('login-recorder').style.display = 'none';
+  document.getElementById('login-choose').style.display   = 'block';
+  document.getElementById('login-err').style.display      = 'none';
   const gate = document.getElementById('login-gate');
   gate.style.display = 'flex';
   gate.style.opacity = '1';
 }
-function enterBasic(){
-  currentUser = '';
-  applyAppMode('basic');
-  localStorage.setItem('loginMode','basic');
-  closeLoginGate();
-  renderAll();
+function showRecorderLogin(fromExpiredBanner){
+  document.getElementById('login-choose').style.display   = 'none';
+  document.getElementById('login-admin').style.display    = 'none';
+  document.getElementById('login-recorder').style.display = 'block';
+  if(fromExpiredBanner){
+    const gate = document.getElementById('login-gate');
+    gate.style.display = 'flex'; gate.style.opacity = '1';
+  }
+  setTimeout(() => document.getElementById('recorder-pass')?.focus(), 100);
+}
+async function handleRecorderLogin(){
+  const passVal  = document.getElementById('recorder-pass').value.trim();
+  const errDiv   = document.getElementById('recorder-login-err');
+  const loginBtn = document.getElementById('recorder-login-btn');
+  if(!passVal){ errDiv.style.display = 'block'; errDiv.innerText = '⚠️ กรุณากรอกรหัสผ่าน'; return; }
+  errDiv.style.display = 'none';
+  const originalHTML = loginBtn.innerHTML;
+  loginBtn.disabled = true; loginBtn.innerHTML = '⏳ กำลังตรวจสอบ...';
+  try{
+    const res = await apiPost({ action:'login', username:'recorder', password:passVal });
+    if(res && res.success){
+      currentUser = res.name || 'ทีมจดมิเตอร์';
+      sessionToken = res.token || null;
+      persistSession(res.token, res.role || 'recorder', currentUser);
+      applyAppMode('basic');
+      localStorage.setItem('loginMode','basic');
+      document.getElementById('recorder-pass').value = '';
+      closeLoginGate();
+      await loadMeterStatus();
+      if(pendingQrSub){
+        goTab('entry');
+        const found = subs.find(s => s.id === pendingQrSub);
+        if(found){ await selectSub(found.id); toast('📍 เปิด ' + found.id + ' จาก QR','ok'); }
+        pendingQrSub = null;
+      }
+      renderAll();
+    } else {
+      errDiv.style.display = 'block'; errDiv.innerText = '❌ ' + (res?.error || 'รหัสผ่านไม่ถูกต้อง');
+      const el = document.getElementById('recorder-pass');
+      el.style.animation = 'shake 0.4s ease'; setTimeout(() => { el.style.animation = ''; }, 400);
+    }
+  }catch(e){
+    errDiv.style.display = 'block'; errDiv.innerText = '❌ เชื่อมต่อ Server ไม่ได้';
+  }finally{
+    loginBtn.disabled = false; loginBtn.innerHTML = originalHTML;
+  }
 }
 function showAdminLogin(){
-  document.getElementById('login-choose').style.display = 'none';
-  document.getElementById('login-admin').style.display  = 'block';
+  document.getElementById('login-choose').style.display   = 'none';
+  document.getElementById('login-recorder').style.display = 'none';
+  document.getElementById('login-admin').style.display    = 'block';
   setTimeout(() => document.getElementById('login-user')?.focus(), 100);
 }
 function backToChoose(){
-  document.getElementById('login-admin').style.display  = 'none';
-  document.getElementById('login-choose').style.display = 'block';
-  document.getElementById('login-err').style.display    = 'none';
+  document.getElementById('login-admin').style.display    = 'none';
+  document.getElementById('login-recorder').style.display = 'none';
+  document.getElementById('login-choose').style.display   = 'block';
+  document.getElementById('login-err').style.display      = 'none';
+  document.getElementById('recorder-login-err').style.display = 'none';
 }
 async function handleLogin(){
   const userVal  = document.getElementById('login-user').value.trim();
@@ -1142,9 +1069,14 @@ async function handleLogin(){
     const res = await apiPost({ action:'login', username:userVal, password:passVal });
     if(res && res.success && res.role === 'admin'){
       currentUser = res.name || userVal;
+      sessionToken = res.token || null;
+      persistSession(res.token, 'admin', currentUser);
       applyAppMode('admin');
       localStorage.removeItem('loginMode');
-      closeLoginGate(); renderAll();
+      closeLoginGate();
+      loginBtn.innerHTML = '⏳ กำลังโหลดข้อมูล...';
+      await loadAdminRecords();
+      renderAll();
     } else if(res && res.success){
       errDiv.style.display = 'block'; errDiv.innerText = '⚠️ บัญชีนี้ไม่มีสิทธิ์แอดมิน'; shakeInputs();
     } else {
@@ -1179,7 +1111,7 @@ function applyAppMode(mode){
     if(mode === 'admin'){
       hdrSmall.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:3px"><path d="m2 7 4.5 4.5L12 5l5.5 6.5L22 7v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z"/></svg>แอดมิน: ${esc(currentUser)}`;
     } else {
-      hdrSmall.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>โหมดบันทึก`;
+      hdrSmall.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>โหมดบันทึก${currentUser ? ' — '+esc(currentUser) : ''}`;
     }
   }
 }
@@ -1214,12 +1146,6 @@ function toggleTheme(){
 }
 
 /* ════════════ API ════════════ */
-/* ════════════ PERF INSTRUMENTATION (DEBUG only) ════════════
-   วัดคอขวดจริงด้วย performance.mark/measure — เปิด/ปิดด้วย DEBUG_PERF
-   Production: ตั้ง DEBUG_PERF=false → เป็น no-op ทั้งหมด (ไม่มี overhead)
-   วิธีใช้: เปิด console → ตั้ง window.DEBUG_PERF=true → กดใช้งาน → อ่าน log
-   ⚠️ อย่าลืม: perfEnd() ต้อง clearMeasures เพื่อกัน entry สะสมข้าม warm runs
-*/
 let DEBUG_PERF = false;
 try { if(location.search.indexOf('perf=1')>=0) DEBUG_PERF = true; } catch(e){}
 const _perfSeen = new Set();
@@ -1227,10 +1153,7 @@ function perfLabel(name){
   if(!_perfSeen.has(name)){ _perfSeen.add(name); return name+' [COLD]'; }
   return name+' [WARM]';
 }
-function perfStart(name){
-  if(!DEBUG_PERF) return;
-  performance.mark(name+'-start');
-}
+function perfStart(name){ if(!DEBUG_PERF) return; performance.mark(name+'-start'); }
 function perfEnd(name){
   if(!DEBUG_PERF) return;
   performance.mark(name+'-end');
@@ -1238,8 +1161,7 @@ function perfEnd(name){
     performance.measure(name, name+'-start', name+'-end');
     const entry = performance.getEntriesByName(name).pop();
     if(entry) console.log(`⏱ ${name}: ${entry.duration.toFixed(2)} ms`);
-  }catch(e){ /* mark missing — ignore */ }
-  // สำคัญ: เคลียร์เพื่อกัน entry สะสมข้าม warm runs
+  }catch(e){}
   performance.clearMarks(name+'-start');
   performance.clearMarks(name+'-end');
   performance.clearMeasures(name);
@@ -1264,21 +1186,45 @@ async function apiPost(body, retries = 2){
   }
 }
 
-/* ════════════ SUMMARY API CACHE ════════════
-   Cache getMonthlySummary โดย key = dateFrom|dateTo|granularity
-   ทั้ง 3 กราฟ (report, g9, cmp) ใช้ endpoint เดียวกัน จึงแชร์ cache ได้
-   invalidate เมื่อ save/edit/delete record หรือแก้ปฏิทิน
-*/
+async function apiPostAuthed(body){
+  const res = await apiPost(Object.assign({}, body, { token: sessionToken }));
+  if(!res || res.success === false){
+    const msg = (res && res.error) || 'การดำเนินการล้มเหลว';
+    toast('❌ ' + msg, 'err');
+    if(res && /session|เข้าสู่ระบบ/i.test(res.error || '')){
+      sessionToken = null;
+      setTimeout(() => { logout(); }, 1200);
+    }
+    throw new Error(msg);
+  }
+  return res;
+}
+
+/* ════════════ SCOPED DATA LOADERS ════════════ */
+let meterStatus = {};
+let activeSubRecent = [];
+
+async function loadMeterStatus(){
+  try{
+    const res = await apiPost({ action:'getMeterStatus', subIds: subs.map(s => s.id) });
+    if(res && res.success && res.status) meterStatus = res.status;
+  }catch(e){ console.warn('⚠️ โหลดสถานะมิเตอร์ไม่ได้:', e.message); }
+}
+async function loadAdminRecords(){
+  try{
+    const res = await apiPostAuthed({ action:'getRawRecords' });
+    records = computeUsed(res.records || []);
+    persist();
+  }catch(e){ /* apiPostAuthed already surfaced the error toast */ }
+}
+async function loadRecentForSub(subId, limit){
+  const res = await apiPost({ action:'getRecentRecords', subId, limit: limit || 5, token: sessionToken });
+  if(!res || !res.success) throw new Error((res && res.error) || 'โหลดประวัติมิเตอร์ไม่ได้');
+  return res.records || [];
+}
+
+/* ════════════ SUMMARY API CACHE ════════════ */
 let summaryCache = {};
-// ขยาย [dateFrom, dateTo] ให้คลุมเดือนเต็มทั้งสองฝั่ง — ใช้เฉพาะ granularity='day'
-// เหตุผล: G9 chart แบบรายวันขอข้อมูลเป็นหน้าต่าง 8 วัน (pick..pick+7) แล้วเลื่อนทีละ 1 วันตอนกด ◀▶
-// ถ้า cache key ผูกกับ dateFrom/dateTo ตรงๆ จะ miss cache ทุกครั้งที่เลื่อน ทั้งที่ข้อมูลทับกัน ~87%
-// การ snap ให้คลุมเต็มเดือนทำให้การเลื่อนวันภายในเดือนเดียวกันได้ key เดิม → hit cache ทันที
-// ไม่มี network round-trip เลย (ตรงข้ามกับ cache เดิมที่ยัง miss ทุกครั้งแม้ backend จะมี month-cache
-// อยู่แล้วก็ตาม เพราะ backend cache ช่วยแค่ข้าม _readAllSheet() แต่ HTTP round-trip ไป Apps Script
-// ยังเกิดอยู่ดี — ซึ่งเป็นส่วนที่กินเวลาจริง (วัดได้ 3-8 วิ ต่อครั้ง เทียบกับ compute ≈1ms)
-// ผลลัพธ์ที่ backend คืนมายังถูกต้องสำหรับช่วงที่ผู้เรียกต้องการจริง เพราะ caller ทุก Meter (loadReport,
-// renderG9Chart, renderCmpChart) กรอง/มองหาเฉพาะ date key ที่ต้องการเองอยู่แล้วจากผลลัพธ์ที่ได้กว้างขึ้น
 function _snapDayRangeToMonths(dateFrom, dateTo){
   const from = dateFrom.slice(0,7) + '-01';
   const [ty, tm] = dateTo.slice(0,7).split('-').map(Number);
@@ -1297,9 +1243,9 @@ async function getSummaryCached(dateFrom, dateTo, granularity){
     return summaryCache[key];
   }
   const _t0 = (DEBUG_PERF && performance.now()) || 0;
-  const res = await apiPost({ action:'getMonthlySummary', dateFrom:qFrom, dateTo:qTo, granularity });
+  const res = await apiPostAuthed({ action:'getMonthlySummary', dateFrom:qFrom, dateTo:qTo, granularity });
   if(DEBUG_PERF) console.log(`⏱ getSummaryCached [MISS→network] ${key}: ${(performance.now()-_t0).toFixed(0)} ms`);
-  if(res && res.success) summaryCache[key] = res;  // cache เฉพาะ response ที่สำเร็จ
+  if(res && res.success) summaryCache[key] = res;
   return res;
 }
 function invalidateSummaryCache(reason){
@@ -1308,21 +1254,12 @@ function invalidateSummaryCache(reason){
   console.log(`🗑 invalidateSummaryCache — ล้าง ${keys} keys, reason: ${reason||'ไม่ระบุ'}`);
 }
 
-/* ════════════ SAFE CHART TEARDOWN ════════════
-   ป้องกัน crash "Cannot read properties of undefined (reading 'node')"
-   จากการ destroy() chart ที่ยัง mount ไม่เสร็จ (v3 rapid-toggle bug)
-   fixed ใน v5.15.1+ แต่เรายังอยู่ v3.50.0 จึง guard เอง
-*/
 function safeDestroyChart(inst){
   if(!inst) return;
   try{ inst.destroy(); }
   catch(e){ console.warn('chart destroy guarded:', e && e.message); }
 }
 
-/* ════════════ LAZY CDN LOADER ════════════
-   โหลด library เมื่อใช้จริง ไม่โหลดตอนเปิดแอป (ลดเวลาโหลดหน้าแรก ~655KB)
-   cache promise ต่อ url — เรียกซ้ำได้ไม่โหลดซ้ำ
-*/
 const _scriptPromises = {};
 function loadScript(url){
   if(_scriptPromises[url]) return _scriptPromises[url];
@@ -1340,7 +1277,6 @@ const CDN = {
   xlsx:       'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   apexcharts: 'https://cdn.jsdelivr.net/npm/apexcharts@3.50.0/dist/apexcharts.min.js'
 };
-// โหลดเฉพาะเมื่อยังไม่มี global (กัน double-load)
 function ensureQRCode(){    return (typeof QRCode!=='undefined')    ? Promise.resolve() : loadScript(CDN.qrcode); }
 function ensureXLSX(){      return (typeof XLSX!=='undefined')      ? Promise.resolve() : loadScript(CDN.xlsx); }
 function ensureApex(){      return (typeof ApexCharts!=='undefined') ? Promise.resolve() : loadScript(CDN.apexcharts); }
@@ -1370,27 +1306,26 @@ function loadFromServer(){
       const _plJson = perfLabel('loadFromServer:jsonParse'); perfStart(_plJson);
       return res.json().then(data => { perfEnd(_plJson); return data; });
     })
-    .then(data => {
+    .then(async data => {
       if(!data || data.status === 'error') throw new Error(data?.message || 'Server error');
       if(data.subs     && Array.isArray(data.subs))     subs         = data.subs;
-      if(data.records  && Array.isArray(data.records))  records      = computeUsed(data.records);
       if(data.calendar && Array.isArray(data.calendar)) workCalendar = data.calendar;
-      persist(); isConnected = true; invalidateSummaryCache('loadFromServer'); renderAll();
-      // ✅ ถ้ากำลังอยู่หน้ากรอก อัปเดตปุ่ม save ให้เป็นออนไลน์
+      persist(); isConnected = true; invalidateSummaryCache('loadFromServer');
+      await loadMeterStatus();
+      if(appMode === 'admin' && sessionToken) await loadAdminRecords();
+      renderAll();
       if(activeSub){
         const sb = document.getElementById('save-btn');
         if(sb && !sb.disabled){ sb.innerHTML = '✅ บันทึกข้อมูล'; }
       }
-      console.log(`✅ Sync — ${subs.length} subs, ${records.length} records, ${workCalendar.length} cal`);
+      console.log(`✅ Sync — ${subs.length} subs, ${workCalendar.length} cal${appMode==='admin' ? ', '+records.length+' records' : ''}`);
     })
     .catch(err => { console.warn('⚠️ โหลด Server ไม่ได้ ใช้ Cache:', err.message); isConnected = false; });
 }
-
 function refreshData(){
   const btn = document.getElementById('refresh-btn');
   if(btn){ btn.disabled = true; btn.innerHTML = '⏳ กำลังโหลด...'; }
   setSyncStatus('busy','กำลังโหลดข้อมูล...');
-
   const _plApiR = perfLabel('refreshData:api'); perfStart(_plApiR);
   fetch(API_URL)
     .then(res => {
@@ -1399,22 +1334,19 @@ function refreshData(){
       const _plJsonR = perfLabel('refreshData:jsonParse'); perfStart(_plJsonR);
       return res.json().then(data => { perfEnd(_plJsonR); return data; });
     })
-    .then(data => {
+    .then(async data => {
       if(!data || data.status === 'error') throw new Error(data?.message || 'Server error');
       if(data.subs     && Array.isArray(data.subs))     subs         = data.subs;
-      if(data.records  && Array.isArray(data.records))  records      = computeUsed(data.records);
       if(data.calendar && Array.isArray(data.calendar)) workCalendar = data.calendar;
-      persist(); isConnected = true; invalidateSummaryCache('refreshData'); renderAll();
+      persist(); isConnected = true; invalidateSummaryCache('refreshData');
+      await loadMeterStatus();
+      if(appMode === 'admin' && sessionToken) await loadAdminRecords();
+      renderAll();
       setSyncStatus('ok',`โหลดสำเร็จ — ${subs.length} Meter`);
     })
-    .catch(err => {
-      setSyncStatus('error','โหลดไม่ได้: ' + err.message);
-    })
-    .finally(() => {
-      if(btn){ btn.disabled = false; btn.innerHTML = '🔄 Refresh'; }
-    });
+    .catch(err => { setSyncStatus('error','โหลดไม่ได้: ' + err.message); })
+    .finally(() => { if(btn){ btn.disabled = false; btn.innerHTML = '🔄 Refresh'; } });
 }
-
 async function testConn(){
   setSyncStatus('busy','กำลังทดสอบ...');
   const box = document.getElementById('api-status');
@@ -1425,14 +1357,14 @@ async function testConn(){
     const data = await res.json();
     if(data.status === 'error') throw new Error(data.message);
     setSyncStatus('ok','เชื่อมต่อสำเร็จ');
-    box.innerHTML = `<div class="info-box">✅ เชื่อมต่อสำเร็จ — ${records.length} records, ${subs.length} subs</div>`;
+    const recNote = appMode === 'admin' ? `${records.length} records, ` : '';
+    box.innerHTML = `<div class="info-box">✅ เชื่อมต่อสำเร็จ — ${recNote}${subs.length} subs</div>`;
   }catch(e){
     setSyncStatus('error','ล้มเหลว');
     box.innerHTML = `<div class="warn-box">❌ ${e.message}</div>`;
   }
 }
 
-/* ════════════ COMPUTE USED ════════════ */
 function computeUsed(rawRecords){
   const _pl = perfLabel('computeUsed(n='+rawRecords.length+')'); perfStart(_pl);
   rawRecords.forEach(r => { if(r.date && String(r.date).includes('T')) r.date = String(r.date).slice(0, 10); });
@@ -1452,30 +1384,26 @@ function computeUsed(rawRecords){
   return _out;
 }
 
-/* ════════════ INIT ════════════ */
 async function init(){
   if(!Array.isArray(subs)) subs = [];
   subs = subs.map(s => ({ ...s, decimal: s.decimal !== undefined ? s.decimal : 0 }));
   initTheme(); setNow();
-  if(localStorage.getItem('loginMode') === 'basic'){ applyAppMode('basic'); closeLoginGate(); }
+  const hasSession = restoreSession();
   renderAll();
   document.getElementById('qr-url-preview').textContent = QR_BASE_URL + '?sub=WM-XX';
   const p = new URLSearchParams(location.search).get('sub');
   if(p){
-    // เข้าโหมด basic ทันที (QR = คนจดมิเตอร์)
-    applyAppMode('basic');
-    localStorage.setItem('loginMode','basic');
-    closeLoginGate();
-    goTab('entry');
-    // รอโหลดข้อมูลจริงจบก่อนค่อยเปิด Meter — แทนการ poll ด้วย setTimeout ทุก 200ms สูงสุด 8 วิ
-    // loadFromServer() คืน promise แล้ว (แก้ไปพร้อมกับ instrumentation ด้านบน) จึง await ตรงๆ ได้
-    await loadFromServer();
-    const found = subs.find(s => s.id === p.toUpperCase());
-    if(found){
-      selectSub(found.id);
-      toast('📍 เปิด ' + found.id + ' จาก QR','ok');
+    pendingQrSub = p.toUpperCase();
+    if(hasSession){
+      goTab('entry');
+      await loadFromServer();
+      const found = subs.find(s => s.id === pendingQrSub);
+      if(found){ await selectSub(found.id); toast('📍 เปิด ' + found.id + ' จาก QR','ok'); }
+      else{ toast('ไม่พบ Meter: ' + pendingQrSub + ' (ลองรีเฟรช)','err'); }
+      pendingQrSub = null;
     } else {
-      toast('ไม่พบ Meter: ' + p.toUpperCase() + ' (ลองรีเฟรช)','err');
+      await loadFromServer();
+      showRecorderLogin();
     }
   } else {
     loadFromServer();
@@ -1488,7 +1416,6 @@ function renderAll(){
     if(activeSub){ updateMeterSummary(); renderRecent(); }
     return;
   }
-  // วัดแยก segment — หา DOM render ที่แพงจริง (ไม่เดา)
   const seg = (name, fn) => { const l=perfLabel('renderAll:'+name); perfStart(l); fn(); perfEnd(l); };
   const _t0 = performance.now();
   seg('zoneAreas', renderZoneAreas);
@@ -1500,7 +1427,6 @@ function renderAll(){
   console.log(`⏱ renderAll TOTAL: ${(performance.now()-_t0).toFixed(2)} ms`);
 }
 
-/* ════════════ TABS ════════════ */
 const TAB_ORDER = ['entry','data','chart','summary','qr','settings'];
 function goTab(name){
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -1511,199 +1437,10 @@ function goTab(name){
   if(tabEl) tabEl.classList.add('active');
   if(name === 'data')     { renderData(); renderStats(); }
   if(name === 'chart')    { populateDDs(); setSubQuick('30d'); buildCompareGroupOptions(); initG9Pickers(); renderG9Chart(); }
-  if(name === 'summary')  { buildMonthOptions(); loadReport(); }
   if(name === 'qr')       { renderQR(); }
   if(name === 'settings') { renderSubList(); renderCalendarList(); }
 }
 
-/* ════════════════════════════════════════════════════════════
-   หน้าสรุป — รายงานรายวันทั้งเดือน
-   ════════════════════════════════════════════════════════════ */
-function buildMonthOptions(){
-  const months = [...new Set(records.map(r => String(r.date).slice(0,7)))].filter(Boolean).sort().reverse();
-  const sel = document.getElementById('rep-month');
-  if(!sel) return;
-  const MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  sel.innerHTML = months.map(m => { const [y,mm]=m.split('-'); return `<option value="${m}">${MN[parseInt(mm)]} ${y}</option>`; }).join('');
-}
-
-let reportReqId = 0;
-async function loadReport(){
-  const thisReq = ++reportReqId;
-  const month = document.getElementById('rep-month')?.value;
-  if(!month){ document.getElementById('report-area').innerHTML = '<div class="section-empty">ไม่มีข้อมูล</div>'; return; }
-  const [y,m] = month.split('-');
-  const dateFrom = `${month}-01`;
-  const lastDay  = new Date(parseInt(y), parseInt(m), 0).getDate();
-  // ดึงเพิ่ม 7 วันหลังสิ้นเดือน เพื่อให้วันสุดท้ายคำนวณ used ได้
-  const extDate  = new Date(parseInt(y), parseInt(m)-1, lastDay+7);
-  const dateTo   = `${extDate.getFullYear()}-${String(extDate.getMonth()+1).padStart(2,'0')}-${String(extDate.getDate()).padStart(2,'0')}`;
-  document.getElementById('report-area').innerHTML = '<div class="section-empty">⏳ กำลังโหลด...</div>';
-  try{
-    const res = await getSummaryCached(dateFrom, dateTo, 'day');
-    if(thisReq !== reportReqId) return; // stale request — discard
-    if(!res || !res.success) throw new Error(res?.error || 'Server error');
-    reportRaw = res.summary || [];
-    renderReport(month, lastDay);
-  }catch(e){
-    if(thisReq !== reportReqId) return;
-    document.getElementById('report-area').innerHTML = `<div class="warn-box">❌ ${e.message}</div>`;
-  }
-}
-
-function buildMeterDayMap(){
-  const m = {};
-  reportRaw.forEach(r => { if(!m[r.subId]) m[r.subId]={}; m[r.subId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
-  return m;
-}
-function meterUsedOnDay(meterMap, subId, dateStr, allDates){
-  const cur = meterMap[subId]?.[dateStr];
-  if(!cur) return null;
-  const sub  = subs.find(s => s.id === subId);
-  const mult = sub?.multiplier !== undefined ? parseFloat(sub.multiplier) : 1;
-  const idx = allDates.indexOf(dateStr);
-  for(let k = idx+1; k < allDates.length; k++){
-    const next = meterMap[subId]?.[allDates[k]];
-    if(next) return Math.max(0, next.firstKwh - cur.firstKwh) * mult;
-  }
-  return Math.max(0, cur.lastKwh - cur.firstKwh) * mult;
-}
-function sumGroupOnDay(meterMap, col, dateStr, allDates){
-  const ids   = Array.isArray(col) ? col : (col.ids || []);
-  const minus = Array.isArray(col) ? []  : (col.minus || []);
-  let total = 0, hasAny = false;
-  ids.forEach(id => { const u = meterUsedOnDay(meterMap, id, dateStr, allDates); if(u !== null){ total += u; hasAny = true; } });
-  minus.forEach(id => { const u = meterUsedOnDay(meterMap, id, dateStr, allDates); if(u !== null){ total -= u; hasAny = true; } });
-  return hasAny ? total : null;
-}
-
-function renderReport(month, lastDay){
-  const area = document.getElementById('report-area');
-  if(!reportRaw.length){ area.innerHTML = '<div class="section-empty">📭 ไม่มีข้อมูลเดือนนี้</div>'; return; }
-  const _plMap = perfLabel('buildMeterDayMap'); perfStart(_plMap);
-  const meterMap = buildMeterDayMap();
-  perfEnd(_plMap);
-  const allDates = [...new Set(reportRaw.map(r => r.period))].sort();
-  const days = [];
-  for(let d = 1; d <= lastDay; d++) days.push(`${month}-${String(d).padStart(2,'0')}`);
-
-  const _plRows = perfLabel('renderReport:rowsCompute'); perfStart(_plRows);
-  const rows = days.map(dateStr => {
-    const cells = {};
-    REPORT_MAIN.forEach(c => cells[c.key] = sumGroupOnDay(meterMap, c, dateStr, allDates));
-    REPORT_UTIL.forEach(c => cells[c.key] = sumGroupOnDay(meterMap, c, dateStr, allDates));
-    let utilTotal = 0, utilHas = false;
-    REPORT_UTIL.forEach(c => { if(cells[c.key] !== null){ utilTotal += cells[c.key]; utilHas = true; } });
-    cells['UTILITY'] = utilHas ? utilTotal : null;
-    let mainTotal = 0, mainHas = false;
-    REPORT_MAIN.forEach(c => { if(cells[c.key] !== null){ mainTotal += cells[c.key]; mainHas = true; } });
-    cells['TOTAL'] = (mainHas || utilHas) ? (mainTotal + utilTotal) : null;
-    return { dateStr, cells };
-  });
-
-  const totals = {};
-  [...REPORT_MAIN.map(c=>c.key), ...REPORT_UTIL.map(c=>c.key), 'UTILITY','TOTAL'].forEach(k => {
-    totals[k] = rows.reduce((a,r) => a + (r.cells[k]||0), 0);
-  });
-  perfEnd(_plRows);
-  reportComputed = { month, rows, totals };
-
-  const fmtCell = v => v === null ? '<span style="color:var(--text-3)">—</span>' : Math.round(v).toLocaleString();
-  const MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  const [yy,mm] = month.split('-');
-  const headMain = REPORT_MAIN.map(c => `<th style="text-align:right;padding:6px 8px;min-width:64px">${c.name}</th>`).join('');
-  const headUtil = REPORT_UTIL.map(c => `<th style="text-align:right;padding:6px 8px;min-width:64px;color:var(--purple)">${c.name}</th>`).join('');
-
-  const bodyRows = rows.map(r => {
-    const dnum = parseInt(r.dateStr.split('-')[2]);
-    const mainCells = REPORT_MAIN.map(c => `<td style="text-align:right;padding:5px 8px">${fmtCell(r.cells[c.key])}</td>`).join('');
-    const utilCells = REPORT_UTIL.map(c => `<td style="text-align:right;padding:5px 8px;color:var(--text-2)">${fmtCell(r.cells[c.key])}</td>`).join('');
-    return `<tr>
-      <td style="padding:5px 8px;font-weight:600;color:var(--accent);position:sticky;left:0;background:var(--surface-1)">${dnum}/${parseInt(mm)}</td>
-      ${mainCells}
-      <td style="text-align:right;padding:5px 8px;font-weight:700;color:var(--green);background:var(--green-dim)">${fmtCell(r.cells['UTILITY'])}</td>
-      ${utilCells}
-      <td style="text-align:right;padding:5px 8px;font-weight:700;color:var(--accent)">${fmtCell(r.cells['TOTAL'])}</td>
-    </tr>`;
-  }).join('');
-
-  const totMain = REPORT_MAIN.map(c => `<td style="text-align:right;padding:7px 8px;font-weight:700">${Math.round(totals[c.key]).toLocaleString()}</td>`).join('');
-  const totUtil = REPORT_UTIL.map(c => `<td style="text-align:right;padding:7px 8px;font-weight:700;color:var(--purple)">${Math.round(totals[c.key]).toLocaleString()}</td>`).join('');
-
-  area.innerHTML = `
-    <div style="font-size:var(--fs-md);font-weight:700;margin-bottom:8px;text-align:center">รายละเอียดปริมาณการใช้น้ำแต่ละ Meter · ${MN[parseInt(mm)]} ${yy}</div>
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:var(--fs-sm);white-space:nowrap">
-        <thead><tr style="background:var(--surface-3)">
-          <th style="padding:6px 8px;position:sticky;left:0;background:var(--surface-3);text-align:left">วันที่</th>
-          ${headMain}
-          <th style="text-align:right;padding:6px 8px;color:var(--green)">UTILITY<br>PLANT</th>
-          ${headUtil}
-          <th style="text-align:right;padding:6px 8px;color:var(--accent)">TOTAL</th>
-        </tr></thead>
-        <tbody>${bodyRows}</tbody>
-        <tfoot><tr style="background:var(--surface-3);border-top:2px solid var(--border)">
-          <td style="padding:7px 8px;font-weight:700;position:sticky;left:0;background:var(--surface-3)">รวม</td>
-          ${totMain}
-          <td style="text-align:right;padding:7px 8px;font-weight:700;color:var(--green);background:var(--green-dim)">${Math.round(totals['UTILITY']).toLocaleString()}</td>
-          ${totUtil}
-          <td style="text-align:right;padding:7px 8px;font-weight:700;color:var(--accent)">${Math.round(totals['TOTAL']).toLocaleString()}</td>
-        </tr></tfoot>
-      </table>
-    </div>
-    <div style="margin-top:6px;font-size:10px;color:var(--text-3)">หน่วย: m³ · — = ไม่มีข้อมูล · UTILITY PLANT = รวม Raw Water Supply + RO/WWT/DI Plant + Utility/Cooling + Toilet/Septic + อื่นๆ · TOTAL = group หลัก + utility</div>`;
-  buildCompareGroupOptions();
-}
-
-async function exportReportExcel(){
-  if(!reportComputed) return toast('ยังไม่มีข้อมูล','err');
-  try{ await ensureXLSX(); }catch(e){ return toast('โหลด Excel library ไม่ได้','err'); }
-  const { month, rows, totals } = reportComputed;
-  const mm = parseInt(month.split('-')[1]);
-  const aoa = [];
-  const header = ['วันที่', ...REPORT_MAIN.map(c=>c.name), 'UTILITY PLANT', ...REPORT_UTIL.map(c=>c.name), 'TOTAL'];
-  aoa.push(header);
-  rows.forEach(r => {
-    const dnum = parseInt(r.dateStr.split('-')[2]);
-    const line = [`${dnum}/${mm}`];
-    REPORT_MAIN.forEach(c => line.push(r.cells[c.key]===null?'':Math.round(r.cells[c.key])));
-    line.push(r.cells['UTILITY']===null?'':Math.round(r.cells['UTILITY']));
-    REPORT_UTIL.forEach(c => line.push(r.cells[c.key]===null?'':Math.round(r.cells[c.key])));
-    line.push(r.cells['TOTAL']===null?'':Math.round(r.cells['TOTAL']));
-    aoa.push(line);
-  });
-  const totLine = ['รวม'];
-  REPORT_MAIN.forEach(c => totLine.push(Math.round(totals[c.key])));
-  totLine.push(Math.round(totals['UTILITY']));
-  REPORT_UTIL.forEach(c => totLine.push(Math.round(totals[c.key])));
-  totLine.push(Math.round(totals['TOTAL']));
-  aoa.push(totLine);
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = header.map(()=>({wch:13}));
-  XLSX.utils.book_append_sheet(wb, ws, month);
-  XLSX.writeFile(wb, `Report_${month}.xlsx`);
-  toast('✅ Export รายงานแล้ว','ok');
-}
-
-/* ════════════ กราฟเทียบต่อกลุ่ม ════════════ */
-function buildCompareGroupOptions(){
-  const sel = document.getElementById('cmp-group');
-  if(!sel) return;
-  const prev = sel.value;
-  const allCols = [...REPORT_MAIN, ...REPORT_UTIL];
-  sel.innerHTML = allCols.map(c => `<option value="${c.key}">${c.name}</option>`).join('')
-    + '<option value="__UTILITY__">UTILITY PLANT (รวม)</option>'
-    + '<option value="__TOTAL__">TOTAL</option>';
-  if(prev) sel.value = prev;
-}
-function getColIds(key){
-  if(key === '__UTILITY__') return REPORT_UTIL.flatMap(c => c.ids);
-  if(key === '__TOTAL__')   return [...REPORT_MAIN, ...REPORT_UTIL].flatMap(c => c.ids);
-  const col = [...REPORT_MAIN, ...REPORT_UTIL].find(c => c.key === key);
-  return col ? col.ids : [];
-}
-   
 /* ════════════ WORK CALENDAR ════════════ */
 function getDayType(dateStr){
   const found = workCalendar.find(c => c.date === dateStr);
@@ -1723,13 +1460,13 @@ async function addCalendarDay(){
   persist(); renderCalendarList();
   document.getElementById('cal-date').value = ''; document.getElementById('cal-note').value = '';
   toast('✅ เพิ่มวันพิเศษแล้ว','ok');
-  try{ await apiPost({ action:'setCalendarDay', date, type, note }); invalidateSummaryCache('setCalendarDay:'+date); }catch(e){ toast('⚠️ Sync ปฏิทินล้มเหลว','warn'); }
+  try{ await apiPostAuthed({ action:'setCalendarDay', date, type, note }); invalidateSummaryCache('setCalendarDay:'+date); }catch(e){ toast('⚠️ Sync ปฏิทินล้มเหลว: ' + e.message,'warn'); }
 }
 async function removeCalendarDay(date){
   if(!confirm(`ลบวันพิเศษ ${fmtDate(date)}?`)) return;
   workCalendar = workCalendar.filter(c => c.date !== date);
   persist(); renderCalendarList(); toast('ลบแล้ว');
-  try{ await apiPost({ action:'deleteCalendarDay', date }); invalidateSummaryCache('deleteCalendarDay:'+date); }catch(e){}
+  try{ await apiPostAuthed({ action:'deleteCalendarDay', date }); invalidateSummaryCache('deleteCalendarDay:'+date); }catch(e){}
 }
 function renderCalendarList(){
   const box = document.getElementById('cal-list');
@@ -1828,7 +1565,7 @@ function renderZoneAreas(){
     const grid = document.createElement('div');
     grid.className = 'sub-grid';
     list.forEach(s => {
-      const hasData = records.some(r => r.subId === s.id);
+      const hasData = !!meterStatus[s.id];
       const isSel   = activeSub && activeSub.id === s.id;
       const d = document.createElement('div');
       d.className = 'sub-card' + (isSel?' sel':'') + (hasData?' has-data':'');
@@ -1840,7 +1577,7 @@ function renderZoneAreas(){
     container.appendChild(block);
   });
 }
-function selectSub(subId){
+async function selectSub(subId){
   activeSub = subs.find(s => s.id === subId);
   if(!activeSub) return;
   document.getElementById('sub-list-screen').style.display = 'none';
@@ -1858,24 +1595,33 @@ function selectSub(subId){
   document.getElementById('preview-box').style.display = 'none';
   setNow();
   const sb = document.getElementById('save-btn');
+  sb.disabled  = true;
+  sb.innerHTML = '⏳ กำลังโหลดประวัติมิเตอร์...';
+  activeSubRecent = [];
+  updateMeterSummary(); renderRecent(); renderZoneAreas();
+  try{
+    activeSubRecent = await loadRecentForSub(activeSub.id, 5);
+  }catch(e){
+    toast('⚠️ โหลดประวัติมิเตอร์ไม่ได้: ' + e.message,'warn');
+  }
   sb.innerHTML = isConnected ? '✅ บันทึกข้อมูล' : '⚠️ บันทึก (Offline)';
   sb.disabled  = false;
-  updateMeterSummary(); renderRecent(); renderZoneAreas();
+  updateMeterSummary(); renderRecent();
 }
 function backToList(){
   activeSub = null;
+  activeSubRecent = [];
   document.getElementById('sub-list-screen').style.display = 'block';
   document.getElementById('entry-section').style.display   = 'none';
   renderZoneAreas();
 }
 function updateMeterSummary(){
   if(!activeSub) return;
-  const recs = getSubRecs(activeSub.id);
-  const sm   = document.getElementById('meter-summary');
-  if(!recs.length){ sm.style.display = 'none'; return; }
+  const sm = document.getElementById('meter-summary');
+  if(!activeSubRecent.length){ sm.style.display = 'none'; return; }
   sm.style.display = 'block';
-  const last = recs[recs.length - 1];
-  const prev = recs.length > 1 ? recs[recs.length - 2] : null;
+  const last = activeSubRecent[0];
+  const prev = activeSubRecent.length > 1 ? activeSubRecent[1] : null;
   document.getElementById('last-reading').textContent = fmtNum(last.kwh, activeSub.id);
   document.getElementById('prev-reading').textContent = prev ? fmtNum(prev.kwh, activeSub.id) : '—';
   document.getElementById('last-used').textContent    = prev ? fmtNum(prev.used||0, activeSub.id) : '—';
@@ -1886,7 +1632,7 @@ function previewUsed(){
   const box  = document.getElementById('preview-box');
   const chip = document.getElementById('preview-chip');
   if(isNaN(val) || val < 0){ box.style.display = 'none'; return; }
-  const lastKwh    = getLastKwh(activeSub.id);
+  const lastKwh    = activeSubRecent.length ? (parseFloat(activeSubRecent[0].kwh) || 0) : null;
   const multiplier = activeSub.multiplier !== undefined ? parseFloat(activeSub.multiplier) : 1;
   box.style.display = 'block';
   if(lastKwh === null){ chip.className = 'chip chip-green'; chip.textContent = '📌 บันทึกครั้งแรกของ Meter นี้'; }
@@ -1898,17 +1644,18 @@ function previewUsed(){
 }
 function renderRecent(){
   if(!activeSub) return;
-  const recs = getSubRecs(activeSub.id).slice(-5).reverse();
+  const recs = activeSubRecent;
   const card = document.getElementById('recent-card');
   const body = document.getElementById('recent-body');
   if(!recs.length){ card.style.display = 'none'; return; }
   card.style.display = 'block';
+  const canEdit = appMode === 'admin';
   body.innerHTML = recs.map(r => `<tr>
     <td>${fmtDate(r.date)}</td><td>${fmtTime(r.time)}</td>
     <td class="td-kwh">${fmtNum(r.kwh, activeSub.id)}</td>
     <td class="td-used">${fmtNum(r.used||0, activeSub.id)}</td>
     <td>${esc(r.user)||'—'}</td>
-    <td><button class="btn btn-ghost btn-sm" onclick="openEdit('${r.id}')">✏️</button></td>
+    <td>${canEdit ? `<button class="btn btn-ghost btn-sm" onclick="openEdit('${r.id}')">✏️</button>` : ''}</td>
   </tr>`).join('');
 }
 
@@ -1923,9 +1670,9 @@ async function saveRecord(){
   if(!date) return toast('เลือกวันที่ด้วย','err');
   const time = document.getElementById('in-time').value;
   const note = document.getElementById('in-note').value || '';
-  const dupe = records.find(r => r.subId === activeSub.id && r.date === date);
+  const dupe = activeSubRecent.find(r => r.date === date);
   if(dupe){ if(!confirm(`⚠️ Meter ${activeSub.id} วันที่ ${fmtDate(date)} มีการบันทึกแล้ว (${fmtNum(dupe.kwh, activeSub.id)} m³)\nบันทึกเพิ่มอีกหรือไม่?`)) return; }
-  const lastKwh = getLastKwh(activeSub.id);
+  const lastKwh = activeSubRecent.length ? (parseFloat(activeSubRecent[0].kwh) || 0) : null;
   if(lastKwh !== null && kwh < lastKwh){ if(!confirm(`ค่าที่กรอก (${kwh}) น้อยกว่าครั้งก่อน (${lastKwh})\nบันทึกต่อหรือไม่?`)) return; }
   if(lastKwh !== null && kwh > lastKwh){
     const multiplier = activeSub.multiplier !== undefined ? parseFloat(activeSub.multiplier) : 1;
@@ -1940,34 +1687,47 @@ async function saveRecord(){
 async function doSaveRecord(sub, kwh, date, time, user, note){
   const now = new Date();
   const rec = { id: `REC-${now.getTime()}-${Math.floor(Math.random()*1000)}`, subId: sub.id, subName: sub.name, zone: sub.zone, date, time, kwh, user, note, ts: now.toISOString(), editedTs: '', editedBy: '' };
-  records.push(rec); records = computeUsed(records); persist();
+  if(appMode === 'admin' && records.length){ records.push(rec); records = computeUsed(records); persist(); }
+  meterStatus[sub.id] = true;
   toast('✅ บันทึกแล้ว','ok');
   document.getElementById('in-kwh').value  = '';
   document.getElementById('in-note').value = '';
   document.getElementById('preview-box').style.display = 'none';
   setNow();
-  updateMeterSummary(); renderRecent(); renderZoneAreas(); updateBadge();
+  renderZoneAreas(); updateBadge();
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = '⏳ กำลัง sync...';
   setSyncStatus('busy','กำลังบันทึกลง Google Sheets...');
   try{
     const payload = { id:rec.id, subId:rec.subId, subName:rec.subName, zone:rec.zone, date:rec.date, time:rec.time, kwh:rec.kwh, user:rec.user, note:rec.note, ts:rec.ts, editedTs:'', editedBy:'' };
-    await apiPost({ action:'saveRecord', record:payload });
+    const res = await apiPost({ action:'saveRecord', record:payload, token: sessionToken });
+    if(!res || res.success === false) throw new Error((res && res.error) || 'บันทึกไม่สำเร็จ');
     invalidateSummaryCache('saveRecord:'+rec.subId+'@'+rec.date);
     setSyncStatus('ok','บันทึกลง Sheets แล้ว');
+    if(activeSub && activeSub.id === sub.id){
+      try{ activeSubRecent = await loadRecentForSub(sub.id, 5); }catch(e){}
+      updateMeterSummary(); renderRecent();
+    }
   }catch(e){
-    setSyncStatus('error','บันทึกในเครื่องแล้ว — Sync ล้มเหลว');
-    toast('⚠️ บันทึกในเครื่องแล้ว แต่ Sync ยังไม่สำเร็จ','warn');
+    const isAuthFailure = /เซสชัน|เข้าสู่ระบบ/.test(e.message || '');
+    if(isAuthFailure){
+      setSyncStatus('error','เซสชันหมดอายุ — บันทึกในเครื่องแล้ว แต่ยังไม่ได้ sync');
+      toast('⚠️ เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่แล้วลองบันทึกอีกครั้ง','warn');
+      showSessionExpiredBanner();
+    } else {
+      setSyncStatus('error','บันทึกในเครื่องแล้ว — Sync ยังไม่สำเร็จ');
+      toast('⚠️ บันทึกในเครื่องแล้ว แต่ Sync ยังไม่สำเร็จ','warn');
+    }
   }finally{ btn.disabled = false; btn.innerHTML = '✅ บันทึกข้อมูล'; }
 }
 function getRecentAvgUsed(subId){
-  const chain = getSubRecs(subId).filter(r => (r.used||0) > 0).slice(-5);
+  const chain = activeSubRecent.filter(r => (r.used||0) > 0);
   if(!chain.length) return 0;
   return chain.reduce((a,r) => a + (r.used||0), 0) / chain.length;
 }
 async function markUnableToRecord(){
   if(!activeSub) return toast('เลือก Meter ก่อน','err');
-  const lastRec = getSubRecs(activeSub.id).slice(-1)[0];
+  const lastRec = activeSubRecent[0];
   if(!lastRec){ return toast('⚠️ ยังไม่มีค่ามิเตอร์ก่อนหน้า ไม่สามารถใช้ฟังก์ชันนี้ได้','err'); }
   const reason = prompt('📝 ระบุเหตุผลที่จดไม่ได้:\n(เช่น มิเตอร์เสีย, เข้าพื้นที่ไม่ได้)', 'ไม่สามารถบันทึกค่าได้');
   if(reason === null) return;
@@ -2018,31 +1778,44 @@ async function saveEdit(){
   if(isNaN(kwh) || kwh < 0) return toast('กรอกค่ามิเตอร์ให้ถูกต้อง','err');
   if(!date) return toast('เลือกวันที่ด้วย','err');
   const sub = subs.find(s => s.id === newSubId);
+  const originalRecord = { ...records[idx] };
   records[idx] = { ...records[idx], subId: newSubId, subName: sub?.name || records[idx].subName, zone: sub?.zone || records[idx].zone, kwh, date, time, user, note, editedTs: new Date().toISOString(), editedBy: currentUser || 'ผู้บันทึก' };
   records = computeUsed(records); persist();
   const saved = records[idx];
-  closeEdit(); renderAll(); toast('✅ แก้ไขแล้ว','ok');
+  closeEdit(); renderAll(); toast('✅ แก้ไขแล้ว (กำลัง sync...)','ok');
   setSyncStatus('busy','กำลังซิงค์...');
   try{
     const payload = { id:saved.id, subId:saved.subId, subName:saved.subName, zone:saved.zone, date:saved.date, time:saved.time, kwh:saved.kwh, user:saved.user, note:saved.note, ts:saved.ts, editedTs:saved.editedTs, editedBy:saved.editedBy };
-    await apiPost({ action:'editRecord', record:payload });
+    await apiPostAuthed({ action:'editRecord', record:payload });
     invalidateSummaryCache('editRecord:'+saved.subId+'@'+saved.date);
     setSyncStatus('ok','แก้ไขสำเร็จ');
-  }catch(e){ setSyncStatus('error','แก้ในเครื่องแล้ว — Sync ล้มเหลว'); }
+  }catch(e){
+    records[idx] = originalRecord;
+    records = computeUsed(records); persist(); renderAll();
+    setSyncStatus('error','แก้ไขไม่สำเร็จ — ยกเลิกการเปลี่ยนแปลงในเครื่องแล้ว');
+  }
 }
 async function deleteRecord(id){
   if(!confirm('ลบรายการนี้?')) return;
   const target = records.find(r => r.id === id);
   if(!target) return;
+  const targetIdx = records.indexOf(target);
   records = records.filter(r => r.id !== id);
   records = computeUsed(records); persist();
-  toast('ลบแล้ว'); renderAll();
+  toast('ลบแล้ว (กำลัง sync...)'); renderAll();
   setSyncStatus('busy','กำลังลบจาก Sheets...');
-  try{ await apiPost({ action:'deleteRecord', id:String(id) }); invalidateSummaryCache('deleteRecord:'+id); setSyncStatus('ok','ลบสำเร็จ'); }
-  catch(e){ setSyncStatus('error','Offline — จะ sync เมื่อเชื่อมต่อได้'); }
+  try{
+    await apiPostAuthed({ action:'deleteRecord', id:String(id) });
+    invalidateSummaryCache('deleteRecord:'+id);
+    setSyncStatus('ok','ลบสำเร็จ');
+  }catch(e){
+    records.splice(targetIdx, 0, target);
+    records = computeUsed(records); persist(); renderAll();
+    setSyncStatus('error','ลบไม่สำเร็จ — กู้คืนรายการในเครื่องแล้ว');
+  }
 }
 
-/* ════════════ EDIT SUBSTATION ════════════ */
+/* ════════════ EDIT METER ════════════ */
 function openEditSub(i){
   editSubIndex = i;
   const s = subs[i];
@@ -2061,19 +1834,18 @@ async function saveEditSub(){
   const name       = document.getElementById('esub-name').value.trim();
   const zone       = document.getElementById('esub-zone').value.trim();
   const decimal    = parseInt(document.getElementById('esub-decimal').value) || 0;
-  const multiplier = parseFloat(document.getElementById('esub-multiplier').value);  // ✅ ไม่ใส่ || 1
+  const multiplier = parseFloat(document.getElementById('esub-multiplier').value);
   if(!name || !zone) return toast('⚠️ กรุณากรอกชื่อ Meter และ Zone ให้ครบ','err');
-  if(!isFinite(multiplier) || multiplier <= 0) return toast('⚠️ ตัวคูณต้องมากกว่า 0','err');  // ✅ เช็ค NaN ด้วย
+  if(!isFinite(multiplier) || multiplier <= 0) return toast('⚠️ ตัวคูณต้องมากกว่า 0','err');
   const updatedSub = { ...subs[editSubIndex], name, zone, decimal, multiplier };
   subs[editSubIndex] = updatedSub; persist(); closeEditSub();
   records = computeUsed(records); persist();
   renderSubList(); renderZoneAreas(); populateDDs(); renderAll();
-  toast(`✅ อัปเดต Meter ${updatedSub.id} เรียบร้อย`,'ok');
+  toast(`✅ อัปเดต Meter ${updatedSub.id} เรียบร้อย (กำลังซิงค์...)`,'ok');
   setSyncStatus('busy','กำลังซิงค์ลง Google Sheets...');
   try{
-    const res = await apiPost({ action:'updateSubConfig', sub:updatedSub });
-    if(res && res.success) setSyncStatus('ok','บันทึกข้อมูล Meter ลงแผ่นชีทสำเร็จ');
-    else throw new Error(res?.error || 'Sheets rejected');
+    await apiPostAuthed({ action:'updateSubConfig', sub:updatedSub });
+    setSyncStatus('ok','บันทึกข้อมูล Meter ลงแผ่นชีทสำเร็จ');
   }catch(e){ setSyncStatus('error','บันทึกลงชีทไม่สำเร็จ (แต่เซฟเก็บในแคชแล้ว)'); }
 }
 
@@ -2081,8 +1853,6 @@ async function saveEditSub(){
 function isFilterActive(){ return !!(activeFilter.sub || activeFilter.user || activeFilter.from || activeFilter.to); }
 function renderData(){ applyFilter(); }
 function applyFilter(){
-  // วัดแยกจาก renderTable — เดิม 'renderAll:data' รวมทั้ง filter/sort + DOM paint ไว้ด้วยกัน
-  // แยกไว้เพื่อให้รู้ว่าถ้าช้า เป็นเพราะ filter/sort (ฝั่งนี้) หรือ DOM paint (renderTable)
   const _plF = perfLabel('applyFilter(n='+records.length+')'); perfStart(_plF);
   const subVal   = document.getElementById('fl-sub').value;
   const userVal  = document.getElementById('fl-user')?.value.trim().toLowerCase() || '';
@@ -2097,7 +1867,6 @@ function applyFilter(){
     if(endVal   && r.date > endVal)    return false;
     return true;
   });
-  // เรียงลำดับตามที่เลือก
   if(sortVal === 'newest'){
     filteredRecords.sort((a,b) => (b.ts||'').localeCompare(a.ts||''));
   } else if(sortVal === 'date-desc'){
@@ -2137,32 +1906,26 @@ function renderStats(){
 }
 function updateBadge(){ document.getElementById('hdr-badge').textContent = records.length + ' rec'; }
 
-/* ════════════ CHART (ราย Meter) ════════════ */
 /* ════════════ QR ════════════ */
 function renderQR(){
   const grid = document.getElementById('qr-grid');
   grid.innerHTML = '';
-
-  // เติม dropdown zone (ครั้งแรก)
   const zoneSel = document.getElementById('qr-zone-filter');
   if(zoneSel && zoneSel.options.length <= 1){
-    const zones = [...new Set(subs.map(s => s.zone))].sort();
+    const zoneKeys = [...new Set(subs.map(s => s.zone))].sort();
     zoneSel.innerHTML = '<option value="">ทั้งหมด</option>' +
-      zones.map(z => `<option value="${z}">${z}</option>`).join('');
+      zoneKeys.map(z => `<option value="${z}">${esc(ZONE_CATEGORY_MAP[z] || z)}</option>`).join('');
   }
-
   const filterZone = zoneSel?.value || '';
   const list = filterZone ? subs.filter(s => s.zone === filterZone) : subs;
-
   if(!list.length){ grid.innerHTML = '<div class="section-empty">ไม่มี Meter ใน Zone นี้</div>'; return; }
-
   ensureQRCode().catch(function(e){ grid.innerHTML = '<div class="warn-box">❌ โหลด QR library ไม่ได้</div>'; });
   list.forEach(sub => {
     const url = QR_BASE_URL.replace(/\/$/, '') + '?sub=' + encodeURIComponent(sub.id);
     const qid = 'qr_' + sub.id.replace(/\W/g,'_');
     const div = document.createElement('div');
     div.className = 'qr-item';
-    div.innerHTML = `<div class="qi-name">${sub.name}<br><span style="color:var(--purple)">${sub.zone}</span></div><div class="qi-id">${sub.id}</div><div class="qi-qr" id="${qid}"></div><div class="qi-url">${url.length>55 ? url.slice(0,52)+'…' : url}</div>`;
+    div.innerHTML = `<div class="qi-name">${esc(sub.name)}<br><span style="color:var(--purple)">${esc(ZONE_CATEGORY_MAP[sub.zone] || sub.zone)}</span></div><div class="qi-id">${sub.id}</div><div class="qi-qr" id="${qid}"></div><div class="qi-url">${url.length>55 ? url.slice(0,52)+'…' : url}</div>`;
     grid.appendChild(div);
     ensureQRCode().then(function(){
       const elQ = document.getElementById(qid);
@@ -2204,12 +1967,10 @@ async function addSub(){
   if(!id || !name) return toast('กรอก ID และชื่อด้วย','err');
   if(subs.find(s => s.id === id)) return toast('ID นี้มีอยู่แล้ว','err');
   const newSub = { id, name, zone, decimal, multiplier:1, unit:'m³' };
-  // บันทึก backend ก่อน — ถ้าล้มเหลว ไม่เพิ่มใน local (กัน state หลุด)
   try{
-    const res = await apiPost({ action:'updateSubConfig', sub:newSub });
-    if(!res || !res.success) return toast('บันทึกไม่สำเร็จ: ' + (res && res.error || 'server error'),'err');
+    await apiPostAuthed({ action:'updateSubConfig', sub:newSub });
   }catch(e){
-    return toast('บันทึกไม่สำเร็จ: ' + e.message,'err');
+    return;
   }
   subs.push(newSub);
   persist();
@@ -2221,14 +1982,15 @@ async function addSub(){
 async function removeSub(i){
   const s   = subs[i];
   const cnt = records.filter(r => r.subId === s.id).length;
-  const msg = cnt > 0 ? `ลบ ${s.id} — ${s.name}?\n(มีข้อมูล ${cnt} records ที่เชื่อมกับ Meter นี้ — records จะยังอยู่)` : `ลบ ${s.id} — ${s.name}?`;
-  if(!confirm(msg)) return;
-  // ลบ backend ก่อน — ถ้าล้มเหลว ไม่ลบ local (กัน state หลุด)
+  if(cnt > 0){
+    toast(`❌ ลบไม่ได้ — ${s.id} มีประวัติการบันทึก ${cnt} รายการอยู่แล้ว (ระบบป้องกันไว้เพื่อไม่ให้ report เก่าคำนวณผิด — เปลี่ยนชื่อ/Zone แทนถ้าต้องการเลิกใช้งาน Meter นี้)`,'err');
+    return;
+  }
+  if(!confirm(`ลบ ${s.id} — ${s.name}?`)) return;
   try{
-    const res = await apiPost({ action:'deleteSub', id:s.id });
-    if(!res || !res.success) return toast('ลบไม่สำเร็จ: ' + (res && res.error || 'server error'),'err');
+    await apiPostAuthed({ action:'deleteSub', id:s.id });
   }catch(e){
-    return toast('ลบไม่สำเร็จ: ' + e.message,'err');
+    return;
   }
   subs.splice(i, 1); persist();
   renderSubList(); renderZoneAreas(); populateDDs();
@@ -2258,7 +2020,6 @@ function exportJSON(){
   const a = document.createElement('a');
   const url = URL.createObjectURL(blob);
   a.href = url; a.download = 'watermeter_backup_' + Date.now() + '.json'; a.click();
-  // defer revoke: revoke ทันทีทำ download ล้มเหลวในบางเบราว์เซอร์ (Chromium #41380177, FF #1282407)
   setTimeout(() => URL.revokeObjectURL(url), 0);
   toast('💾 Backup สำเร็จ','ok');
 }
@@ -2285,7 +2046,6 @@ function clearCache(){
   loadFromServer();
 }
 
-/* ════════════ TOAST ════════════ */
 function toast(msg, type=''){
   const t = document.getElementById('toast');
   if(!t) return;
@@ -2293,29 +2053,25 @@ function toast(msg, type=''){
   clearTimeout(t._t); t._t = setTimeout(() => { t.className = ''; }, 3200);
 }
 
-/* ════════════ ENTER KEY — Login ════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   ['login-user','login-pass'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.addEventListener('keydown', e => { if(e.key === 'Enter') handleLogin(); });
   });
+  const recorderPassEl = document.getElementById('recorder-pass');
+  if(recorderPassEl) recorderPassEl.addEventListener('keydown', e => { if(e.key === 'Enter') handleRecorderLogin(); });
 });
 
 init();
 
-/* ════════════════════════════════════════════════════════════
-   APEXCHARTS SYSTEM — แทนฟังก์ชันกราฟเก่าทั้งหมด
-   
-   วางแทนที่ฟังก์ชันเก่า (ดู 06_delete_list.txt)
-   วางไว้หลัง renderReport / exportReportExcel
-   ════════════════════════════════════════════════════════════ */
 
-/* ── Global chart instances ── */
+/* ════════════════════════════════════════════════════════════
+   APEXCHARTS SYSTEM
+   ════════════════════════════════════════════════════════════ */
 let subChartInst = null;
 let g9ChartInst = null;
 let cmpChartInst = null;
 
-/* ── อ่านสีจาก CSS variables (dark/light) ── */
 function getThemeColors(){
   const s = getComputedStyle(document.documentElement);
   const g = k => (s.getPropertyValue(k)||'').trim();
@@ -2330,24 +2086,6 @@ function getThemeColors(){
   };
 }
 
-/* ── ApexCharts base options ── */
-function apexBase(TC){
-  return {
-    chart:{ fontFamily:'IBM Plex Mono, monospace', foreColor:TC.text2,
-      toolbar:{ show:true, tools:{ download:true, zoom:true, zoomin:true, zoomout:true, pan:true, reset:true } },
-      background:'transparent', animations:{ enabled:true, speed:400 } },
-    grid:{ borderColor:TC.border, strokeDashArray:3, xaxis:{lines:{show:false}}, yaxis:{lines:{show:true}} },
-    xaxis:{ axisBorder:{color:TC.border}, axisTicks:{show:false}, labels:{style:{fontSize:'10px',colors:TC.text3}} },
-    yaxis:{ labels:{style:{fontSize:'11px',colors:TC.text2}, formatter:function(v){return Math.round(v).toLocaleString();}}, axisBorder:{show:false} },
-    tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'},
-      y:{formatter:function(v){return v!=null?Math.round(v).toLocaleString()+' m³':'—';}} },
-    legend:{ fontSize:'11px', labels:{colors:TC.text2}, markers:{shape:'square',size:6} },
-    dataLabels:{ enabled:false },
-    states:{ hover:{filter:{type:'lighten',value:0.08}} }
-  };
-}
-
-/* ── Quick range helper ── */
 function getQuickRange(key){
   var today = new Date().toISOString().slice(0,10);
   var t = new Date(today+'T00:00:00');
@@ -2360,20 +2098,16 @@ function getQuickRange(key){
   return ['',''];
 }
 
-/* ── Aggregate records by period ── */
 function aggregateRecords(recs, period, dateFrom, dateTo){
   var MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   var fmt = function(dt){ return dt.toISOString().slice(0,10); };
-
   if(period === 'day'){
-    // รวมค่าตาม date
     var byDate = {};
     recs.forEach(function(r){
       if(!byDate[r.date]) byDate[r.date] = { used:0, count:0 };
       byDate[r.date].used += parseFloat(r.used)||0;
       byDate[r.date].count++;
     });
-    // สร้างทุกวันในช่วง from-to (ไม่ข้ามวัน)
     var dates = Object.keys(byDate).sort();
     var start = dateFrom || (dates.length ? dates[0] : null);
     var end = dateTo || (dates.length ? dates[dates.length-1] : null);
@@ -2397,7 +2131,6 @@ function aggregateRecords(recs, period, dateFrom, dateTo){
       if(!byM[key]) byM[key] = 0;
       byM[key] += parseFloat(r.used)||0;
     });
-    // สร้างทุกเดือนในช่วง
     var months = Object.keys(byM).sort();
     var startM = dateFrom ? dateFrom.slice(0,7) : (months.length ? months[0] : null);
     var endM = dateTo ? dateTo.slice(0,7) : (months.length ? months[months.length-1] : null);
@@ -2414,7 +2147,6 @@ function aggregateRecords(recs, period, dateFrom, dateTo){
     }
     return result;
   }
-  // year
   var byY = {};
   recs.forEach(function(r){
     var y = String(r.date).slice(0,4);
@@ -2426,11 +2158,7 @@ function aggregateRecords(recs, period, dateFrom, dateTo){
   });
 }
 
-/* ══════════════════════════════════════
-   กราฟ 1: ราย Meter (Meter Chart)
-   ══════════════════════════════════════ */
 var subChartState = { period:'day', type:'bar', showAvg:true, showHol:true };
-
 function setSubQuick(key){
   var r = getQuickRange(key);
   document.getElementById('sub-from').value = r[0];
@@ -2463,31 +2191,23 @@ function toggleSubOpt(opt){
   if(el) el.className = on ? 'ctrl-btn on' : 'ctrl-btn';
   renderSubChart();
 }
-
 function renderSubChart(){
   var subId = document.getElementById('chart-sub').value;
   var el = document.getElementById('sub-chart-el');
   var sumEl = document.getElementById('sub-chart-summary');
   if(!subId){ el.innerHTML='<div class="section-empty">เลือก Meter เพื่อดูกราฟ</div>'; sumEl.innerHTML=''; return; }
-
-  var _plSub = perfLabel('renderSubChart:compute'); perfStart(_plSub);
   var fromVal = document.getElementById('sub-from').value || '';
   var toVal = document.getElementById('sub-to').value || '';
   var recs = getSubRecs(subId);
   if(fromVal) recs = recs.filter(function(r){return r.date >= fromVal;});
   if(toVal) recs = recs.filter(function(r){return r.date <= toVal;});
-  if(!recs.length){ perfEnd(_plSub); el.innerHTML='<div class="section-empty">ไม่มีข้อมูลในช่วงที่เลือก</div>'; sumEl.innerHTML=''; return; }
-
+  if(!recs.length){ el.innerHTML='<div class="section-empty">ไม่มีข้อมูลในช่วงที่เลือก</div>'; sumEl.innerHTML=''; return; }
   var data = aggregateRecords(recs, subChartState.period, fromVal, toVal);
-  perfEnd(_plSub);
   if(!data.length){ el.innerHTML='<div class="section-empty">ไม่มีข้อมูล</div>'; sumEl.innerHTML=''; return; }
-
   var TC = getThemeColors();
   var total = data.reduce(function(a,d){return a+d.value;},0);
   var avg = data.length ? total/data.length : 0;
   var pl = subChartState.period==='day'?'วัน':subChartState.period==='month'?'เดือน':'ปี';
-
-  // แยกค่าเฉลี่ยวันทำงาน/วันหยุด (เฉพาะ day mode — month/year ไม่มีแนวคิดวันหยุด)
   var avgWork = null, avgHol = null, nWork = 0, nHol = 0;
   if(subChartState.period === 'day'){
     var sumWork = 0, sumHol = 0;
@@ -2498,19 +2218,10 @@ function renderSubChart(){
     avgWork = nWork ? sumWork/nWork : 0;
     avgHol  = nHol  ? sumHol/nHol  : 0;
   }
-
   var labels = data.map(function(d){return d.label;});
   var chartType = subChartState.type==='bar' ? 'bar' : 'line';
-
-  // ── ApexCharts ไม่ส่ง dataPointIndex ให้ colors-callback ของ bar chart
-  //    (ยืนยันจาก apexcharts.js GitHub issue #586 — ยังเป็น open feature request)
-  //    ดังนั้นระบายสีทีละแท่งด้วย colors:[fn] แบบเดิมจะไม่ทำงาน (ได้สีเดียวเสมอ)
-  //    แก้โดยแยกเป็น 2 series (วันทำงาน/วันหยุด) แล้ว stack ทับกัน — แต่ละ index
-  //    จะมีค่าจริงแค่ series เดียว (อีก series เป็น null) จึงได้แท่งเดียวสีถูกต้อง
   var useHolSplit = subChartState.period==='day' && subChartState.showHol && chartType==='bar';
-
   var series, chartColors, strokeW, strokeDash;
-
   if(useHolSplit){
     var workData = data.map(function(d){ return d.hol ? null : Math.round(d.value); });
     var holData  = data.map(function(d){ return d.hol ? Math.round(d.value) : null; });
@@ -2519,36 +2230,29 @@ function renderSubChart(){
       { name:'ใช้น้ำ (วันหยุด)',  data:holData,  type:'bar' }
     ];
     chartColors = [TC.green, TC.orange];
-    strokeW = [0,0];
-    strokeDash = [0,0];
+    strokeW = [0,0]; strokeDash = [0,0];
     if(subChartState.showAvg){
       var avgRoundS = Math.round(avgWork);
       series.push({ name:'ค่าเฉลี่ย', data:data.map(function(){return avgRoundS;}), type:'line' });
-      chartColors.push(TC.accent+'77');
-      strokeW.push(2); strokeDash.push(5);
+      chartColors.push(TC.accent+'77'); strokeW.push(2); strokeDash.push(5);
     }
   } else {
     var values = data.map(function(d){return Math.round(d.value);});
     series = [{ name:'ใช้น้ำ (m³/'+pl+')', data:values, type:chartType }];
     chartColors = [TC.green];
-    strokeW = chartType==='bar' ? [0] : [2.5];
-    strokeDash = [0];
+    strokeW = chartType==='bar' ? [0] : [2.5]; strokeDash = [0];
     if(subChartState.showAvg){
       var avgRound = Math.round(subChartState.period==='day' ? avgWork : avg);
       series.push({ name:'ค่าเฉลี่ย', data:data.map(function(){return avgRound;}), type:'line' });
       chartColors.push(TC.accent+'77');
-      strokeW = chartType==='bar' ? [0,2] : [2.5,2];
-      strokeDash = [0,5];
+      strokeW = chartType==='bar' ? [0,2] : [2.5,2]; strokeDash = [0,5];
     }
   }
-
-  if(DEBUG_PERF) perfStart('renderSubChart:mount');
   var opts = {
     chart:{ type:'bar', height:340, fontFamily:'IBM Plex Mono,monospace', foreColor:TC.text2,
       stacked: useHolSplit,
       toolbar:{ show:true, tools:{download:true,zoom:true,zoomin:true,zoomout:true,pan:true,reset:true} },
-      background:'transparent', animations:{enabled:true,speed:400},
-      events:{ mounted:function(){ if(DEBUG_PERF){ perfEnd('renderSubChart:mount'); } } } },
+      background:'transparent', animations:{enabled:true,speed:400} },
     series: series,
     xaxis:{ categories:labels, axisBorder:{color:TC.border}, axisTicks:{show:false}, labels:{rotate:0, rotateAlways:false, hideOverlappingLabels:true, trim:false, style:{fontSize:'10px',colors:TC.text3}} },
     yaxis:{ labels:{style:{fontSize:'11px',colors:TC.text2}, formatter:function(v){return Math.round(v).toLocaleString();}}, axisBorder:{show:false} },
@@ -2563,17 +2267,14 @@ function renderSubChart(){
     dataLabels:{ enabled:false },
     states:{ hover:{filter:{type:'lighten',value:0.08}} }
   };
-
   ensureApex().then(function(){
     safeDestroyChart(subChartInst);
     el.innerHTML = '';
     subChartInst = new ApexCharts(el, opts);
     subChartInst.render();
   }).catch(function(e){ el.innerHTML = '<div class="warn-box">❌ โหลดกราฟไม่ได้: '+(e&&e.message||'')+'</div>'; });
-
   var avgChips;
   if(subChartState.period === 'day' && (nWork || nHol)){
-    // แยก 2 ค่า: วันทำงาน (เขียว) / วันหยุด (ส้ม)
     avgChips = '<span class="chip chip-green">เฉลี่ยวันทำงาน '+Math.round(avgWork).toLocaleString()+' m³ ('+nWork+' วัน)</span> '+
                '<span class="chip" style="background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.4)">เฉลี่ยวันหยุด '+Math.round(avgHol).toLocaleString()+' m³ ('+nHol+' วัน)</span>';
   } else {
@@ -2584,11 +2285,7 @@ function renderSubChart(){
     '<span class="chip" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border)">'+data.length+' '+pl+'</span>';
 }
 
-/* ══════════════════════════════════════
-   กราฟ 2: 9 กลุ่มหลัก (G9 Chart)
-   ══════════════════════════════════════ */
 var g9State = { period:'day', sort:'default', showPct:false };
-
 function setG9Period(p){
   g9State.period = p;
   ['day','month','year'].forEach(function(k){
@@ -2651,20 +2348,16 @@ async function renderG9Chart(){
   var sumEl = document.getElementById('g9-chart-summary');
   var TC = getThemeColors();
   var MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-
   var pick;
   if(g9State.period === 'day') pick = document.getElementById('g9-date').value;
   else if(g9State.period === 'month') pick = document.getElementById('g9-month').value;
   else pick = document.getElementById('g9-year').value;
   if(!pick){ el.innerHTML='<div class="section-empty">เลือกช่วงเวลา</div>'; return; }
-
   var lbl = document.getElementById('g9-label');
   if(g9State.period==='day'){ var pp=pick.split('-'); lbl.textContent=parseInt(pp[2])+' '+MN[parseInt(pp[1])]+' '+pp[0]; }
   else if(g9State.period==='month'){ var pp=pick.split('-'); lbl.textContent=MN[parseInt(pp[1])]+' '+pp[0]; }
   else lbl.textContent = 'ปี '+pick;
-
   el.innerHTML='<div class="section-empty">⏳ กำลังคำนวณ...</div>';
-
   var dateFrom, dateTo;
   if(g9State.period==='day'){
     dateFrom = pick;
@@ -2679,7 +2372,6 @@ async function renderG9Chart(){
     dateFrom = pick+'-01-01';
     dateTo = (parseInt(pick)+1)+'-01-07';
   }
-
   try{
     var res = await getSummaryCached(dateFrom, dateTo, 'day');
     if(thisReq !== g9ReqId) return;
@@ -2688,12 +2380,9 @@ async function renderG9Chart(){
     var meterMap = {};
     raw.forEach(function(r){ if(!meterMap[r.subId]) meterMap[r.subId]={}; meterMap[r.subId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
     var allPeriods = []; raw.forEach(function(r){ if(allPeriods.indexOf(r.period)<0) allPeriods.push(r.period); }); allPeriods.sort();
-
     var countPeriods;
     if(g9State.period==='day') countPeriods = [pick];
     else countPeriods = allPeriods.filter(function(p){return p.startsWith(pick);});
-
-    var _plG9 = perfLabel('renderG9Chart:compute'); perfStart(_plG9);
     var groupVals = REPORT_MAIN.map(function(col){
       var total = 0;
       countPeriods.forEach(function(p){
@@ -2702,14 +2391,10 @@ async function renderG9Chart(){
       });
       return { name:col.name, value:total, color:GROUP_COLORS[col.name]||TC.accent };
     });
-    perfEnd(_plG9);
-
     if(g9State.sort==='desc') groupVals.sort(function(a,b){return b.value-a.value;});
     else if(g9State.sort==='asc') groupVals.sort(function(a,b){return a.value-b.value;});
-
     var total = groupVals.reduce(function(a,g){return a+g.value;},0);
     var top = groupVals.reduce(function(a,g){return g.value>a.value?g:a;}, groupVals[0]);
-
     var tooltipFmt = g9State.showPct
       ? function(v){ return Math.round(v).toLocaleString()+' m³ ('+(total>0?((v/total)*100).toFixed(1):'0')+'%)'; }
       : function(v){ return v!=null?Math.round(v).toLocaleString()+' m³':'—'; };
@@ -2730,24 +2415,47 @@ async function renderG9Chart(){
       dataLabels:{ enabled:false },
       states:{ hover:{filter:{type:'lighten',value:0.08}} }
     };
-
     await ensureApex();
     if(thisReq !== g9ReqId) return;
     safeDestroyChart(g9ChartInst);
     el.innerHTML = '';
     g9ChartInst = new ApexCharts(el, opts);
     g9ChartInst.render();
-
     sumEl.innerHTML = '<span class="chip chip-green">💧 รวม '+Math.round(total).toLocaleString()+' m³</span> '+
       '<span class="chip" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border)">🏭 สูงสุด: '+top.name+'</span>';
   }catch(e){ el.innerHTML='<div class="warn-box">❌ '+e.message+'</div>'; }
 }
 
-/* ══════════════════════════════════════
-   กราฟ 3: เทียบต่อกลุ่ม (Compare Chart)
-   ══════════════════════════════════════ */
-var cmpState = { period:'day', type:'bar', showAvg:true };
+function buildCompareGroupOptions(){
+  const sel = document.getElementById('cmp-group');
+  if(!sel) return;
+  const prev = sel.value;
+  const allCols = [...REPORT_MAIN, ...REPORT_UTIL];
+  sel.innerHTML = allCols.map(c => `<option value="${c.key}">${c.name}</option>`).join('')
+    + '<option value="__UTILITY__">UTILITY PLANT (รวม)</option>'
+    + '<option value="__TOTAL__">TOTAL</option>';
+  if(prev) sel.value = prev;
+}
+function getColIds(key){
+  if(key === '__UTILITY__') return REPORT_UTIL.flatMap(c => c.ids);
+  if(key === '__TOTAL__')   return [...REPORT_MAIN, ...REPORT_UTIL].flatMap(c => c.ids);
+  const col = [...REPORT_MAIN, ...REPORT_UTIL].find(c => c.key === key);
+  return col ? col.ids : [];
+}
+function meterUsedOnDay(meterMap, subId, dateStr, allDates){
+  const cur = meterMap[subId]?.[dateStr];
+  if(!cur) return null;
+  const sub  = subs.find(s => s.id === subId);
+  const mult = sub?.multiplier !== undefined ? parseFloat(sub.multiplier) : 1;
+  const idx = allDates.indexOf(dateStr);
+  for(let k = idx+1; k < allDates.length; k++){
+    const next = meterMap[subId]?.[allDates[k]];
+    if(next) return Math.max(0, next.firstKwh - cur.firstKwh) * mult;
+  }
+  return Math.max(0, cur.lastKwh - cur.firstKwh) * mult;
+}
 
+var cmpState = { period:'day', type:'bar', showAvg:true };
 function setCmpQuick(key){
   var r = getQuickRange(key);
   document.getElementById('cmp-from').value = r[0];
@@ -2778,8 +2486,6 @@ function toggleCmpOpt(){
 }
 
 let cmpReqId = 0;
-// สร้างรายการ period ต่อเนื่อง (วัน/เดือน) ในช่วง from-to — fill ที่ขาด
-// ถ้าไม่ระบุ from/to → ใช้ขอบเขตจาก allPeriods ที่มี
 function _cmpFillPeriods(allPeriods, fromVal, toVal, period){
   if(!allPeriods.length && !(fromVal && toVal)) return [];
   var pad = function(n){ return String(n).padStart(2,'0'); };
@@ -2790,7 +2496,6 @@ function _cmpFillPeriods(allPeriods, fromVal, toVal, period){
     var out = [];
     var cur = new Date(start+'T00:00:00');
     var stop = new Date(end+'T00:00:00');
-    // guard: ช่วงกว้างเกิน 400 วัน → ไม่ fill (กัน loop ยาว) คืนของเดิม
     if((stop - cur)/86400000 > 400) return allPeriods.slice();
     while(cur <= stop){
       out.push(cur.getFullYear()+'-'+pad(cur.getMonth()+1)+'-'+pad(cur.getDate()));
@@ -2798,7 +2503,6 @@ function _cmpFillPeriods(allPeriods, fromVal, toVal, period){
     }
     return out;
   }
-  // month
   var startM = (fromVal ? fromVal.slice(0,7) : (allPeriods[0]||'').slice(0,7));
   var endM   = (toVal   ? toVal.slice(0,7)   : (allPeriods[allPeriods.length-1]||'').slice(0,7));
   if(!startM || !endM) return allPeriods.slice();
@@ -2820,20 +2524,14 @@ async function renderCmpChart(){
   var el = document.getElementById('cmp-chart-el');
   var sumEl = document.getElementById('cmp-chart-summary');
   if(!groupKey){ el.innerHTML='<div class="section-empty">เลือกกลุ่ม</div>'; return; }
-
   var ids = getColIds(groupKey);
   var fromVal = document.getElementById('cmp-from').value || null;
   var toVal = document.getElementById('cmp-to').value || null;
   var TC = getThemeColors();
   var MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-
   el.innerHTML='<div class="section-empty">⏳ กำลังคำนวณ...</div>';
-
   try{
     var gran = cmpState.period === 'day' ? 'day' : 'month';
-    // เผื่อ buffer หลัง toVal 7 วัน เพื่อหา "ค่าถัดไป" มาคำนวณ used ของช่วงสุดท้ายที่แสดง
-    // (เหมือน loadReport()/renderG9Chart() — ถ้าไม่เผื่อ จะไม่มีข้อมูลมองไปข้างหน้า ทำให้
-    // แท่งสุดท้ายตกไปใช้ fallback lastKwh-firstKwh ภายใน period เดียวกัน ซึ่งมักจะได้ ~0)
     var apiToVal = toVal;
     if(toVal){
       var extD = new Date(toVal+'T00:00:00');
@@ -2847,11 +2545,8 @@ async function renderCmpChart(){
     var meterMap = {};
     raw.forEach(function(r){ if(!meterMap[r.subId]) meterMap[r.subId]={}; meterMap[r.subId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
     var allPeriods = []; raw.forEach(function(r){ if(allPeriods.indexOf(r.period)<0) allPeriods.push(r.period); }); allPeriods.sort();
-
     var dataPoints;
     if(cmpState.period === 'year'){
-      // จำกัดเฉพาะ period ที่อยู่ในช่วงที่เลือกจริง (ไม่รวม buffer 7 วันที่เผื่อไว้ข้างบน)
-      // ส่วน meterUsedOnDay ยังรับ allPeriods เต็ม (รวม buffer) เพื่อใช้หาค่าถัดไปได้ตามปกติ
       var displayPeriods = allPeriods.filter(function(p){
         if(fromVal && p < fromVal) return false;
         if(toVal && p > toVal) return false;
@@ -2861,14 +2556,12 @@ async function renderCmpChart(){
       displayPeriods.forEach(function(p){ ids.forEach(function(id){ var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) byYear[p.slice(0,4)]=(byYear[p.slice(0,4)]||0)+u; }); });
       dataPoints = Object.entries(byYear).map(function(e){return {label:e[0],value:e[1]};});
     } else {
-      // คำนวณค่าต่อ period ที่มีข้อมูล
       var valByPeriod = {};
       allPeriods.forEach(function(p){
         var total=0, has=false;
         ids.forEach(function(id){ var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null){total+=u;has=true;} });
         valByPeriod[p] = has ? total : 0;
       });
-      // สร้างทุก period ในช่วงที่แสดงจริง (ขอบเขต toVal เดิม ไม่ใช่ apiToVal ที่เผื่อ buffer)
       var fullPeriods = _cmpFillPeriods(allPeriods, fromVal, toVal, cmpState.period);
       dataPoints = fullPeriods.map(function(p){
         var label;
@@ -2877,14 +2570,10 @@ async function renderCmpChart(){
         return { label:label, value:valByPeriod[p]||0, hol:(cmpState.period==='day' && getDayType(p)==='holiday') };
       });
     }
-
     if(!dataPoints.length){ el.innerHTML='<div class="section-empty">ไม่มีข้อมูล</div>'; return; }
-
     var total = dataPoints.reduce(function(a,d){return a+d.value;},0);
     var avg = dataPoints.length ? total/dataPoints.length : 0;
     var pl = cmpState.period==='day'?'วัน':cmpState.period==='month'?'เดือน':'ปี';
-
-    // แยกค่าเฉลี่ยวันทำงาน/วันหยุด (เฉพาะ day mode)
     var cmpAvgWork = 0, cmpAvgHol = 0, cmpNWork = 0, cmpNHol = 0;
     if(cmpState.period === 'day'){
       var cSumW = 0, cSumH = 0;
@@ -2895,23 +2584,18 @@ async function renderCmpChart(){
       cmpAvgWork = cmpNWork ? cSumW/cmpNWork : 0;
       cmpAvgHol  = cmpNHol  ? cSumH/cmpNHol  : 0;
     }
-
     var values = dataPoints.map(function(d){return Math.round(d.value);});
     var labels = dataPoints.map(function(d){return d.label;});
-
     var series = [{ name:'ใช้น้ำ (m³/'+pl+')', data:values }];
     var chartColors = [TC.accent];
     var strokeW = cmpState.type==='bar' ? [0] : [2.5];
     var strokeDash = [0];
-
     if(cmpState.showAvg){
       var cmpAvgLine = Math.round(cmpState.period === 'day' ? cmpAvgWork : avg);
       series.push({ name:'ค่าเฉลี่ย', data:dataPoints.map(function(){return cmpAvgLine;}), type:'line' });
       chartColors.push(TC.orange+'77');
-      strokeW = cmpState.type==='bar' ? [0,2] : [2.5,2];
-      strokeDash = [0,5];
+      strokeW = cmpState.type==='bar' ? [0,2] : [2.5,2]; strokeDash = [0,5];
     }
-
     var opts = {
       chart:{ type:cmpState.type==='bar'?'bar':'line', height:340, fontFamily:'IBM Plex Mono,monospace', foreColor:TC.text2,
         toolbar:{ show:true, tools:{download:true,zoom:true,zoomin:true,zoomout:true,pan:true,reset:true} },
@@ -2930,14 +2614,12 @@ async function renderCmpChart(){
       dataLabels:{ enabled:false },
       states:{ hover:{filter:{type:'lighten',value:0.08}} }
     };
-
     await ensureApex();
     if(thisReq !== cmpReqId) return;
     safeDestroyChart(cmpChartInst);
     el.innerHTML = '';
     cmpChartInst = new ApexCharts(el, opts);
     cmpChartInst.render();
-
     var cmpAvgChips;
     if(cmpState.period === 'day' && (cmpNWork || cmpNHol)){
       cmpAvgChips = '<span class="chip chip-green">เฉลี่ยวันทำงาน '+Math.round(cmpAvgWork).toLocaleString()+' m³ ('+cmpNWork+' วัน)</span> '+
