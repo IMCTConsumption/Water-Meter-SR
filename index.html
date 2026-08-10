@@ -565,7 +565,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     </div>
 
     <div class="card">
-      <div class="card-title">เทียบการใช้น้ำ 11 กลุ่มหลัก</div>
+      <div class="card-title">เทียบการใช้น้ำกลุ่มหลัก</div>
       <div class="chart-ctrl">
         <span class="chart-ctrl-label">มุมมอง:</span>
         <button class="ctrl-btn green" id="g9-p-day" onclick="setG9Period('day')">รายวัน</button>
@@ -2779,7 +2779,10 @@ async function renderG9Chart(){
     var countPeriods;
     if(g9State.period==='day') countPeriods = [pick];
     else countPeriods = allPeriods.filter(function(p){return p.startsWith(pick);});
-    var groupVals = reportGroups.map(function(col){
+    // "กลุ่มหลัก" chart — main groups only. In apps without a `type` column
+    // (or where every row is 'main'), this behaves the same as showing all groups.
+    var _mainOnly = reportGroups.filter(function(g){ return !g.type || g.type === 'main'; });
+    var groupVals = _mainOnly.map(function(col){
       var total = 0;
       countPeriods.forEach(function(p){
         (col.meters||[]).forEach(function(id){ var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) total+=u; });
