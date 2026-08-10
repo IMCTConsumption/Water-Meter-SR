@@ -323,7 +323,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     </svg>
   </div>
   <div class="hdr-text">
-    <div class="hdr-title">Water Meter SR Plant</div>
+    <div class="hdr-title" id="hdr-title">Water Meter — SR</div>
     <div class="hdr-sub" id="hdr-small">กำลังโหลด...</div>
   </div>
   <div class="hdr-right">
@@ -354,7 +354,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
   <div class="tab admin-tab" onclick="goTab('chart')">
     <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 4-6"/></svg></i>กราฟ
   </div>
-  <div class="tab admin-tab" onclick="goTab('summary')" style="display:none" title="ปิดชั่วคราว — รอปรับรูปแบบรายงานใหม่">
+  <div class="tab admin-tab" onclick="goTab('summary')" title="รายละเอียดรายมิเตอร์แยกตาม Zone">
     <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/></svg></i>สรุป
   </div>
   <div class="tab admin-tab" onclick="goTab('qr')">
@@ -631,9 +631,11 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 
 <div class="panel" id="panel-summary">
   <div class="card">
-    <div class="card-title">⏸️ หน้าสรุป — ปิดชั่วคราว</div>
-    <div class="info-box">รูปแบบรายงานเดิมถูกปิดไว้ก่อน รอปรับรูปแบบใหม่ให้เหมาะกับข้อมูลน้ำ</div>
+    <div class="card-title">📊 รายละเอียดรายมิเตอร์แยกตาม Zone</div>
+    <div class="info-box">ผลรวมการใช้น้ำต่อมิเตอร์ แยกตามกลุ่มใน <strong>_REPORT_GROUPS</strong> (หัก minus อัตโนมัติ) — รวมทุกช่วงเวลาที่โหลดมา</div>
+    <div class="btn-row"><button class="btn btn-yellow btn-sm" onclick="renderSummary()">🔄 คำนวณใหม่</button></div>
   </div>
+  <div id="summary-body"></div>
 </div>
   <div class="panel" id="panel-qr">
     <div class="card">
@@ -789,88 +791,63 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
    architecture from the Electric (Substation) sister app.
    ════════════════════════════════════════════════════════════ */
 
-/* ═══════════ ZONE_GROUPS — แหล่งข้อมูลเดียวสำหรับหมวดหมู่ทั้งหมด ═══════════
-   รวม REPORT_MAIN / REPORT_UTIL / ZONE_CATEGORY_MAP / LOAD_CATEGORIES / GROUP_COLORS
-   ที่เคยแยกเป็น 5 ก้อน ให้เหลือแก้ที่เดียวพอ
-   ids ของแต่ละกลุ่ม "ไม่ hardcode" — ดึงสดจาก subs.filter(s => s.zone === key)
-   "minus" คือ override พิเศษที่ zone เดียวไม่พอจะสื่อได้ — WM-24/WM-29 ต้องถูกหักออก
-   จาก Paint Shop และ LA เพราะ WM-08 (header รวมของ Paint Shop) วัดรวมค่าของสาขาย่อย
-   เหล่านั้นไปแล้วในตัว ถ้าไม่หักจะนับซ้ำ
-   หมายเหตุ (Aug 2026): มีเคสเพิ่มเติมที่ minus แบบ static list ยังไม่ครอบคลุม — ถ้ามิเตอร์
-   ลูก (sub-meter) อยู่ใน "โซนเดียวกัน" กับมิเตอร์แม่ (header) การรวม ids ตรงๆ จะนับซ้ำทันที
-   เพราะค่ามิเตอร์แม่รวมค่าของลูกไว้อยู่แล้ว — เรื่องนี้อยู่ระหว่างออกแบบกลไก parentId ทั่วไป
-   (แทน minus แบบเขียนมือ) ยังไม่ implement ในรอบนี้ ดูบทสนทนาที่เกี่ยวข้อง */
-const ZONE_GROUPS = [
-  { key:'BODY',      name:'Body Shop',        icon:'🏭', color:'#00D4FF', type:'main', minus:[] },
-  { key:'PT78',      name:'PT7-8',            icon:'🏗️', color:'#a78bfa', type:'main', minus:[] },
-  { key:'PAINT',     name:'Paint Shop',       icon:'🎨', color:'#22C55E', type:'main', minus:['WM-29','WM-24'] },
-  { key:'CANTEEN',   name:'Canteen',          icon:'🍽️', color:'#FACC15', type:'main', minus:[] },
-  { key:'LA',        name:'LA',               icon:'🔧', color:'#fb923c', type:'main', minus:['WM-29','WM-24'] },
-  { key:'FRAME',     name:'Frame',            icon:'🔩', color:'#f472b6', type:'main', minus:[] },
-  { key:'UA',        name:'UA',               icon:'⚙️', color:'#38bdf8', type:'main', minus:[] },
-  { key:'OFFICE',    name:'Office',           icon:'🏢', color:'#818cf8', type:'main', minus:[] },
-  { key:'FR',        name:'FR Shop',          icon:'🚧', color:'#fb7185', type:'main', minus:[] },
-  { key:'POWERZONE', name:'Power Zone',       icon:'⚡', color:'#f59e0b', type:'main', minus:[] },
-  { key:'RAWWATER',  name:'Raw Water Supply', icon:'🚰', color:null, type:'util', minus:[] },
-  { key:'ROWWT',     name:'RO/WWT/DI Plant',  icon:'♻️', color:null, type:'util', minus:[] },
-  { key:'UTILCOOL',  name:'Utility/Cooling',  icon:'❄️', color:null, type:'util', minus:[] },
-  { key:'SEPTIC',    name:'Toilet/Septic',    icon:'🚻', color:null, type:'util', minus:[] }
-];
-
-function getGroupIds(key){
-  return subs.filter(s => s.zone === key).map(s => s.id);
-}
-
-const REPORT_MAIN = ZONE_GROUPS.filter(g => g.type === 'main').map(g => ({
-  key: g.key, name: g.name, minus: g.minus,
-  get ids(){ return getGroupIds(g.key); }
-}));
-const REPORT_UTIL = ZONE_GROUPS.filter(g => g.type === 'util').map(g => ({
-  key: g.key, name: g.name,
-  get ids(){ return getGroupIds(g.key); }
-}));
-
-const ZONE_CATEGORY_MAP = {};
-ZONE_GROUPS.forEach(g => { ZONE_CATEGORY_MAP[g.key] = g.name; });
-
-const LOAD_CATEGORIES = ZONE_GROUPS.map(g => ({ name: g.name, icon: g.icon }));
-LOAD_CATEGORIES.push({ name:'อื่นๆ', icon:'📦' });
-
-function getCategoryOf(sub){
-  const zone = sub && sub.zone;
-  return ZONE_CATEGORY_MAP[zone] || 'อื่นๆ';
-}
-
-/* ───────── CONFIG ───────── */
-const API_URL     = 'https://script.google.com/macros/s/AKfycbwWwB0nz478TGH-3nQv9P_eiRh7YE2llDKfonjRTEqlg-AE8XoY2D6c9EO4i1ukH85EVw/exec';
-const QR_BASE_URL = 'https://github.com/IMCTConsumption/Water-Meter-SR/';
+/* ═══════════════════════════════════════════════════════════
+   CONFIG — the ONLY block that differs between the four apps
+   (Electric/Water × SR/GW). Generating another app = change this block.
+   ═══════════════════════════════════════════════════════════ */
+const APP_ID      = 'water-sr';   // must equal doGet's `app`; verified on load
+const APP_NS      = 'watersr';    // localStorage namespace — UNIQUE per app
+const APP_VERSION = '1.0.0';
+const SITE_NAME   = 'Water Meter'; // header title
+const SITE_CODE   = 'SR';          // header suffix → "Water Meter — SR"
+const UNIT        = 'm³';           // display unit (m³ water / kWh electric)
+const API_URL     = 'https://script.google.com/macros/s/AKfycbwtDnJduLZUc7WRKyqUOA8-4YQwiah7gFcPz8e40j0JvoNEal2uqxDcklajWLVcRr93_g/exec';
+const QR_BASE_URL = 'https://imctconsumption.github.io/Water-Meter-SR/';
 const ABNORMAL_MULTIPLIER = 5;
-const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours — matches SESSION_TTL_SECONDS in Code.gs
+const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // matches SESSION_TTL_SECONDS in Code.gs
+
+/* ── localStorage namespacing ──
+   All four apps share the ramesimct.github.io origin, so localStorage is
+   shared. Keys are prefixed per-app (APP_NS) to prevent cross-app collision.
+   `theme` is intentionally left un-prefixed so the light/dark choice is shared. */
+function nsKey(k){ return APP_NS + ':' + k; }
+function lsGet(k){ try { return JSON.parse(localStorage.getItem(nsKey(k))); } catch(e){ return null; } }
+function lsGetRaw(k){ return localStorage.getItem(nsKey(k)); }
+function lsSetRaw(k, v){ localStorage.setItem(nsKey(k), v); }
+function lsRemove(k){ localStorage.removeItem(nsKey(k)); }
+
+/* ═══════════ REPORT GROUPS (consumption zoning) ═══════════
+   Loaded live from the _REPORT_GROUPS sheet (doGet → reportGroups). An admin
+   edits it directly in the Sheet — no code change to add a zone, move a meter,
+   or change a cross-zone subtraction. Each group: {key,name,icon,color,meters,minus}.
+   A meter's `zone` field (on _METERS) is display-grouping ONLY and is decoupled
+   from this: a monitoring meter can appear under a zone yet be in no group here
+   (so it is never counted in any consumption total). */
+let reportGroups = Array.isArray(lsGet('reportGroups')) ? lsGet('reportGroups') : [];
+
+function groupByKey(key){ return reportGroups.find(g => g.key === key) || null; }
+function getGroupIds(key){ const g = groupByKey(key); return g ? (g.meters || []) : []; }
+function zoneName(zoneKey){ const g = groupByKey(zoneKey); return (g && g.name) ? g.name : (zoneKey || 'อื่นๆ'); }
+function zoneIcon(zoneKey){ const g = groupByKey(zoneKey); return (g && g.icon) ? g.icon : '📦'; }
 
 /* ───────── STATE ───────── */
-let subs                   = Array.isArray(jLoad('subs'))     ? jLoad('subs')     : [];
+let subs                   = Array.isArray(lsGet('subs'))     ? lsGet('subs')     : [];
 let records                = [];  // never hydrated from localStorage — admin-session-only
-let workCalendar           = Array.isArray(jLoad('calendar')) ? jLoad('calendar') : [];
+let workCalendar           = Array.isArray(lsGet('calendar')) ? lsGet('calendar') : [];
 let filteredRecords        = [];
 let currentPage            = 1;
-let pageSize                = 15;
+let pageSize               = 15;
 let activeFilter           = { sub:'', user:'', from:'', to:'' };
 let appMode                = 'basic';
-let activeSub               = null;
-let editSubIndex            = null;
-let isConnected             = false;
+let activeSub              = null;
+let editSubIndex           = null;
+let isConnected            = false;
 let currentEditingRecordId = null;
 let currentUser            = '';
-let sessionToken            = null;
-let reportRaw               = [];
-let reportComputed         = null;
+let sessionToken           = null;
 let compareMode            = 'day';
 
-const GROUP_COLORS = {};
-ZONE_GROUPS.forEach(g => { if(g.color) GROUP_COLORS[g.name] = g.color; });
-
 /* ───────── UTILITIES ───────── */
-function jLoad(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
 function esc(str){
   if(str == null) return '';
   return String(str)
@@ -881,8 +858,9 @@ function esc(str){
     .replace(/'/g, '&#39;');
 }
 function persist(){
-  localStorage.setItem('subs',     JSON.stringify(subs));
-  localStorage.setItem('calendar', JSON.stringify(workCalendar));
+  lsSetRaw('subs',         JSON.stringify(subs));
+  lsSetRaw('calendar',     JSON.stringify(workCalendar));
+  lsSetRaw('reportGroups', JSON.stringify(reportGroups));
 }
 function fmtDate(d){
   if(!d) return '—';
@@ -900,8 +878,8 @@ function fmtTime(t){
   }
   return String(t).slice(0,5) || '—';
 }
-function fmtNum(val, subId){
-  const sub = subs.find(s => s.id === subId);
+function fmtNum(val, meterId){
+  const sub = subs.find(s => s.id === meterId);
   const dec = sub && sub.decimal !== undefined ? sub.decimal : 0;
   return parseFloat(val || 0).toFixed(dec);
 }
@@ -920,13 +898,13 @@ function setNow(){
   if(ed) ed.value = n.toISOString().split('T')[0];
   if(et) et.value = n.toTimeString().slice(0,5);
 }
-function getLastKwh(subId){
-  const sorted = records.filter(r => r.subId === subId)
+function getLastKwh(meterId){
+  const sorted = records.filter(r => r.meterId === meterId)
     .sort((a,b) => (`${b.date} ${b.time||'00:00'}`).localeCompare(`${a.date} ${a.time||'00:00'}`));
   return sorted.length ? parseFloat(sorted[0].kwh) || 0 : null;
 }
-function getSubRecs(subId){
-  return records.filter(r => r.subId === subId)
+function getSubRecs(meterId){
+  return records.filter(r => r.meterId === meterId)
     .sort((a,b) => (`${a.date} ${a.time||'00:00'}`).localeCompare(`${b.date} ${b.time||'00:00'}`));
 }
 
@@ -937,17 +915,17 @@ let sessionExpiryWarned = false;
 
 function persistSession(token, role, name){
   sessionExpiresAt = Date.now() + SESSION_TTL_MS;
-  localStorage.setItem('authSession', JSON.stringify({ token, role, name, expiresAt: sessionExpiresAt }));
+  localStorage.setItem(nsKey('authSession'), JSON.stringify({ token, role, name, expiresAt: sessionExpiresAt }));
   sessionExpiryWarned = false;
   hideSessionExpiredBanner();
 }
 function clearSessionStorage(){
-  localStorage.removeItem('authSession');
+  localStorage.removeItem(nsKey('authSession'));
   sessionExpiresAt = null;
 }
 function restoreSession(){
   let saved;
-  try{ saved = JSON.parse(localStorage.getItem('authSession')); }catch(e){ saved = null; }
+  try{ saved = JSON.parse(localStorage.getItem(nsKey('authSession'))); }catch(e){ saved = null; }
   if(!saved || !saved.token || !saved.expiresAt) return false;
   if(Date.now() >= saved.expiresAt){ clearSessionStorage(); return false; }
   sessionToken     = saved.token;
@@ -979,12 +957,12 @@ function logout(){
     const tokenToRevoke = sessionToken;
     apiPost({ action:'logout', token: tokenToRevoke }).catch(() => {});
   }
-  localStorage.removeItem('loginMode');
+  lsRemove('loginMode');
   clearSessionStorage();
   currentUser = '';
   sessionToken = null;
   records = [];
-  localStorage.removeItem('records');
+  lsRemove('records');
   hideSessionExpiredBanner();
   document.getElementById('login-admin').style.display    = 'none';
   document.getElementById('login-recorder').style.display = 'none';
@@ -1019,7 +997,7 @@ async function handleRecorderLogin(){
       sessionToken = res.token || null;
       persistSession(res.token, res.role || 'recorder', currentUser);
       applyAppMode('basic');
-      localStorage.setItem('loginMode','basic');
+      lsSetRaw('loginMode','basic');
       document.getElementById('recorder-pass').value = '';
       closeLoginGate();
       await loadMeterStatus();
@@ -1072,7 +1050,7 @@ async function handleLogin(){
       sessionToken = res.token || null;
       persistSession(res.token, 'admin', currentUser);
       applyAppMode('admin');
-      localStorage.removeItem('loginMode');
+      lsRemove('loginMode');
       closeLoginGate();
       loginBtn.innerHTML = '⏳ กำลังโหลดข้อมูล...';
       await loadAdminRecords();
@@ -1206,7 +1184,7 @@ let activeSubRecent = [];
 
 async function loadMeterStatus(){
   try{
-    const res = await apiPost({ action:'getMeterStatus', subIds: subs.map(s => s.id) });
+    const res = await apiPost({ action:'getMeterStatus', meterIds: subs.map(s => s.id) });
     if(res && res.success && res.status) meterStatus = res.status;
   }catch(e){ console.warn('⚠️ โหลดสถานะมิเตอร์ไม่ได้:', e.message); }
 }
@@ -1217,8 +1195,8 @@ async function loadAdminRecords(){
     persist();
   }catch(e){ /* apiPostAuthed already surfaced the error toast */ }
 }
-async function loadRecentForSub(subId, limit){
-  const res = await apiPost({ action:'getRecentRecords', subId, limit: limit || 5, token: sessionToken });
+async function loadRecentForSub(meterId, limit){
+  const res = await apiPost({ action:'getRecentRecords', meterId, limit: limit || 5, token: sessionToken });
   if(!res || !res.success) throw new Error((res && res.error) || 'โหลดประวัติมิเตอร์ไม่ได้');
   return res.records || [];
 }
@@ -1308,8 +1286,10 @@ function loadFromServer(){
     })
     .then(async data => {
       if(!data || data.status === 'error') throw new Error(data?.message || 'Server error');
-      if(data.subs     && Array.isArray(data.subs))     subs         = data.subs;
-      if(data.calendar && Array.isArray(data.calendar)) workCalendar = data.calendar;
+      if(data.app && data.app !== APP_ID) toast('⚠️ Backend ผิดแอป: ได้ '+data.app+' คาดว่า '+APP_ID,'err');
+      if(data.meters       && Array.isArray(data.meters))       subs         = data.meters;
+      if(data.reportGroups && Array.isArray(data.reportGroups)) reportGroups = data.reportGroups;
+      if(data.calendar     && Array.isArray(data.calendar))     workCalendar = data.calendar;
       persist(); isConnected = true; invalidateSummaryCache('loadFromServer');
       await loadMeterStatus();
       if(appMode === 'admin' && sessionToken) await loadAdminRecords();
@@ -1336,8 +1316,10 @@ function refreshData(){
     })
     .then(async data => {
       if(!data || data.status === 'error') throw new Error(data?.message || 'Server error');
-      if(data.subs     && Array.isArray(data.subs))     subs         = data.subs;
-      if(data.calendar && Array.isArray(data.calendar)) workCalendar = data.calendar;
+      if(data.app && data.app !== APP_ID) toast('⚠️ Backend ผิดแอป: ได้ '+data.app+' คาดว่า '+APP_ID,'err');
+      if(data.meters       && Array.isArray(data.meters))       subs         = data.meters;
+      if(data.reportGroups && Array.isArray(data.reportGroups)) reportGroups = data.reportGroups;
+      if(data.calendar     && Array.isArray(data.calendar))     workCalendar = data.calendar;
       persist(); isConnected = true; invalidateSummaryCache('refreshData');
       await loadMeterStatus();
       if(appMode === 'admin' && sessionToken) await loadAdminRecords();
@@ -1369,11 +1351,11 @@ function computeUsed(rawRecords){
   const _pl = perfLabel('computeUsed(n='+rawRecords.length+')'); perfStart(_pl);
   rawRecords.forEach(r => { if(r.date && String(r.date).includes('T')) r.date = String(r.date).slice(0, 10); });
   const groups = {};
-  rawRecords.forEach(r => { if(!groups[r.subId]) groups[r.subId]=[]; groups[r.subId].push(r); });
-  Object.keys(groups).forEach(subId => {
-    const sub        = subs.find(s => s.id === subId);
+  rawRecords.forEach(r => { if(!groups[r.meterId]) groups[r.meterId]=[]; groups[r.meterId].push(r); });
+  Object.keys(groups).forEach(meterId => {
+    const sub        = subs.find(s => s.id === meterId);
     const multiplier = sub?.multiplier !== undefined ? parseFloat(sub.multiplier) : 1;
-    const chain = groups[subId].sort((a,b) => (`${a.date} ${a.time||'00:00'}`).localeCompare(`${b.date} ${b.time||'00:00'}`));
+    const chain = groups[meterId].sort((a,b) => (`${a.date} ${a.time||'00:00'}`).localeCompare(`${b.date} ${b.time||'00:00'}`));
     chain.forEach((rec, i) => {
       if(i === chain.length - 1){ rec.used = 0; }
       else { const diff = parseFloat(chain[i+1].kwh) - parseFloat(rec.kwh); rec.used = Math.max(0, diff) * multiplier; }
@@ -1388,19 +1370,30 @@ async function init(){
   if(!Array.isArray(subs)) subs = [];
   subs = subs.map(s => ({ ...s, decimal: s.decimal !== undefined ? s.decimal : 0 }));
   initTheme(); setNow();
+  { const t = document.getElementById('hdr-title'); if(t) t.textContent = SITE_NAME + ' — ' + SITE_CODE; }
   const hasSession = restoreSession();
   renderAll();
-  document.getElementById('qr-url-preview').textContent = QR_BASE_URL + '?sub=WM-XX';
-  const p = new URLSearchParams(location.search).get('sub');
+  document.getElementById('qr-url-preview').textContent = QR_BASE_URL + '?meter=WM-XX';
+  const params = new URLSearchParams(location.search);
+  const p = params.get('meter') || params.get('sub');  // accept both (old printed QR = ?sub=)
   if(p){
     pendingQrSub = p.toUpperCase();
     if(hasSession){
       goTab('entry');
-      await loadFromServer();
-      const found = subs.find(s => s.id === pendingQrSub);
-      if(found){ await selectSub(found.id); toast('📍 เปิด ' + found.id + ' จาก QR','ok'); }
-      else{ toast('ไม่พบ Meter: ' + pendingQrSub + ' (ลองรีเฟรช)','err'); }
-      pendingQrSub = null;
+      const cached = subs.find(s => s.id === pendingQrSub);
+      if(cached){
+        // cache-first: open the scanned meter immediately, refresh in background
+        await selectSub(cached.id);
+        toast('📍 เปิด ' + cached.id + ' จาก QR','ok');
+        pendingQrSub = null;
+        loadFromServer();                 // non-blocking background refresh
+      } else {
+        await loadFromServer();           // not cached (first load) — must fetch first
+        const found = subs.find(s => s.id === pendingQrSub);
+        if(found){ await selectSub(found.id); toast('📍 เปิด ' + found.id + ' จาก QR','ok'); }
+        else{ toast('ไม่พบ Meter: ' + pendingQrSub + ' (ลองรีเฟรช)','err'); }
+        pendingQrSub = null;
+      }
     } else {
       await loadFromServer();
       showRecorderLogin();
@@ -1439,6 +1432,7 @@ function goTab(name){
   if(name === 'chart')    { populateDDs(); setSubQuick('30d'); buildCompareGroupOptions(); initG9Pickers(); renderG9Chart(); }
   if(name === 'qr')       { renderQR(); }
   if(name === 'settings') { renderSubList(); renderCalendarList(); }
+  if(name === 'summary')  { renderSummary(); }
 }
 
 /* ════════════ WORK CALENDAR ════════════ */
@@ -1529,9 +1523,9 @@ function renderTable(){
   if(total === 0){ emptyBox.style.display = 'block'; if(document.getElementById('pageNav')) document.getElementById('pageNav').innerHTML = ''; perfEnd(_plT); return; }
   emptyBox.style.display = 'none';
   tbody.innerHTML = pageItems.map(r => `<tr>
-    <td class="td-sub">${r.subId}</td><td>${fmtDate(r.date)}</td><td>${fmtTime(r.time)}</td>
-    <td class="td-kwh">${fmtNum(r.kwh, r.subId)}</td>
-    <td class="td-used"><strong>${fmtNum(r.used||0, r.subId)}</strong></td>
+    <td class="td-sub">${r.meterId}</td><td>${fmtDate(r.date)}</td><td>${fmtTime(r.time)}</td>
+    <td class="td-kwh">${fmtNum(r.kwh, r.meterId)}</td>
+    <td class="td-used"><strong>${fmtNum(r.used||0, r.meterId)}</strong></td>
     <td class="desktop-only">${esc(r.user)||'—'}</td><td class="desktop-only">${esc(r.note)||'—'}</td>
     <td><div class="td-act">
       <button class="btn btn-primary btn-sm" onclick="openEdit('${r.id}')">✏️</button>
@@ -1545,7 +1539,7 @@ function renderTable(){
 function renderZoneAreas(){
   const container = document.getElementById('zone-areas');
   container.innerHTML = '';
-   if(!subs.length){
+  if(!subs.length){
     container.innerHTML = `<div class="section-empty" style="padding:30px">
       <div style="font-size:24px;margin-bottom:8px">⏳</div>
       กำลังโหลดรายการ Meter...<br>
@@ -1553,15 +1547,23 @@ function renderZoneAreas(){
     </div>`;
     return;
   }
-  const grouped = {};
-  LOAD_CATEGORIES.forEach(c => grouped[c.name] = []);
-  subs.forEach(s => { const cat = getCategoryOf(s); if(!grouped[cat]) grouped[cat]=[]; grouped[cat].push(s); });
-  LOAD_CATEGORIES.forEach(cat => {
-    const list = grouped[cat.name];
-    if(!list || !list.length) return;
+  // Group meters by their display `zone` field (decoupled from report groups).
+  // Section order follows _REPORT_GROUPS, then any unknown zones, then "อื่นๆ".
+  const grouped = {}; const order = [];
+  function bucket(key){ if(!(key in grouped)){ grouped[key] = []; order.push(key); } return grouped[key]; }
+  reportGroups.forEach(g => { if(g.key) bucket(g.key); });           // seed order
+  subs.forEach(s => {
+    const z = (s.zone && String(s.zone).trim()) ? String(s.zone).trim() : '__OTHER__';
+    bucket(z).push(s);
+  });
+  order.forEach(key => {
+    const list = grouped[key];
+    if(!list || !list.length) return;                                // skip empty seeded groups
+    const label = key === '__OTHER__' ? 'อื่นๆ' : zoneName(key);
+    const icon  = key === '__OTHER__' ? '📦'   : zoneIcon(key);
     const block = document.createElement('div');
     block.className = 'zone-block';
-    block.innerHTML = `<div class="zone-title">${cat.icon} ${cat.name} <span style="color:var(--text-3);font-weight:400">(${list.length})</span></div>`;
+    block.innerHTML = `<div class="zone-title">${icon} ${esc(label)} <span style="color:var(--text-3);font-weight:400">(${list.length})</span></div>`;
     const grid = document.createElement('div');
     grid.className = 'sub-grid';
     list.forEach(s => {
@@ -1569,7 +1571,7 @@ function renderZoneAreas(){
       const isSel   = activeSub && activeSub.id === s.id;
       const d = document.createElement('div');
       d.className = 'sub-card' + (isSel?' sel':'') + (hasData?' has-data':'');
-      d.innerHTML = `<div class="sc-dot"></div><div class="sc-name">${s.name}</div><div class="sc-id">${s.id}</div>`;
+      d.innerHTML = `<div class="sc-dot"></div><div class="sc-name">${esc(s.name)}</div><div class="sc-id">${esc(s.id)}</div>`;
       d.onclick = () => selectSub(s.id);
       grid.appendChild(d);
     });
@@ -1577,13 +1579,13 @@ function renderZoneAreas(){
     container.appendChild(block);
   });
 }
-async function selectSub(subId){
-  activeSub = subs.find(s => s.id === subId);
+async function selectSub(meterId){
+  activeSub = subs.find(s => s.id === meterId);
   if(!activeSub) return;
   document.getElementById('sub-list-screen').style.display = 'none';
   document.getElementById('entry-section').style.display  = 'block';
   document.getElementById('banner-name').textContent = activeSub.name;
-  document.getElementById('banner-id').textContent   = `${activeSub.id} · ${activeSub.zone}`;
+  document.getElementById('banner-id').textContent   = `${activeSub.id} · ${zoneName(activeSub.zone)}`;
   const inKwh = document.getElementById('in-kwh');
   const dec   = activeSub.decimal !== undefined ? activeSub.decimal : 0;
   inKwh.value = '';
@@ -1686,7 +1688,7 @@ async function saveRecord(){
 }
 async function doSaveRecord(sub, kwh, date, time, user, note){
   const now = new Date();
-  const rec = { id: `REC-${now.getTime()}-${Math.floor(Math.random()*1000)}`, subId: sub.id, subName: sub.name, zone: sub.zone, date, time, kwh, user, note, ts: now.toISOString(), editedTs: '', editedBy: '' };
+  const rec = { id: `REC-${now.getTime()}-${Math.floor(Math.random()*1000)}`, meterId: sub.id, meterName: sub.name, zone: sub.zone, date, time, kwh, user, note, ts: now.toISOString(), editedTs: '', editedBy: '' };
   if(appMode === 'admin' && records.length){ records.push(rec); records = computeUsed(records); persist(); }
   meterStatus[sub.id] = true;
   toast('✅ บันทึกแล้ว','ok');
@@ -1699,10 +1701,10 @@ async function doSaveRecord(sub, kwh, date, time, user, note){
   btn.disabled = true; btn.textContent = '⏳ กำลัง sync...';
   setSyncStatus('busy','กำลังบันทึกลง Google Sheets...');
   try{
-    const payload = { id:rec.id, subId:rec.subId, subName:rec.subName, zone:rec.zone, date:rec.date, time:rec.time, kwh:rec.kwh, user:rec.user, note:rec.note, ts:rec.ts, editedTs:'', editedBy:'' };
+    const payload = { id:rec.id, meterId:rec.meterId, meterName:rec.meterName, zone:rec.zone, date:rec.date, time:rec.time, kwh:rec.kwh, user:rec.user, note:rec.note, ts:rec.ts, editedTs:'', editedBy:'' };
     const res = await apiPost({ action:'saveRecord', record:payload, token: sessionToken });
     if(!res || res.success === false) throw new Error((res && res.error) || 'บันทึกไม่สำเร็จ');
-    invalidateSummaryCache('saveRecord:'+rec.subId+'@'+rec.date);
+    invalidateSummaryCache('saveRecord:'+rec.meterId+'@'+rec.date);
     setSyncStatus('ok','บันทึกลง Sheets แล้ว');
     if(activeSub && activeSub.id === sub.id){
       try{ activeSubRecent = await loadRecentForSub(sub.id, 5); }catch(e){}
@@ -1720,7 +1722,7 @@ async function doSaveRecord(sub, kwh, date, time, user, note){
     }
   }finally{ btn.disabled = false; btn.innerHTML = '✅ บันทึกข้อมูล'; }
 }
-function getRecentAvgUsed(subId){
+function getRecentAvgUsed(meterId){
   const chain = activeSubRecent.filter(r => (r.used||0) > 0);
   if(!chain.length) return 0;
   return chain.reduce((a,r) => a + (r.used||0), 0) / chain.length;
@@ -1745,19 +1747,19 @@ function openEdit(recordId){
   if(!r) return toast('❌ ไม่พบข้อมูลรายการนี้','err');
   currentEditingRecordId = recordId;
   const editSubSelect = document.getElementById('edit-sub');
-  editSubSelect.innerHTML = subs.map(s => `<option value="${s.id}" ${s.id === r.subId ? 'selected' : ''}>${s.id} — ${s.name}</option>`).join('');
+  editSubSelect.innerHTML = subs.map(s => `<option value="${s.id}" ${s.id === r.meterId ? 'selected' : ''}>${s.id} — ${s.name}</option>`).join('');
   document.getElementById('edit-kwh').value  = r.kwh;
   document.getElementById('edit-date').value = r.date;
   document.getElementById('edit-time').value = r.time || '';
   document.getElementById('edit-user').value = r.user || '';
   document.getElementById('edit-note').value = r.note || '';
-  updateEditKwhStep(r.subId);
+  updateEditKwhStep(r.meterId);
   editSubSelect.onchange = e => updateEditKwhStep(e.target.value);
   const modal = document.getElementById('edit-modal');
   modal.style.display = 'flex'; modal.classList.add('open');
 }
-function updateEditKwhStep(subId){
-  const sub      = subs.find(s => s.id === subId);
+function updateEditKwhStep(meterId){
+  const sub      = subs.find(s => s.id === meterId);
   const dec      = sub?.decimal !== undefined ? sub.decimal : 0;
   const inputKwh = document.getElementById('edit-kwh');
   if(dec === 0){ inputKwh.setAttribute('step','1'); inputKwh.setAttribute('placeholder','กรอกเลขจำนวนเต็มเท่านั้น'); }
@@ -1779,15 +1781,15 @@ async function saveEdit(){
   if(!date) return toast('เลือกวันที่ด้วย','err');
   const sub = subs.find(s => s.id === newSubId);
   const originalRecord = { ...records[idx] };
-  records[idx] = { ...records[idx], subId: newSubId, subName: sub?.name || records[idx].subName, zone: sub?.zone || records[idx].zone, kwh, date, time, user, note, editedTs: new Date().toISOString(), editedBy: currentUser || 'ผู้บันทึก' };
+  records[idx] = { ...records[idx], meterId: newSubId, meterName: sub?.name || records[idx].meterName, zone: sub?.zone || records[idx].zone, kwh, date, time, user, note, editedTs: new Date().toISOString(), editedBy: currentUser || 'ผู้บันทึก' };
   records = computeUsed(records); persist();
   const saved = records[idx];
   closeEdit(); renderAll(); toast('✅ แก้ไขแล้ว (กำลัง sync...)','ok');
   setSyncStatus('busy','กำลังซิงค์...');
   try{
-    const payload = { id:saved.id, subId:saved.subId, subName:saved.subName, zone:saved.zone, date:saved.date, time:saved.time, kwh:saved.kwh, user:saved.user, note:saved.note, ts:saved.ts, editedTs:saved.editedTs, editedBy:saved.editedBy };
+    const payload = { id:saved.id, meterId:saved.meterId, meterName:saved.meterName, zone:saved.zone, date:saved.date, time:saved.time, kwh:saved.kwh, user:saved.user, note:saved.note, ts:saved.ts, editedTs:saved.editedTs, editedBy:saved.editedBy };
     await apiPostAuthed({ action:'editRecord', record:payload });
-    invalidateSummaryCache('editRecord:'+saved.subId+'@'+saved.date);
+    invalidateSummaryCache('editRecord:'+saved.meterId+'@'+saved.date);
     setSyncStatus('ok','แก้ไขสำเร็จ');
   }catch(e){
     records[idx] = originalRecord;
@@ -1844,7 +1846,7 @@ async function saveEditSub(){
   toast(`✅ อัปเดต Meter ${updatedSub.id} เรียบร้อย (กำลังซิงค์...)`,'ok');
   setSyncStatus('busy','กำลังซิงค์ลง Google Sheets...');
   try{
-    await apiPostAuthed({ action:'updateSubConfig', sub:updatedSub });
+    await apiPostAuthed({ action:'updateMeterConfig', meter:updatedSub });
     setSyncStatus('ok','บันทึกข้อมูล Meter ลงแผ่นชีทสำเร็จ');
   }catch(e){ setSyncStatus('error','บันทึกลงชีทไม่สำเร็จ (แต่เซฟเก็บในแคชแล้ว)'); }
 }
@@ -1861,7 +1863,7 @@ function applyFilter(){
   const sortVal  = document.getElementById('fl-sort')?.value || 'newest';
   activeFilter = { sub:subVal, user:userVal, from:startVal, to:endVal };
   filteredRecords = records.filter(r => {
-    if(subVal   && r.subId !== subVal) return false;
+    if(subVal   && r.meterId !== subVal) return false;
     if(userVal  && !String(r.user).toLowerCase().includes(userVal)) return false;
     if(startVal && r.date < startVal)  return false;
     if(endVal   && r.date > endVal)    return false;
@@ -1874,7 +1876,7 @@ function applyFilter(){
   } else if(sortVal === 'date-asc'){
     filteredRecords.sort((a,b) => (`${a.date} ${a.time||'00:00'}`).localeCompare(`${b.date} ${b.time||'00:00'}`));
   } else if(sortVal === 'sub-asc'){
-    filteredRecords.sort((a,b) => a.subId.localeCompare(b.subId) || (`${b.date} ${b.time||'00:00'}`).localeCompare(`${a.date} ${a.time||'00:00'}`));
+    filteredRecords.sort((a,b) => a.meterId.localeCompare(b.meterId) || (`${b.date} ${b.time||'00:00'}`).localeCompare(`${a.date} ${a.time||'00:00'}`));
   }
   perfEnd(_plF);
   currentPage = 1; renderTable();
@@ -1894,7 +1896,7 @@ function populateDDs(){
 }
 function renderStats(){
   const total    = records.length;
-  const subsDone = new Set(records.map(r => r.subId)).size;
+  const subsDone = new Set(records.map(r => r.meterId)).size;
   const today    = new Date().toISOString().split('T')[0];
   const todayN   = records.filter(r => r.date === today).length;
   const totalUsed = records.reduce((a,r) => a + (parseFloat(r.used)||0), 0);
@@ -1914,7 +1916,7 @@ function renderQR(){
   if(zoneSel && zoneSel.options.length <= 1){
     const zoneKeys = [...new Set(subs.map(s => s.zone))].sort();
     zoneSel.innerHTML = '<option value="">ทั้งหมด</option>' +
-      zoneKeys.map(z => `<option value="${z}">${esc(ZONE_CATEGORY_MAP[z] || z)}</option>`).join('');
+      zoneKeys.map(z => `<option value="${z}">${esc(zoneName(z))}</option>`).join('');
   }
   const filterZone = zoneSel?.value || '';
   const list = filterZone ? subs.filter(s => s.zone === filterZone) : subs;
@@ -1925,7 +1927,7 @@ function renderQR(){
     const qid = 'qr_' + sub.id.replace(/\W/g,'_');
     const div = document.createElement('div');
     div.className = 'qr-item';
-    div.innerHTML = `<div class="qi-name">${esc(sub.name)}<br><span style="color:var(--purple)">${esc(ZONE_CATEGORY_MAP[sub.zone] || sub.zone)}</span></div><div class="qi-id">${sub.id}</div><div class="qi-qr" id="${qid}"></div><div class="qi-url">${url.length>55 ? url.slice(0,52)+'…' : url}</div>`;
+    div.innerHTML = `<div class="qi-name">${esc(sub.name)}<br><span style="color:var(--purple)">${esc(zoneName(sub.zone))}</span></div><div class="qi-id">${sub.id}</div><div class="qi-qr" id="${qid}"></div><div class="qi-url">${url.length>55 ? url.slice(0,52)+'…' : url}</div>`;
     grid.appendChild(div);
     ensureQRCode().then(function(){
       const elQ = document.getElementById(qid);
@@ -1943,8 +1945,8 @@ function renderSubList(){
   document.getElementById('sub-count').textContent = subs.length;
   if(!subs.length){ document.getElementById('sub-list').innerHTML='<div class="section-empty">ยังไม่มี Meter</div>'; return; }
   document.getElementById('sub-list').innerHTML = subs.map((s,i) => {
-    const cnt       = records.filter(r => r.subId === s.id).length;
-    const totalUsed = records.filter(r => r.subId === s.id).reduce((a,r) => a+(parseFloat(r.used)||0), 0);
+    const cnt       = records.filter(r => r.meterId === s.id).length;
+    const totalUsed = records.filter(r => r.meterId === s.id).reduce((a,r) => a+(parseFloat(r.used)||0), 0);
     const dec       = s.decimal !== undefined ? s.decimal : 0;
     return `<div class="sub-row">
       <div class="sub-row-info">
@@ -1968,7 +1970,7 @@ async function addSub(){
   if(subs.find(s => s.id === id)) return toast('ID นี้มีอยู่แล้ว','err');
   const newSub = { id, name, zone, decimal, multiplier:1, unit:'m³' };
   try{
-    await apiPostAuthed({ action:'updateSubConfig', sub:newSub });
+    await apiPostAuthed({ action:'updateMeterConfig', meter:newSub });
   }catch(e){
     return;
   }
@@ -1981,14 +1983,14 @@ async function addSub(){
 }
 async function removeSub(i){
   const s   = subs[i];
-  const cnt = records.filter(r => r.subId === s.id).length;
+  const cnt = records.filter(r => r.meterId === s.id).length;
   if(cnt > 0){
     toast(`❌ ลบไม่ได้ — ${s.id} มีประวัติการบันทึก ${cnt} รายการอยู่แล้ว (ระบบป้องกันไว้เพื่อไม่ให้ report เก่าคำนวณผิด — เปลี่ยนชื่อ/Zone แทนถ้าต้องการเลิกใช้งาน Meter นี้)`,'err');
     return;
   }
   if(!confirm(`ลบ ${s.id} — ${s.name}?`)) return;
   try{
-    await apiPostAuthed({ action:'deleteSub', id:s.id });
+    await apiPostAuthed({ action:'deleteMeter', id:s.id });
   }catch(e){
     return;
   }
@@ -2005,9 +2007,9 @@ async function exportExcel(){
   try{ await ensureXLSX(); }catch(e){ return toast('โหลด Excel library ไม่ได้','err'); }
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(dataToExport.map(r => ({
-    'ID': r.id, 'Meter ID': r.subId, 'คำอธิบาย': r.subName, 'หมวด': r.zone,
+    'ID': r.id, 'Meter ID': r.meterId, 'คำอธิบาย': r.meterName, 'หมวด': r.zone,
     'Date': fmtDate(r.date), 'Time': fmtTime(r.time),
-    'm³ (Cumulative)': fmtNum(r.kwh, r.subId), 'Used (m³)': fmtNum(r.used, r.subId),
+    'm³ (Cumulative)': fmtNum(r.kwh, r.meterId), 'Used (m³)': fmtNum(r.used, r.meterId),
     'User': r.user, 'Note': r.note, 'Edited By': r.editedBy||'', 'Timestamp': r.ts
   })));
   ws['!cols'] = Array(12).fill({ wch:18 });
@@ -2029,7 +2031,8 @@ function doImport(e){
   r.onload = ev => {
     try{
       const d = JSON.parse(ev.target.result);
-      if(d.subs)     subs         = d.subs.map(s => ({ ...s, decimal: s.decimal!==undefined?s.decimal:0 }));
+      const imported = d.meters || d.subs;   // accept legacy backup files (old name was 'subs')
+      if(imported)   subs         = imported.map(s => ({ ...s, decimal: s.decimal!==undefined?s.decimal:0 }));
       if(d.records)  records      = computeUsed(d.records);
       if(d.calendar) workCalendar = d.calendar;
       currentPage = 1; persist(); renderAll();
@@ -2041,7 +2044,7 @@ function doImport(e){
 function clearCache(){
   if(!confirm('ล้าง Cache ในเครื่องนี้?\n(ข้อมูลใน Google Sheets ยังอยู่ครบ)')) return;
   records = []; subs = []; workCalendar = []; filteredRecords = []; currentPage = 1;
-  localStorage.removeItem('records'); localStorage.removeItem('subs'); localStorage.removeItem('calendar');
+  lsRemove('records'); lsRemove('subs'); lsRemove('calendar');
   toast('ล้าง Cache แล้ว — กำลังโหลดจาก Sheets ใหม่...','warn');
   loadFromServer();
 }
@@ -2064,6 +2067,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
 init();
 
+
+
+/* ════════════ SUMMARY: per-meter breakdown by report group ════════════ */
+function renderSummary(){
+  const box = document.getElementById('summary-body');
+  if(!box) return;
+  if(appMode !== 'admin'){ box.innerHTML = '<div class="section-empty">เฉพาะแอดมิน (ต้องเข้าสู่ระบบแอดมินเพื่อดูสรุป)</div>'; return; }
+  if(!reportGroups.length){ box.innerHTML = '<div class="section-empty">ยังไม่มีกลุ่มใน _REPORT_GROUPS</div>'; return; }
+  const usedByMeter = {};
+  records.forEach(r => { usedByMeter[r.meterId] = (usedByMeter[r.meterId]||0) + (parseFloat(r.used)||0); });
+  const nameOf = id => { const m = subs.find(x => x.id === id); return m ? m.name : '(ไม่พบใน _METERS)'; };
+  let html = '';
+  reportGroups.forEach(g => {
+    const plus  = (g.meters||[]).map(id => ({ id, name:nameOf(id), used:usedByMeter[id]||0 }));
+    const minus = (g.minus ||[]).map(id => ({ id, name:nameOf(id), used:usedByMeter[id]||0 }));
+    const net = plus.reduce((a,r)=>a+r.used,0) - minus.reduce((a,r)=>a+r.used,0);
+    html += `<div class="card"><div class="card-title">${g.icon||'📦'} ${esc(g.name)}</div>`;
+    if(!plus.length && !minus.length){
+      html += '<div class="section-empty">ยังไม่ได้กำหนดมิเตอร์ในกลุ่มนี้ (แก้ที่ชีท _REPORT_GROUPS)</div></div>';
+      return;
+    }
+    html += `<div class="tbl-wrap"><table><thead><tr><th>Meter</th><th>ชื่อ</th><th style="text-align:right">ใช้ไป (${UNIT})</th></tr></thead><tbody>`;
+    plus.forEach(r => { html += `<tr><td class="td-sub">${esc(r.id)}</td><td>${esc(r.name)}</td><td class="td-used" style="text-align:right">${Math.round(r.used).toLocaleString()}</td></tr>`; });
+    minus.forEach(r => { html += `<tr><td class="td-sub" style="color:var(--orange)">− ${esc(r.id)}</td><td style="color:var(--text-3)">${esc(r.name)}</td><td style="text-align:right;color:var(--orange)">−${Math.round(r.used).toLocaleString()}</td></tr>`; });
+    html += `</tbody></table></div>`;
+    html += `<div class="chip-center" style="margin-top:10px"><span class="chip chip-green">รวม ${esc(g.name)}: ${Math.round(net).toLocaleString()} ${UNIT}</span></div></div>`;
+  });
+  box.innerHTML = html;
+}
 
 /* ════════════════════════════════════════════════════════════
    APEXCHARTS SYSTEM
@@ -2192,13 +2224,13 @@ function toggleSubOpt(opt){
   renderSubChart();
 }
 function renderSubChart(){
-  var subId = document.getElementById('chart-sub').value;
+  var meterId = document.getElementById('chart-sub').value;
   var el = document.getElementById('sub-chart-el');
   var sumEl = document.getElementById('sub-chart-summary');
-  if(!subId){ el.innerHTML='<div class="section-empty">เลือก Meter เพื่อดูกราฟ</div>'; sumEl.innerHTML=''; return; }
+  if(!meterId){ el.innerHTML='<div class="section-empty">เลือก Meter เพื่อดูกราฟ</div>'; sumEl.innerHTML=''; return; }
   var fromVal = document.getElementById('sub-from').value || '';
   var toVal = document.getElementById('sub-to').value || '';
-  var recs = getSubRecs(subId);
+  var recs = getSubRecs(meterId);
   if(fromVal) recs = recs.filter(function(r){return r.date >= fromVal;});
   if(toVal) recs = recs.filter(function(r){return r.date <= toVal;});
   if(!recs.length){ el.innerHTML='<div class="section-empty">ไม่มีข้อมูลในช่วงที่เลือก</div>'; sumEl.innerHTML=''; return; }
@@ -2378,18 +2410,18 @@ async function renderG9Chart(){
     if(!res||!res.success) throw new Error(res&&res.error||'error');
     var raw = res.summary || [];
     var meterMap = {};
-    raw.forEach(function(r){ if(!meterMap[r.subId]) meterMap[r.subId]={}; meterMap[r.subId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
+    raw.forEach(function(r){ if(!meterMap[r.meterId]) meterMap[r.meterId]={}; meterMap[r.meterId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
     var allPeriods = []; raw.forEach(function(r){ if(allPeriods.indexOf(r.period)<0) allPeriods.push(r.period); }); allPeriods.sort();
     var countPeriods;
     if(g9State.period==='day') countPeriods = [pick];
     else countPeriods = allPeriods.filter(function(p){return p.startsWith(pick);});
-    var groupVals = REPORT_MAIN.map(function(col){
+    var groupVals = reportGroups.map(function(col){
       var total = 0;
       countPeriods.forEach(function(p){
-        (col.ids||[]).forEach(function(id){ var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) total+=u; });
+        (col.meters||[]).forEach(function(id){ var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) total+=u; });
         (col.minus||[]).forEach(function(id){ var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) total-=u; });
       });
-      return { name:col.name, value:total, color:GROUP_COLORS[col.name]||TC.accent };
+      return { name:col.name, value:total, color:col.color||TC.accent };
     });
     if(g9State.sort==='desc') groupVals.sort(function(a,b){return b.value-a.value;});
     else if(g9State.sort==='asc') groupVals.sort(function(a,b){return a.value-b.value;});
@@ -2430,26 +2462,23 @@ function buildCompareGroupOptions(){
   const sel = document.getElementById('cmp-group');
   if(!sel) return;
   const prev = sel.value;
-  const allCols = [...REPORT_MAIN, ...REPORT_UTIL];
-  sel.innerHTML = allCols.map(c => `<option value="${c.key}">${c.name}</option>`).join('')
-    + '<option value="__UTILITY__">UTILITY PLANT (รวม)</option>'
-    + '<option value="__TOTAL__">TOTAL</option>';
+  sel.innerHTML = reportGroups.map(c => `<option value="${c.key}">${esc(c.name)}</option>`).join('')
+    + '<option value="__TOTAL__">TOTAL (ทุกกลุ่ม)</option>';
   if(prev) sel.value = prev;
 }
 function getColIds(key){
-  if(key === '__UTILITY__') return REPORT_UTIL.flatMap(c => c.ids);
-  if(key === '__TOTAL__')   return [...REPORT_MAIN, ...REPORT_UTIL].flatMap(c => c.ids);
-  const col = [...REPORT_MAIN, ...REPORT_UTIL].find(c => c.key === key);
-  return col ? col.ids : [];
+  if(key === '__TOTAL__') return reportGroups.flatMap(c => c.meters || []);
+  const col = reportGroups.find(c => c.key === key);
+  return col ? (col.meters || []) : [];
 }
-function meterUsedOnDay(meterMap, subId, dateStr, allDates){
-  const cur = meterMap[subId]?.[dateStr];
+function meterUsedOnDay(meterMap, meterId, dateStr, allDates){
+  const cur = meterMap[meterId]?.[dateStr];
   if(!cur) return null;
-  const sub  = subs.find(s => s.id === subId);
+  const sub  = subs.find(s => s.id === meterId);
   const mult = sub?.multiplier !== undefined ? parseFloat(sub.multiplier) : 1;
   const idx = allDates.indexOf(dateStr);
   for(let k = idx+1; k < allDates.length; k++){
-    const next = meterMap[subId]?.[allDates[k]];
+    const next = meterMap[meterId]?.[allDates[k]];
     if(next) return Math.max(0, next.firstKwh - cur.firstKwh) * mult;
   }
   return Math.max(0, cur.lastKwh - cur.firstKwh) * mult;
@@ -2543,7 +2572,7 @@ async function renderCmpChart(){
     if(!res||!res.success) throw new Error(res&&res.error||'error');
     var raw = res.summary || [];
     var meterMap = {};
-    raw.forEach(function(r){ if(!meterMap[r.subId]) meterMap[r.subId]={}; meterMap[r.subId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
+    raw.forEach(function(r){ if(!meterMap[r.meterId]) meterMap[r.meterId]={}; meterMap[r.meterId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
     var allPeriods = []; raw.forEach(function(r){ if(allPeriods.indexOf(r.period)<0) allPeriods.push(r.period); }); allPeriods.sort();
     var dataPoints;
     if(cmpState.period === 'year'){
