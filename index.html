@@ -217,12 +217,15 @@
 
 /* ─── Sidebar drawer ─── */
 .rd-drawer-overlay {
+  /* Above #entry-section, which is position:fixed with z-index:100 — the
+     drawer previously sat at 50 and was painted underneath the entry screen,
+     so opening the menu while a meter was open appeared to do nothing. */
   position: fixed; inset: 0;
   background: rgba(10,22,40,.45);
   opacity: 0;
   visibility: hidden;
   transition: var(--rd-transition);
-  z-index: 40;
+  z-index: 200;
   backdrop-filter: blur(2px);
 }
 .rd-drawer-overlay.open { opacity: 1; visibility: visible; }
@@ -230,14 +233,18 @@
 .rd-drawer {
   position: fixed;
   top: 0; left: 0;
+  /* dvh tracks the *visible* viewport, so the sign-out row at the bottom of
+     the drawer isn't pushed under the mobile browser's toolbar. vh is kept
+     first as the fallback for browsers without dvh support. */
   height: 100vh;
+  height: 100dvh;
   width: 280px;
   max-width: 85vw;
   background: var(--rd-surface-2);
   border-right: 1px solid var(--rd-line);
   transform: translateX(-100%);
   transition: transform var(--rd-transition);
-  z-index: 50;
+  z-index: 201;
   display: flex;
   flex-direction: column;
   font-family: var(--rd-font-body);
@@ -1776,6 +1783,12 @@ function logout(){
   currentUser = '';
   sessionToken = null;
   records = [];
+  applyAppMode('basic');           // reset role, and with it the sidebar contents
+  _adminRecordsInFlight = null;    // drop any in-flight admin pull from the old session
+  bulkRecent = null;               // stale once the session ends
+  historyLoadFailed = false;
+  activeSub = null;
+  activeSubRecent = [];
   lsRemove('records');
   hideSessionExpiredBanner();
   // #login-choose is an empty compatibility stub after the login redesign —
@@ -1901,6 +1914,11 @@ function applyAppMode(mode){
   appMode = mode;
   const tabsBar = document.getElementById('tabs-bar');
   if(tabsBar) tabsBar.className = mode === 'admin' ? 'tabs admin-mode' : 'tabs basic-mode';
+  // Push the role change into the sidebar right away. It used to refresh only
+  // inside rdOpenDrawer(), so after signing out of admin and back in as a
+  // recorder the drawer kept rendering the admin-only entries until the tab
+  // was reloaded.
+  try { rdApplyRoleVisibility(); rdSyncDrawerUser(); rdSyncDrawerActive(); } catch(e){ /* drawer not in DOM yet during early init */ }
   const hdrSmall = document.getElementById('hdr-small');
   if(hdrSmall){
     if(mode === 'admin'){
@@ -1962,10 +1980,16 @@ function perfEnd(name){
   performance.clearMeasures(name);
 }
 
+/* Per-action timeout. getRawRecords walks the whole sheet server-side and
+   legitimately takes longer than a status ping, so a single flat ceiling
+   either cut off the heavy call or made the light ones hang. */
+const SLOW_ACTIONS = { getRawRecords: 45000, getMonthlySummary: 30000, getAvailableMonths: 20000 };
+
 async function apiPost(body, retries = 2){
+  const timeoutMs = (body && SLOW_ACTIONS[body.action]) || 12000;
   for(let attempt = 0; attempt <= retries; attempt++){
     const ctrl = new AbortController();
-    const tid  = setTimeout(() => ctrl.abort(), 10000);
+    const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
     try{
       const res  = await fetch(API_URL, { method:'POST', body:JSON.stringify(body), signal:ctrl.signal });
       clearTimeout(tid);
@@ -2016,6 +2040,22 @@ async function loadAvailableMonths(){
   return availableMonths;
 }
 
+/* Recent readings for every meter, fetched once.
+   Opening a meter used to fire its own getRecentRecords call, so a recorder
+   walking 66 meters made 66 round-trips — each one re-reading the whole sheet
+   server-side. This pulls them all in a single request and serves meter opens
+   from memory. Falls back to the per-meter call if the bulk set is missing or
+   doesn't contain the meter (e.g. a meter added since the last fetch). */
+let bulkRecent = null;          // { meterId: [records newest-first] }
+
+async function loadBulkRecent(){
+  try{
+    const res = await apiPostAuthed({ action:'getRecentRecordsAll' });
+    if(res && res.success && res.byMeter) bulkRecent = res.byMeter;
+  }catch(e){ console.warn('⚠️ โหลดประวัติรวมไม่ได้ — จะดึงทีละมิเตอร์แทน:', e.message); }
+  return bulkRecent;
+}
+
 async function loadMeterStatus(){
   // ONE request returns both maps (see getMeterStatus in Code.gs). Kept as a
   // single round-trip on purpose: the /exec endpoint is the slowest hop and
@@ -2030,6 +2070,7 @@ async function loadMeterStatus(){
   // Month list is only needed by the admin report pickers — fetch it lazily
   // and never block the entry screen on it.
   if(appMode === 'admin' && !availableMonths) loadAvailableMonths();
+  if(sessionToken) await loadBulkRecent();   // one call replaces one-per-meter later
 }
 /* ── Admin record window ──
    The full history is thousands of rows and is the single slowest thing in
@@ -2049,7 +2090,20 @@ function _windowStartDate(days){
   return d.toISOString().slice(0, 10);
 }
 
+/* Guards against the same heavy pull running twice concurrently. handleLogin()
+   and loadFromServer() both request the admin record set after a login, and on
+   Apps Script two simultaneous full-sheet reads block each other long enough
+   for both to hit the client timeout. Callers now share one in-flight promise. */
+let _adminRecordsInFlight = null;
+
 async function loadAdminRecords(opts){
+  if(_adminRecordsInFlight) return _adminRecordsInFlight;
+  _adminRecordsInFlight = _loadAdminRecordsInner(opts);
+  try { return await _adminRecordsInFlight; }
+  finally { _adminRecordsInFlight = null; }
+}
+
+async function _loadAdminRecordsInner(opts){
   const loadAll = !!(opts && opts.all);
   const dateFrom = loadAll ? null : _windowStartDate(ADMIN_RECORD_WINDOW_DAYS);
   try{
@@ -2565,6 +2619,14 @@ async function selectSub(meterId){
   // genuinely new meter, so the UI would cheerfully say "first reading for
   // this meter" and accept a mistyped number. Block the save instead.
   historyLoadFailed = false;
+  // Served from the bulk set when available — no network call on meter open.
+  if(bulkRecent && Object.prototype.hasOwnProperty.call(bulkRecent, activeSub.id)){
+    activeSubRecent = bulkRecent[activeSub.id] || [];
+    applyHistoryLoadState(); updateMeterSummary(); renderRecent();
+    const sbFast = document.getElementById('save-btn');
+    if(sbFast){ sbFast.innerHTML = isConnected ? '✅ บันทึกข้อมูล' : '⚠️ บันทึก (Offline)'; sbFast.disabled = false; }
+    return;
+  }
   try{
     activeSubRecent = await loadRecentForSub(activeSub.id, 5);
   }catch(e){
@@ -2684,7 +2746,10 @@ async function doSaveRecord(sub, kwh, date, time, user, note){
     setNow();
     setSyncStatus('ok','บันทึกลง Sheets แล้ว');
     if(activeSub && activeSub.id === sub.id){
-      try{ activeSubRecent = await loadRecentForSub(sub.id, 5); }catch(e){}
+      try{
+        activeSubRecent = await loadRecentForSub(sub.id, 5);
+        if(bulkRecent) bulkRecent[sub.id] = activeSubRecent;   // keep the bulk set in step
+      }catch(e){}
       updateMeterSummary(); renderRecent();
     }
   }catch(e){
@@ -4057,6 +4122,13 @@ function rdSyncDrawerUser(){
   const mode  = (typeof appMode !== 'undefined') ? appMode : '';
   const box   = document.getElementById('rd-drawer-user');
   if (!box) return;
+  const signedIn = !!(typeof sessionToken !== 'undefined' && sessionToken);
+  if (!signedIn) {                      // signed out — hide identity + sign-out row
+    box.style.display = 'none';
+    const lo = document.getElementById('rd-logout-item');
+    if (lo) lo.style.display = 'none';
+    return;
+  }
   if (!uname && !mode) { box.style.display = 'none'; return; }
   box.style.display = 'flex';
   const av  = document.getElementById('rd-drawer-avatar');
