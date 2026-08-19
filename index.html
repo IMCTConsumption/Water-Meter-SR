@@ -7,6 +7,690 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
+
+/* ═══════════════════════════════════════════════════════════
+   REDESIGN LAYER — SESSION 1
+   Design tokens matched to the IMCT Consumption hub (navy + cyan + off-white),
+   with dark-mode parity. Component styles for the new header + sidebar drawer +
+   centered login. All original panel/card/button styles below remain untouched.
+   =========================================================== */
+:root {
+  --rd-ink:          #0A1628;
+  --rd-ink-2:        #3A4A5F;
+  --rd-ink-3:        #6B7A90;
+  --rd-line:         #E5E9F0;
+  --rd-line-2:       #F0F3F8;
+  --rd-surface:      #FBFCFE;
+  --rd-surface-2:    #FFFFFF;
+  --rd-accent:       #00D4FF;
+  --rd-accent-ink:   #003D4A;
+  --rd-accent-soft:  #E6FAFF;
+  --rd-success:      #00B87C;
+  --rd-success-soft: #E6F7F0;
+  --rd-danger:       #EF4444;
+  --rd-danger-soft:  #FEE7E7;
+  --rd-warning:      #F59E0B;
+  --rd-warning-soft: #FEF3E2;
+  --rd-shadow-sm:    0 1px 2px rgba(10,22,40,.04);
+  --rd-shadow:       0 4px 16px rgba(10,22,40,.06);
+  --rd-shadow-lg:    0 12px 32px rgba(10,22,40,.10);
+  --rd-radius:       10px;
+  --rd-radius-lg:    14px;
+  --rd-transition:   200ms cubic-bezier(.4,0,.2,1);
+  --rd-font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --rd-font-body:    'Inter', 'Sarabun', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  --rd-font-mono:    'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  --rd-font-th:      'Sarabun', 'IBM Plex Sans Thai', 'Inter', system-ui, sans-serif;
+  /* Button tokens — intentionally do NOT flip with theme. A primary button
+     stays "dark navy bg + white text" in light mode; in dark mode it becomes
+     the cyan accent (dark navy text) so it still reads as the loudest
+     actionable element on the page instead of blending into a light --rd-ink
+     that would otherwise turn white-on-white. */
+  --rd-btn-bg:       var(--rd-ink);
+  --rd-btn-bg-hover: #1A2B45;
+  --rd-btn-text:     #FFFFFF;
+}
+[data-theme="dark"] {
+  --rd-btn-bg:       var(--rd-accent);
+  --rd-btn-bg-hover: #33DDFF;
+  --rd-btn-text:     #001824;
+}
+[data-theme="dark"] {
+  --rd-ink:          #E8F0FF;
+  --rd-ink-2:        #A8B4C8;
+  --rd-ink-3:        #6B7A90;
+  --rd-line:         #1E2A3D;
+  --rd-line-2:       #172131;
+  --rd-surface:      #0B1220;
+  --rd-surface-2:    #111A2B;
+  --rd-accent-soft:  rgba(0,212,255,.10);
+  --rd-success-soft: rgba(0,184,124,.14);
+  --rd-danger-soft:  rgba(239,68,68,.14);
+  --rd-warning-soft: rgba(245,158,11,.14);
+  --rd-shadow-sm:    0 1px 2px rgba(0,0,0,.30);
+  --rd-shadow:       0 4px 16px rgba(0,0,0,.35);
+  --rd-shadow-lg:    0 12px 32px rgba(0,0,0,.45);
+}
+
+/* Preload webfonts (light — Inter + Mono + Sarabun) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Sarabun:wght@400;500;600&display=swap');
+
+/* ─── New header ─── */
+.rd-header {
+  position: sticky; top: 0; z-index: 30;
+  height: 60px;
+  background: rgba(255,255,255,.88);
+  backdrop-filter: saturate(1.2) blur(10px);
+  border-bottom: 1px solid var(--rd-line);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  font-family: var(--rd-font-body);
+  color: var(--rd-ink);
+}
+[data-theme="dark"] .rd-header { background: rgba(17,26,43,.88); }
+
+.rd-hdr-left { display: flex; align-items: center; gap: 12px; }
+.rd-menu-btn {
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--rd-ink);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: var(--rd-transition);
+}
+.rd-menu-btn:hover { background: var(--rd-line-2); }
+.rd-menu-btn:focus-visible { outline: 2px solid var(--rd-accent); outline-offset: 2px; }
+.rd-menu-btn svg { width: 20px; height: 20px; }
+
+.rd-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rd-brand-mark {
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #0A1628 0%, #1A2B45 100%);  /* fixed navy — brand mark, not theme-reactive */
+  display: grid; place-items: center;
+  color: var(--rd-accent);
+  flex-shrink: 0;
+}
+.rd-brand-mark svg { width: 16px; height: 16px; }
+.rd-brand-title {
+  font-family: var(--rd-font-display);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-brand-code {
+  font-family: var(--rd-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--rd-ink-3);
+  background: var(--rd-line-2);
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: .04em;
+  margin-left: 4px;
+  vertical-align: 1px;
+}
+
+/* Search bar */
+.rd-search {
+  position: relative;
+  max-width: 420px;
+  width: 100%;
+  justify-self: center;
+}
+.rd-search-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 38px;
+  border-radius: 8px;
+  border: 1px solid var(--rd-line);
+  background: var(--rd-surface);
+  color: var(--rd-ink);
+  font-family: var(--rd-font-body);
+  font-size: 13px;
+  transition: var(--rd-transition);
+  outline: none;
+}
+.rd-search-input::placeholder { color: var(--rd-ink-3); }
+.rd-search-input:focus {
+  border-color: var(--rd-accent);
+  background: var(--rd-surface-2);
+  box-shadow: 0 0 0 3px var(--rd-accent-soft);
+}
+.rd-search-icon {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--rd-ink-3);
+  pointer-events: none;
+}
+.rd-search-icon svg { width: 16px; height: 16px; display: block; }
+
+.rd-hdr-right {
+  display: flex; align-items: center; gap: 8px;
+}
+.rd-icon-btn {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--rd-ink-2);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: var(--rd-transition);
+}
+.rd-icon-btn:hover {
+  background: var(--rd-line-2);
+  color: var(--rd-ink);
+}
+.rd-icon-btn svg { width: 18px; height: 18px; }
+.rd-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--rd-ink-3);
+  margin-left: 4px;
+  transition: var(--rd-transition);
+  flex-shrink: 0;
+}
+.rd-status-dot.ok      { background: var(--rd-success); box-shadow: 0 0 0 3px var(--rd-success-soft); }
+.rd-status-dot.working { background: var(--rd-warning); box-shadow: 0 0 0 3px var(--rd-warning-soft); animation: rd-pulse 1.4s infinite; }
+.rd-status-dot.err     { background: var(--rd-danger);  box-shadow: 0 0 0 3px var(--rd-danger-soft);  }
+@keyframes rd-pulse {
+  0%, 100% { opacity: 1;   }
+  50%      { opacity: .35; }
+}
+
+/* Mobile: hide search until user opens drawer */
+@media (max-width: 720px) {
+  .rd-search { display: none; }
+  .rd-header { grid-template-columns: auto 1fr auto; padding: 0 12px; gap: 8px; }
+  .rd-brand-title { font-size: 13px; }
+}
+
+/* ─── Sidebar drawer ─── */
+.rd-drawer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10,22,40,.45);
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--rd-transition);
+  z-index: 40;
+  backdrop-filter: blur(2px);
+}
+.rd-drawer-overlay.open { opacity: 1; visibility: visible; }
+
+.rd-drawer {
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  width: 280px;
+  max-width: 85vw;
+  background: var(--rd-surface-2);
+  border-right: 1px solid var(--rd-line);
+  transform: translateX(-100%);
+  transition: transform var(--rd-transition);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--rd-font-body);
+  color: var(--rd-ink);
+}
+.rd-drawer.open { transform: translateX(0); box-shadow: var(--rd-shadow-lg); }
+
+.rd-drawer-head {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--rd-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rd-drawer-title {
+  font-family: var(--rd-font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -.01em;
+}
+.rd-drawer-close {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--rd-ink-2);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: var(--rd-transition);
+}
+.rd-drawer-close:hover { background: var(--rd-line-2); color: var(--rd-ink); }
+
+.rd-drawer-user {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--rd-line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rd-drawer-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--rd-accent-soft);
+  color: var(--rd-accent-ink);
+  display: grid; place-items: center;
+  font-family: var(--rd-font-display);
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.rd-drawer-usermeta { min-width: 0; }
+.rd-drawer-username {
+  font-family: var(--rd-font-display);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--rd-ink);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rd-drawer-role {
+  font-family: var(--rd-font-mono);
+  font-size: 10px;
+  color: var(--rd-ink-3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-top: 2px;
+}
+
+.rd-drawer-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px;
+}
+.rd-drawer-section {
+  font-family: var(--rd-font-mono);
+  font-size: 10px;
+  color: var(--rd-ink-3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 12px 12px 8px;
+}
+.rd-drawer-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--rd-ink-2);
+  cursor: pointer;
+  transition: var(--rd-transition);
+  font-family: var(--rd-font-body);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.rd-drawer-item:hover {
+  background: var(--rd-line-2);
+  color: var(--rd-ink);
+}
+.rd-drawer-item.active {
+  background: var(--rd-accent-soft);
+  color: var(--rd-accent-ink);
+  font-weight: 600;
+}
+[data-theme="dark"] .rd-drawer-item.active { color: var(--rd-accent); }
+.rd-drawer-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.rd-drawer-item.hidden { display: none; }
+
+.rd-drawer-foot {
+  border-top: 1px solid var(--rd-line);
+  padding: 12px;
+}
+
+/* ─── HIDE the original tab bar (drawer replaces it) ─── */
+#tabs-bar { display: none !important; }
+
+/* ─── LOGIN — centered card ─── */
+#login-gate {
+  background: var(--rd-surface) !important;
+  color: var(--rd-ink) !important;
+  font-family: var(--rd-font-body) !important;
+}
+[data-theme="dark"] #login-gate { background: var(--rd-surface) !important; }
+
+.rd-login-shell {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+}
+.rd-login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--rd-ink);
+  text-decoration: none;
+}
+.rd-login-brand:hover { opacity: .8; }
+.rd-login-brand-mark {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0A1628 0%, #1A2B45 100%);  /* fixed navy — brand mark, not theme-reactive */
+  display: grid; place-items: center;
+  color: var(--rd-accent);
+}
+.rd-login-brand-mark svg { width: 22px; height: 22px; }
+.rd-login-brand-txt {
+  font-family: var(--rd-font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -.01em;
+}
+.rd-login-card {
+  width: 100%;
+  background: var(--rd-surface-2);
+  border: 1px solid var(--rd-line);
+  border-radius: var(--rd-radius-lg);
+  padding: 32px 28px;
+  box-shadow: var(--rd-shadow);
+}
+.rd-login-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--rd-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--rd-ink-3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 4px 10px;
+  background: var(--rd-line-2);
+  border-radius: 100px;
+  margin-bottom: 14px;
+}
+.rd-login-eyebrow::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--rd-accent);
+}
+.rd-login-title {
+  font-family: var(--rd-font-display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -.02em;
+  color: var(--rd-ink);
+  margin-bottom: 6px;
+}
+.rd-login-subtitle {
+  font-family: var(--rd-font-th);
+  font-size: 13px;
+  color: var(--rd-ink-2);
+  margin-bottom: 24px;
+}
+.rd-login-body { display: flex; flex-direction: column; gap: 14px; }
+.rd-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rd-field-label {
+  font-family: var(--rd-font-display);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--rd-ink-2);
+  letter-spacing: .01em;
+}
+.rd-field-input {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--rd-line);
+  background: var(--rd-surface);
+  color: var(--rd-ink);
+  font-family: var(--rd-font-body);
+  font-size: 14px;
+  outline: none;
+  transition: var(--rd-transition);
+}
+.rd-field-input:focus {
+  border-color: var(--rd-accent);
+  box-shadow: 0 0 0 3px var(--rd-accent-soft);
+}
+.rd-btn-primary {
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 8px;
+  background: var(--rd-btn-bg);
+  color: var(--rd-btn-text);
+  border: none;
+  font-family: var(--rd-font-display);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--rd-transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.rd-btn-primary:hover { background: var(--rd-btn-bg-hover); transform: translateY(-1px); }
+.rd-btn-primary:active { transform: translateY(0); }
+.rd-btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.rd-btn-ghost {
+  background: transparent;
+  border: none;
+  color: var(--rd-ink-3);
+  font-family: var(--rd-font-body);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: var(--rd-transition);
+}
+.rd-btn-ghost:hover { color: var(--rd-ink); background: var(--rd-line-2); }
+.rd-login-err {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--rd-danger-soft);
+  color: var(--rd-danger);
+  font-family: var(--rd-font-body);
+  font-size: 12px;
+  display: none;
+}
+.rd-login-err.show { display: block; }
+.rd-login-toggle {
+  text-align: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--rd-line);
+  margin-top: 8px;
+}
+.rd-login-toggle-txt {
+  font-family: var(--rd-font-body);
+  font-size: 12px;
+  color: var(--rd-ink-3);
+}
+.rd-login-toggle-link {
+  font-family: var(--rd-font-display);
+  font-weight: 600;
+  color: var(--rd-accent-ink);
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 4px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: var(--rd-transition);
+}
+[data-theme="dark"] .rd-login-toggle-link { color: var(--rd-accent); }
+.rd-login-toggle-link:hover { background: var(--rd-line-2); }
+.rd-login-foot {
+  text-align: center;
+  font-family: var(--rd-font-mono);
+  font-size: 11px;
+  color: var(--rd-ink-3);
+}
+.rd-login-foot a { color: var(--rd-ink-2); border-bottom: 1px solid transparent; text-decoration: none; }
+.rd-login-foot a:hover { border-bottom-color: var(--rd-accent); }
+
+/* Focus-visible baseline */
+:focus-visible { outline: 2px solid var(--rd-accent); outline-offset: 2px; border-radius: 4px; }
+/* Search moved out of the global header into the Entry panel */
+.rd-search-inline {
+  max-width: none;
+  width: 100%;
+  margin: 0 0 14px;
+}
+.rd-search-inline .rd-search-input { height: 40px; }
+
+/* ═══════════════════════════════════════════════════════════
+   REDESIGN LAYER — SESSION 2
+   Meter card ("information card") + zone header restyle.
+   Entry-screen grouping only — does NOT touch _REPORT_GROUPS math.
+   =========================================================== */
+#zone-areas { display: flex; flex-direction: column; gap: 20px; }
+
+#zone-areas .zone-block {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 0;
+}
+#zone-areas .zone-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--rd-font-display);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--rd-ink);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rd-line);
+}
+#zone-areas .zone-title .zt-icon { font-size: 15px; line-height: 1; }
+#zone-areas .zone-title .zt-name { flex: 0 0 auto; }
+#zone-areas .zone-title .zt-count {
+  font-family: var(--rd-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--rd-ink-3);
+  background: var(--rd-line-2);
+  padding: 2px 8px;
+  border-radius: 100px;
+  letter-spacing: .02em;
+}
+#zone-areas .zone-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rd-line);
+}
+
+#zone-areas .sub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 10px;
+}
+@media (min-width: 640px) {
+  #zone-areas .sub-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+}
+@media (min-width: 1100px) {
+  #zone-areas .sub-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+}
+
+/* Information card — replaces the old small button-like tile.
+   Left edge carries a 4px status bar: red = not recorded today,
+   green = recorded today. This is independent from `.sel` (currently
+   open) and `.has-data` (ever recorded, kept for back-compat but no
+   longer the primary signal). */
+#zone-areas .sub-card {
+  position: relative;
+  background: var(--rd-surface-2);
+  border: 1px solid var(--rd-line);
+  border-left: 4px solid var(--rd-danger);
+  border-radius: 8px;
+  padding: 12px 14px 12px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: var(--rd-transition), transform .12s ease;
+  min-height: 68px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  user-select: none;
+}
+#zone-areas .sub-card:active { transform: scale(.97); }
+#zone-areas .sub-card:hover:not(.sel) {
+  border-color: var(--rd-ink-3);
+  box-shadow: var(--rd-shadow-sm);
+}
+#zone-areas .sub-card.today { border-left-color: var(--rd-success); }
+#zone-areas .sub-card.sel {
+  border-color: var(--rd-accent);
+  border-left-color: var(--rd-accent);
+  background: var(--rd-accent-soft);
+  box-shadow: 0 0 0 1px var(--rd-accent);
+}
+
+#zone-areas .sc-id {
+  font-family: var(--rd-font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--rd-ink);
+  letter-spacing: .01em;
+}
+#zone-areas .sc-name {
+  font-family: var(--rd-font-th);
+  font-size: 12px;
+  color: var(--rd-ink-2);
+  line-height: 1.4;
+  word-break: break-word;
+}
+.sc-status-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+}
+.sc-status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--rd-danger);
+  flex-shrink: 0;
+}
+#zone-areas .sub-card.today .sc-status-dot { background: var(--rd-success); }
+.sc-status-txt {
+  font-family: var(--rd-font-mono);
+  font-size: 10px;
+  color: var(--rd-ink-3);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* Legacy dot from session 1 / pre-redesign — hidden, card now uses the
+   left-border + sc-status-row instead. Kept selector so nothing breaks
+   if any old markup still emits it. */
+#zone-areas .sc-dot { display: none; }
+
+
+
 :root {
   --font-body:'IBM Plex Sans Thai',sans-serif;
   --font-mono:'IBM Plex Mono',monospace;
@@ -66,8 +750,8 @@ body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;backgro
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .card{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
 .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--border-hi)}
-.sub-card{transition:var(--trans),transform .12s ease}
-.sub-card:active{transform:scale(.96)}
+#zone-areas .sub-card{transition:var(--trans),transform .12s ease}
+#zone-areas .sub-card:active{transform:scale(.96)}
 .stat{transition:transform .2s ease,box-shadow .2s ease}
 .stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .btn{transition:var(--trans),transform .1s ease}
@@ -92,17 +776,6 @@ body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;backgro
 .card-title{font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .card-title::after{content:'';flex:1;height:1px;background:var(--border)}
 .rec-badge{position:absolute;top:14px;right:14px;background:var(--surface-3);border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-size:var(--fs-xs);color:var(--text-3);font-weight:600}
-.zone-block{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;margin-bottom:8px}
-.zone-title{font-size:var(--fs-sm);font-weight:700;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:5px}
-.sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px;}
-.sub-card{background:var(--surface-3);border:1.5px solid var(--border);border-radius:var(--r-md);padding:12px 11px;cursor:pointer;text-align:left;transition:var(--trans);position:relative;min-height:64px;display:flex;flex-direction:column;justify-content:center;user-select:none}
-.sub-card:active{transform:scale(.93)}
-.sub-card.sel{border-color:var(--accent);background:var(--accent-dim);box-shadow:0 0 0 1px var(--accent-border)}
-.sub-card:hover:not(.sel){border-color:var(--border-hi);background:var(--surface-4)}
-.sc-name{font-size:var(--fs-xs);font-weight:600;color:var(--text-1);line-height:1.35;margin-bottom:5px;word-break:break-word;padding-right:12px}
-.sc-id{font-size:10px;font-weight:600;color:var(--text-3);font-family:var(--font-mono);letter-spacing:.2px}
-.sc-dot{width:5px;height:5px;border-radius:50%;background:var(--border);position:absolute;top:8px;right:8px;transition:var(--trans)}
-.sub-card.has-data .sc-dot{background:var(--green);box-shadow:0 0 5px var(--green)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 16px;border:none;border-radius:var(--r-md);font-size:var(--fs-md);font-weight:700;cursor:pointer;transition:var(--trans);font-family:var(--font-body);letter-spacing:.2px;min-height:44px}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.45;pointer-events:none}
@@ -205,15 +878,12 @@ tr:hover td{background:var(--surface-2)}
   .stats-row{gap:6px}
 }
 @media(min-width:600px){
-  .sub-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}
   .stats-row{grid-template-columns:repeat(4,1fr)}
   .qr-grid{grid-template-columns:repeat(3,1fr)}
   .f-3col{grid-template-columns:1fr 1fr 1fr}
 }
 @media(min-width:900px){
   :root{ --fs-xs:14px; --fs-sm:16px; --fs-md:18px; --fs-lg:20px; --fs-xl:28px; --fs-2xl:40px; }
-  .sub-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
-  .sc-id{font-size:12px}
   .mb-label,.mb-unit{font-size:12px}
   .qi-id{font-size:12px}
   .sub-row-idtag{font-size:12px}
@@ -251,93 +921,166 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 </style>
 </head>
 <body>
-<div id="login-gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0b1220;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'IBM Plex Sans Thai',sans-serif;color:#e8f0ff;padding:20px;">
-  <div style="background:#111827;border:1px solid #1e2e45;padding:32px 26px;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5);width:100%;max-width:380px;text-align:center;">
-    <div style="font-size:38px;margin-bottom:6px;">💧</div>
-    <h2 style="margin:0 0 6px;color:#38bdf8;font-size:21px;font-weight:700;">Water Meter Logger</h2>
-    <p style="font-size:13px;color:#8fa8c8;margin:0 0 26px;">เลือกรูปแบบการใช้งาน</p>
+<div id="login-gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--rd-surface);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
 
-    <div id="login-choose">
-      <button onclick="showRecorderLogin()"
-        style="width:100%;padding:16px;margin-bottom:12px;border:none;border-radius:11px;background:linear-gradient(135deg,#34d399,#059669);color:#04231a;font-weight:700;cursor:pointer;font-size:16px;">
-        📝 เข้าใช้งานบันทึก
-        <div style="font-size:11px;font-weight:400;margin-top:3px;opacity:0.8;">สำหรับผู้จดมิเตอร์ — ใช้รหัสผ่านทีม</div>
-      </button>
-      <button onclick="showAdminLogin()"
-        style="width:100%;padding:16px;border:1px solid #2a3f60;border-radius:11px;background:#1a2336;color:#8fa8c8;font-weight:700;cursor:pointer;font-size:16px;">
-        🔐 เข้าใช้งานแอดมิน
-        <div style="font-size:11px;font-weight:400;margin-top:3px;opacity:0.7;">ต้องใส่รหัสผ่าน</div>
-      </button>
+  <div class="rd-login-shell">
+
+    <a href="https://imctconsumption.github.io/IMCT_HUB/" class="rd-login-brand" title="Back to hub">
+      <div class="rd-login-brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2c-3.5 5-7 9.2-7 13.2A7 7 0 0 0 12 22a7 7 0 0 0 7-6.8C19 11.2 15.5 7 12 2Z"/>
+        </svg>
+      </div>
+      <div class="rd-login-brand-txt">IMCT Consumption</div>
+    </a>
+
+    <div class="rd-login-card">
+      <div class="rd-login-eyebrow" id="rd-login-mode-tag">Recorder access</div>
+      <div class="rd-login-title" id="rd-login-title">Sign in to log readings</div>
+      <div class="rd-login-subtitle" id="rd-login-subtitle">กรอกรหัสผ่านทีมจดมิเตอร์เพื่อเริ่มบันทึกค่า</div>
+
+      <!-- The original 2-button "choose" screen is superseded by the toggle
+           links below, but its ID must stay in the DOM: showRecorderLogin(),
+           showAdminLogin() and backToChoose() all reference #login-choose
+           directly (they just don't run any code that requires it to be
+           visible — they only ever set its style.display). -->
+      <div id="login-choose" style="display:none"></div>
+
+      <!-- RECORDER form — default visible. Every element ID below matches the
+           ORIGINAL app.js exactly (#recorder-pass / #recorder-login-err /
+           #recorder-login-btn) so handleRecorderLogin() needs no changes. -->
+      <div class="rd-login-body" id="login-recorder">
+        <div class="rd-field">
+          <label class="rd-field-label" for="recorder-pass">Passcode / รหัสผ่านทีม</label>
+          <input class="rd-field-input" type="password" id="recorder-pass" placeholder="กรอกรหัสผ่าน" autocomplete="current-password">
+        </div>
+        <div class="rd-login-err" id="recorder-login-err"></div>
+        <button class="rd-btn-primary" id="recorder-login-btn" onclick="handleRecorderLogin()">
+          Continue
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <div class="rd-login-toggle">
+          <span class="rd-login-toggle-txt">แอดมิน / IT?</span>
+          <button class="rd-login-toggle-link" onclick="rdShowAdmin()">Admin access</button>
+        </div>
+      </div>
+
+      <!-- ADMIN form — hidden by default. IDs match original exactly
+           (#login-user / #login-pass / #login-err / #login-btn) so
+           handleLogin() needs no changes either. -->
+      <div class="rd-login-body" id="login-admin" style="display:none">
+        <div class="rd-field">
+          <label class="rd-field-label" for="login-user">Username</label>
+          <input class="rd-field-input" type="text" id="login-user" placeholder="admin" autocomplete="username">
+        </div>
+        <div class="rd-field">
+          <label class="rd-field-label" for="login-pass">Password</label>
+          <input class="rd-field-input" type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div class="rd-login-err" id="login-err"></div>
+        <button class="rd-btn-primary" id="login-btn" onclick="handleLogin()">
+          Sign in as admin
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <div class="rd-login-toggle">
+          <span class="rd-login-toggle-txt">Not an admin?</span>
+          <button class="rd-login-toggle-link" onclick="rdShowRecorder()">Back to recorder</button>
+        </div>
+      </div>
     </div>
 
-    <div id="login-recorder" style="display:none;">
-      <div style="text-align:left;margin-bottom:20px;">
-        <label style="font-size:12px;display:block;margin-bottom:5px;color:#8fa8c8;">รหัสผ่านทีมจดมิเตอร์</label>
-        <input type="password" id="recorder-pass" autocomplete="current-password"
-          style="width:100%;padding:11px;border:1px solid #2a3f60;border-radius:8px;background:#1a2336;color:#fff;box-sizing:border-box;font-size:15px;" placeholder="••••••••">
-      </div>
-      <button id="recorder-login-btn" onclick="handleRecorderLogin()"
-        style="width:100%;padding:13px;border:none;border-radius:9px;background:linear-gradient(135deg,#34d399,#059669);color:#04231a;font-weight:700;cursor:pointer;font-size:15px;">
-        เข้าสู่ระบบ 🔓
-      </button>
-      <button onclick="backToChoose()"
-        style="width:100%;padding:10px;margin-top:10px;border:none;border-radius:9px;background:transparent;color:#4e6a8a;cursor:pointer;font-size:13px;">
-        ← กลับ
-      </button>
-      <div id="recorder-login-err" style="color:#f87171;font-size:13px;margin-top:12px;display:none;"></div>
-      <p style="font-size:11px;color:#4e6a8a;margin-top:14px;">เข้าสู่ระบบครั้งเดียว ใช้งานได้ 4 ชั่วโมง แม้ปิดแล้วสแกน QR ใหม่</p>
-    </div>
-
-    <div id="login-admin" style="display:none;">
-      <div style="text-align:left;margin-bottom:14px;">
-        <label style="font-size:12px;display:block;margin-bottom:5px;color:#8fa8c8;">ชื่อผู้ใช้งาน</label>
-        <input type="text" id="login-user" autocomplete="username"
-          style="width:100%;padding:11px;border:1px solid #2a3f60;border-radius:8px;background:#1a2336;color:#fff;box-sizing:border-box;font-size:15px;" placeholder="admin">
-      </div>
-      <div style="text-align:left;margin-bottom:20px;">
-        <label style="font-size:12px;display:block;margin-bottom:5px;color:#8fa8c8;">รหัสผ่าน</label>
-        <input type="password" id="login-pass" autocomplete="current-password"
-          style="width:100%;padding:11px;border:1px solid #2a3f60;border-radius:8px;background:#1a2336;color:#fff;box-sizing:border-box;font-size:15px;" placeholder="••••••••">
-      </div>
-      <button id="login-btn" onclick="handleLogin()"
-        style="width:100%;padding:13px;border:none;border-radius:9px;background:linear-gradient(135deg,#38bdf8,#0284c7);color:#fff;font-weight:700;cursor:pointer;font-size:15px;">
-        เข้าสู่ระบบ 🔓
-      </button>
-      <button onclick="backToChoose()"
-        style="width:100%;padding:10px;margin-top:10px;border:none;border-radius:9px;background:transparent;color:#4e6a8a;cursor:pointer;font-size:13px;">
-        ← กลับ
-      </button>
-      <div id="login-err" style="color:#f87171;font-size:13px;margin-top:12px;display:none;"></div>
+    <div class="rd-login-foot">
+      Need help? <a href="mailto:IMCT_441_FC@isuzu.com">IMCT_441_FC@isuzu.com</a> · Ext. 2486, 2433
     </div>
   </div>
 </div>
 
-<div id="session-expired-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99998;background:#3a2416;border-bottom:1px solid #92400e;color:#fbbf24;padding:9px 14px;font-size:13px;font-weight:600;text-align:center;">
-  ⚠️ เซสชันหมดอายุแล้ว ข้อมูลที่กรอกยังอยู่ — <button onclick="showRecorderLogin(true)" style="background:#fbbf24;color:#1a1206;border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;font-size:12px;margin-left:4px;">เข้าสู่ระบบใหม่</button>
-</div>
-
-<div class="hdr">
-  <div class="hdr-logo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2c-3.5 5-7 9.2-7 13.2A7 7 0 0 0 12 22a7 7 0 0 0 7-6.8C19 11.2 15.5 7 12 2Z"/>
-    </svg>
-  </div>
-  <div class="hdr-text">
-    <div class="hdr-title" id="hdr-title">Water Meter — SR</div>
-    <div class="hdr-sub" id="hdr-small">กำลังโหลด...</div>
-  </div>
-  <div class="hdr-right">
-    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙</button>
-    <button class="theme-btn" id="logout-btn" onclick="logout()" title="สลับโหมด/ออกจากระบบ">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-        <path d="m16 17 5-5-5-5"/>
-        <path d="M21 12H9"/>
-      </svg>
+<!-- ── NEW HEADER + SIDEBAR DRAWER ── -->
+<header class="rd-header">
+  <div class="rd-hdr-left">
+    <button class="rd-menu-btn" id="rd-menu-btn" onclick="rdOpenDrawer()" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
     </button>
-    <div class="sync-dot" id="sync-dot"></div>
+    <div class="rd-brand">
+      <div class="rd-brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2c-3.5 5-7 9.2-7 13.2A7 7 0 0 0 12 22a7 7 0 0 0 7-6.8C19 11.2 15.5 7 12 2Z"/>
+        </svg>
+      </div>
+      <div class="rd-brand-title" id="hdr-title">Electric Meter<span class="rd-brand-code" id="rd-brand-code">SR</span></div>
+    </div>
   </div>
-</div>
+
+
+  <div class="rd-hdr-right">
+    <button class="rd-icon-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <div class="rd-status-dot" id="sync-dot" title="Sync status"></div>
+    <span class="rec-badge" id="hdr-badge" style="display:none">0 rec</span>
+    <span id="hdr-small" style="display:none"></span>
+  </div>
+</header>
+
+<!-- Sidebar drawer -->
+<div class="rd-drawer-overlay" id="rd-drawer-overlay" onclick="rdCloseDrawer()"></div>
+<aside class="rd-drawer" id="rd-drawer" aria-label="Main navigation">
+  <div class="rd-drawer-head">
+    <div class="rd-drawer-title">Menu</div>
+    <button class="rd-drawer-close" onclick="rdCloseDrawer()" aria-label="Close menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="rd-drawer-user" id="rd-drawer-user" style="display:none">
+    <div class="rd-drawer-avatar" id="rd-drawer-avatar">U</div>
+    <div class="rd-drawer-usermeta">
+      <div class="rd-drawer-username" id="rd-drawer-username">—</div>
+      <div class="rd-drawer-role" id="rd-drawer-role">—</div>
+    </div>
+  </div>
+
+  <nav class="rd-drawer-nav">
+    <div class="rd-drawer-section">General</div>
+    <a class="rd-drawer-item" href="https://imctconsumption.github.io/IMCT_HUB/" title="Back to hub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      Home
+    </a>
+
+    <div class="rd-drawer-section">Workspace</div>
+    <button class="rd-drawer-item active" data-rd-tab="entry" onclick="rdGoTab('entry')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      Entry <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">บันทึก</span>
+    </button>
+    <button class="rd-drawer-item rd-admin-item" data-rd-tab="data" onclick="rdGoTab('data')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+      Data <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">ข้อมูล</span>
+    </button>
+    <button class="rd-drawer-item rd-admin-item" data-rd-tab="chart" onclick="rdGoTab('chart')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 4-6"/></svg>
+      Charts <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">กราฟ</span>
+    </button>
+    <button class="rd-drawer-item rd-admin-item" data-rd-tab="summary" onclick="rdGoTab('summary')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/></svg>
+      Summary <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">สรุป</span>
+    </button>
+    <button class="rd-drawer-item rd-admin-item" data-rd-tab="qr" onclick="rdGoTab('qr')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h.01M17 21h4v-4"/></svg>
+      QR Codes
+    </button>
+    <button class="rd-drawer-item rd-admin-item" data-rd-tab="settings" onclick="rdGoTab('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      Settings <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">ตั้งค่า</span>
+    </button>
+  </nav>
+
+  <div class="rd-drawer-foot">
+    <button class="rd-drawer-item" id="rd-logout-item" onclick="logout()" style="color:var(--rd-danger);display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+      Sign out
+    </button>
+  </div>
+</aside>
 
 <div class="sync-banner" id="sync-banner">
   <span id="sync-icon">⏳</span>
@@ -371,6 +1114,15 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <div class="card">
         <div class="card-title">📍 เลือก Meter</div>
         <div class="rec-badge" id="hdr-badge">0 rec</div>
+        <!-- Search lives here, not in the global header: it only ever filters
+             the meter cards below it, so putting it beside the thing it acts
+             on avoids showing a dead control on the Data/Charts/Summary tabs. -->
+        <div class="rd-search rd-search-inline">
+          <span class="rd-search-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          </span>
+          <input type="search" id="rd-search-input" class="rd-search-input" placeholder="ค้นหามิเตอร์ — รหัส, ชื่อ, หรือโซน" autocomplete="off">
+        </div>
         <div id="zone-areas"></div>
         <div class="btn-row" style="margin-top:12px">
           <button class="btn btn-yellow btn-sm" id="refresh-btn" onclick="refreshData()">🔄 Refresh</button>
@@ -456,7 +1208,6 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
   </div>
 
   <div class="panel" id="panel-data">
-    <div class="stats-row" id="stats-row"></div>
     <div class="card">
       <div class="card-title">🔍 กรองข้อมูล <span id="filter-badge" class="filter-badge" style="display:none">● Active</span></div>
       <div class="f-2col">
@@ -491,7 +1242,9 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <button class="btn btn-ghost btn-sm" onclick="clearFilter()">✖ ล้าง</button>
         <button class="btn btn-yellow btn-sm" onclick="exportExcel()">📥 Excel</button>
         <button class="btn btn-yellow btn-sm" onclick="loadFromServer()">🔄 Refresh</button>
+        <button class="btn btn-ghost btn-sm" id="load-all-btn" onclick="loadAllAdminRecords()">📚 โหลดข้อมูลทั้งหมด</button>
       </div>
+      <div class="info-box" id="record-window-notice" style="display:none;margin-top:10px;margin-bottom:0"></div>
     </div>
 
     <div class="card">
@@ -1209,20 +1962,89 @@ async function apiPostAuthed(body){
 
 /* ════════════ SCOPED DATA LOADERS ════════════ */
 let meterStatus = {};
+let meterStatusToday = {};  // {meterId: true/false} — has a reading dated TODAY (Asia/Bangkok)
 let activeSubRecent = [];
 
+/* Months that actually contain data, fetched from the server.
+   Independent of the in-memory `records` window, so the pickers can offer
+   every month that exists without the client holding the whole dataset. */
+let availableMonths = null;   // array of 'YYYY-MM', newest first
+
+async function loadAvailableMonths(){
+  try{
+    const res = await apiPost({ action:'getAvailableMonths' });
+    if(res && res.success && Array.isArray(res.months)) availableMonths = res.months;
+  }catch(e){ console.warn('⚠️ โหลดรายการเดือนไม่ได้:', e.message); }
+  return availableMonths;
+}
+
 async function loadMeterStatus(){
+  // ONE request returns both maps (see getMeterStatus in Code.gs). Kept as a
+  // single round-trip on purpose: the /exec endpoint is the slowest hop and
+  // has shown intermittent 404s under parallel load, so we don't fan out here.
   try{
     const res = await apiPost({ action:'getMeterStatus', meterIds: subs.map(s => s.id) });
-    if(res && res.success && res.status) meterStatus = res.status;
+    if(res && res.success){
+      if(res.status) meterStatus = res.status;
+      if(res.today)  meterStatusToday = res.today;
+    }
   }catch(e){ console.warn('⚠️ โหลดสถานะมิเตอร์ไม่ได้:', e.message); }
+  // Month list is only needed by the admin report pickers — fetch it lazily
+  // and never block the entry screen on it.
+  if(appMode === 'admin' && !availableMonths) loadAvailableMonths();
 }
-async function loadAdminRecords(){
+/* ── Admin record window ──
+   The full history is thousands of rows and is the single slowest thing in
+   the app: loading it blocks the entry screen from painting. Day-to-day work
+   (checking today's readings, fixing a wrong entry) only ever touches recent
+   data, so we load a rolling window by default and let the admin pull the
+   full set on demand from the Data tab.
+   NOTE: the Summary/report numbers do NOT come from this array — they're
+   computed server-side by getMonthlySummary — so narrowing this window never
+   changes any reported consumption figure. */
+const ADMIN_RECORD_WINDOW_DAYS = 90;
+let recordsWindowFrom = null;   // 'YYYY-MM-DD', or null when the full set is loaded
+
+function _windowStartDate(days){
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+async function loadAdminRecords(opts){
+  const loadAll = !!(opts && opts.all);
+  const dateFrom = loadAll ? null : _windowStartDate(ADMIN_RECORD_WINDOW_DAYS);
   try{
-    const res = await apiPostAuthed({ action:'getRawRecords' });
+    const payload = { action:'getRawRecords' };
+    if(dateFrom) payload.dateFrom = dateFrom;
+    const res = await apiPostAuthed(payload);
     records = computeUsed(res.records || []);
+    recordsWindowFrom = dateFrom;
     persist();
+    updateRecordWindowNotice();
   }catch(e){ /* apiPostAuthed already surfaced the error toast */ }
+}
+
+async function loadAllAdminRecords(){
+  const btn = document.getElementById('load-all-btn');
+  if(btn){ btn.disabled = true; btn.innerHTML = '⏳ กำลังโหลด...'; }
+  setSyncStatus('busy','กำลังโหลดข้อมูลทั้งหมด...');
+  await loadAdminRecords({ all:true });
+  renderAll();
+  setSyncStatus('ok','โหลดข้อมูลทั้งหมดแล้ว — ' + records.length + ' รายการ');
+  if(btn){ btn.disabled = false; btn.innerHTML = '📚 โหลดข้อมูลทั้งหมด'; }
+}
+
+function updateRecordWindowNotice(){
+  const el = document.getElementById('record-window-notice');
+  if(!el) return;
+  if(recordsWindowFrom){
+    el.style.display = 'block';
+    el.innerHTML = 'กำลังแสดงข้อมูล <strong>' + ADMIN_RECORD_WINDOW_DAYS + ' วันล่าสุด</strong> (ตั้งแต่ ' + fmtDate(recordsWindowFrom) + ') · ' + records.length + ' รายการ — ตัวเลขในหน้าสรุปไม่ได้รับผลกระทบ';
+  } else {
+    el.style.display = 'block';
+    el.innerHTML = 'กำลังแสดง <strong>ข้อมูลทั้งหมด</strong> · ' + records.length + ' รายการ';
+  }
 }
 async function loadRecentForSub(meterId, limit){
   const res = await apiPost({ action:'getRecentRecords', meterId, limit: limit || 5, token: sessionToken });
@@ -1304,14 +2126,41 @@ function setSyncStatus(status, msg){
     setTimeout(() => { ban.className = 'sync-banner'; }, 2500);
   }
 }
+/* Fetch the doGet payload with retries.
+   The Apps Script /exec endpoint answers a GET by 302-ing to a one-shot
+   script.googleusercontent.com/macros/echo URL, and that redirect target
+   intermittently returns 404 — a Google-side failure, not a bad request.
+   apiPost() already retried; this path did not, even though it's the FIRST
+   request the app makes on load. A single blip therefore dropped the app
+   straight to cached data (blank on a fresh browser). Same backoff as apiPost. */
+async function _fetchDoGet(retries = 2){
+  let lastErr;
+  for(let attempt = 0; attempt <= retries; attempt++){
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 20000);
+    try{
+      const res = await fetch(API_URL, { signal: ctrl.signal });
+      clearTimeout(tid);
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    }catch(e){
+      clearTimeout(tid);
+      lastErr = e;
+      if(attempt < retries){
+        console.warn('⚠️ loadFromServer attempt ' + (attempt+1) + ' failed (' + e.message + ') — retrying...');
+        await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 function loadFromServer(){
   const _plApi = perfLabel('loadFromServer:api'); perfStart(_plApi);
-  return fetch(API_URL)
-    .then(res => {
+  return _fetchDoGet()
+    .then(data => {
       perfEnd(_plApi);
-      if(!res.ok) throw new Error('Network error');
-      const _plJson = perfLabel('loadFromServer:jsonParse'); perfStart(_plJson);
-      return res.json().then(data => { perfEnd(_plJson); return data; });
+      return data;
     })
     .then(async data => {
       if(!data || data.status === 'error') throw new Error(data?.message || 'Server error');
@@ -1336,12 +2185,10 @@ function refreshData(){
   if(btn){ btn.disabled = true; btn.innerHTML = '⏳ กำลังโหลด...'; }
   setSyncStatus('busy','กำลังโหลดข้อมูล...');
   const _plApiR = perfLabel('refreshData:api'); perfStart(_plApiR);
-  fetch(API_URL)
-    .then(res => {
+  _fetchDoGet()                       // same retry/timeout wrapper as loadFromServer
+    .then(data => {
       perfEnd(_plApiR);
-      if(!res.ok) throw new Error('Network error');
-      const _plJsonR = perfLabel('refreshData:jsonParse'); perfStart(_plJsonR);
-      return res.json().then(data => { perfEnd(_plJsonR); return data; });
+      return data;
     })
     .then(async data => {
       if(!data || data.status === 'error') throw new Error(data?.message || 'Server error');
@@ -1457,7 +2304,7 @@ function goTab(name){
   const idx   = TAB_ORDER.indexOf(name);
   const tabEl = document.querySelectorAll('.tab')[idx];
   if(tabEl) tabEl.classList.add('active');
-  if(name === 'data')     { renderData(); renderStats(); }
+  if(name === 'data')     { renderData(); renderStats(); updateRecordWindowNotice(); }
   if(name === 'chart')    { populateDDs(); setSubQuick('30d'); buildCompareGroupOptions(); initG9Pickers(); renderG9Chart(); }
   if(name === 'qr')       { renderQR(); }
   if(name === 'settings') { renderSubList(); renderCalendarList(); }
@@ -1592,15 +2439,21 @@ function renderZoneAreas(){
     const icon  = key === '__OTHER__' ? '📦'   : zoneIcon(key);
     const block = document.createElement('div');
     block.className = 'zone-block';
-    block.innerHTML = `<div class="zone-title">${icon} ${esc(label)} <span style="color:var(--text-3);font-weight:400">(${list.length})</span></div>`;
+    block.innerHTML = `<div class="zone-title"><span class="zt-icon">${icon}</span><span class="zt-name">${esc(label)}</span><span class="zt-count">${list.length}</span></div>`;
     const grid = document.createElement('div');
     grid.className = 'sub-grid';
     list.forEach(s => {
-      const hasData = !!meterStatus[s.id];
-      const isSel   = activeSub && activeSub.id === s.id;
+      const recordedToday = !!meterStatusToday[s.id];
+      const isSel = activeSub && activeSub.id === s.id;
       const d = document.createElement('div');
-      d.className = 'sub-card' + (isSel?' sel':'') + (hasData?' has-data':'');
-      d.innerHTML = `<div class="sc-dot"></div><div class="sc-name">${esc(s.name)}</div><div class="sc-id">${esc(s.id)}</div>`;
+      d.className = 'sub-card' + (isSel ? ' sel' : '') + (recordedToday ? ' today' : '');
+      d.innerHTML = `
+        <div class="sc-id">${esc(s.id)}</div>
+        <div class="sc-name">${esc(s.name)}</div>
+        <div class="sc-status-row">
+          <span class="sc-status-dot"></span>
+          <span class="sc-status-txt">${recordedToday ? 'บันทึกแล้ววันนี้' : 'ยังไม่บันทึกวันนี้'}</span>
+        </div>`;
       d.onclick = () => selectSub(s.id);
       grid.appendChild(d);
     });
@@ -1718,36 +2571,55 @@ async function saveRecord(){
 async function doSaveRecord(sub, kwh, date, time, user, note){
   const now = new Date();
   const rec = { id: `REC-${now.getTime()}-${Math.floor(Math.random()*1000)}`, meterId: sub.id, meterName: sub.name, zone: sub.zone, date, time, kwh, user, note, ts: now.toISOString(), editedTs: '', editedBy: '' };
+  // Remember the pre-save state so a failed write can be rolled back cleanly.
+  // NOTE: nothing is queued locally for a recorder — if the POST fails the
+  // reading is genuinely gone, so we must NOT clear the form or claim success
+  // until the server has confirmed. (The old code did both up-front and told
+  // the user "saved on device", which was untrue for recorders and could let
+  // a lost reading pass unnoticed.)
+  const prevStatus      = meterStatus[sub.id];
+  const prevStatusToday = meterStatusToday[sub.id];
   if(appMode === 'admin' && records.length){ records.push(rec); records = computeUsed(records); persist(); }
   meterStatus[sub.id] = true;
-  toast('✅ บันทึกแล้ว','ok');
-  document.getElementById('in-kwh').value  = '';
-  document.getElementById('in-note').value = '';
-  document.getElementById('preview-box').style.display = 'none';
-  setNow();
+  meterStatusToday[sub.id] = true;   // this is what drives the green/red card
   renderZoneAreas(); updateBadge();
   const btn = document.getElementById('save-btn');
-  btn.disabled = true; btn.textContent = '⏳ กำลัง sync...';
+  btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
   setSyncStatus('busy','กำลังบันทึกลง Google Sheets...');
   try{
     const payload = { id:rec.id, meterId:rec.meterId, meterName:rec.meterName, zone:rec.zone, date:rec.date, time:rec.time, kwh:rec.kwh, user:rec.user, note:rec.note, ts:rec.ts, editedTs:'', editedBy:'' };
     const res = await apiPost({ action:'saveRecord', record:payload, token: sessionToken });
     if(!res || res.success === false) throw new Error((res && res.error) || 'บันทึกไม่สำเร็จ');
     invalidateSummaryCache('saveRecord:'+rec.meterId+'@'+rec.date);
+    // Confirmed by the server — only now is it safe to clear the form.
+    toast('✅ บันทึกแล้ว','ok');
+    document.getElementById('in-kwh').value  = '';
+    document.getElementById('in-note').value = '';
+    document.getElementById('preview-box').style.display = 'none';
+    setNow();
     setSyncStatus('ok','บันทึกลง Sheets แล้ว');
     if(activeSub && activeSub.id === sub.id){
       try{ activeSubRecent = await loadRecentForSub(sub.id, 5); }catch(e){}
       updateMeterSummary(); renderRecent();
     }
   }catch(e){
+    // Roll back the optimistic state: the card goes back to red and the value
+    // the person typed stays in the box so they can just press save again.
+    meterStatus[sub.id]      = prevStatus;
+    meterStatusToday[sub.id] = prevStatusToday;
+    if(appMode === 'admin' && records.length){
+      records = records.filter(r => r.id !== rec.id);
+      records = computeUsed(records); persist();
+    }
+    renderZoneAreas(); updateBadge();
     const isAuthFailure = /เซสชัน|เข้าสู่ระบบ/.test(e.message || '');
     if(isAuthFailure){
-      setSyncStatus('error','เซสชันหมดอายุ — บันทึกในเครื่องแล้ว แต่ยังไม่ได้ sync');
-      toast('⚠️ เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่แล้วลองบันทึกอีกครั้ง','warn');
+      setSyncStatus('error','เซสชันหมดอายุ — ยังไม่ได้บันทึก');
+      toast('❌ เซสชันหมดอายุ ยังไม่ได้บันทึก — เข้าสู่ระบบใหม่แล้วกดบันทึกอีกครั้ง','err');
       showSessionExpiredBanner();
     } else {
-      setSyncStatus('error','บันทึกในเครื่องแล้ว — Sync ยังไม่สำเร็จ');
-      toast('⚠️ บันทึกในเครื่องแล้ว แต่ Sync ยังไม่สำเร็จ','warn');
+      setSyncStatus('error','บันทึกไม่สำเร็จ');
+      toast('❌ บันทึกไม่สำเร็จ กรุณาลองใหม่ (ค่าที่กรอกยังอยู่)','err');
     }
   }finally{ btn.disabled = false; btn.innerHTML = '✅ บันทึกข้อมูล'; }
 }
@@ -1923,7 +2795,13 @@ function populateDDs(){
   const cs = document.getElementById('chart-sub');
   if(cs) cs.innerHTML = cOpts;
 }
-function renderStats(){
+/* The Data-tab stat tiles were removed: after the rolling 90-day record
+   window was introduced, three of the four counters (total records,
+   meters recorded, total kWh) silently described the loaded window
+   rather than the real dataset, which made them misleading. Kept as a
+   no-op so the existing call sites need no changes. */
+function renderStats(){ return;
+
   const total    = records.length;
   const subsDone = new Set(records.map(r => r.meterId)).size;
   const today    = new Date().toISOString().split('T')[0];
@@ -2111,7 +2989,14 @@ let summaryData = null;  // { month, meters: {meterId: {date: used}}, meta: {day
 
 function initSummaryMonth(){
   const el = document.getElementById('sum-month');
-  if(el && !el.value){
+  if(!el) return;
+  // Constrain the native month picker to the span that actually holds data,
+  // so it can't be scrolled to a month that will render an empty report.
+  if(availableMonths && availableMonths.length){
+    el.max = availableMonths[0];                       // newest
+    el.min = availableMonths[availableMonths.length-1]; // oldest
+    if(!el.value) el.value = availableMonths[0];
+  } else if(!el.value){
     const now = new Date();
     el.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   }
@@ -2724,17 +3609,36 @@ function navG9(dir){
   renderG9Chart();
 }
 function initG9Pickers(){
+  // Default the pickers to the most recent day/month we actually have loaded,
+  // but build the YEAR list from the calendar — the year <select> is the only
+  // one of the three that can't be typed into freely, so deriving it from
+  // `records` would hard-block older years whenever the admin record window is
+  // narrow. The chart data itself is fetched server-side per selected range.
   var dates = [];
   records.forEach(function(r){ var d = String(r.date).slice(0,10); if(d && dates.indexOf(d)<0) dates.push(d); });
   dates.sort();
+
+  // Years that actually contain data — derived from the server-provided month
+  // list, falling back to the loaded records if it hasn't arrived yet.
+  var srcMonths = (availableMonths && availableMonths.length)
+    ? availableMonths
+    : dates.map(function(d){ return d.slice(0,7); });
+  var years = [];
+  srcMonths.forEach(function(m){ var y = m.slice(0,4); if(y && years.indexOf(y) < 0) years.push(y); });
+  years.sort().reverse();
+  if(!years.length) years = [String(new Date().getFullYear())];
+  var thisYear = years[0];
+  var ySel = document.getElementById('g9-year');
+  if(ySel){
+    var prevYear = ySel.value;
+    ySel.innerHTML = years.map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join('');
+    ySel.value = (prevYear && years.indexOf(prevYear) >= 0) ? prevYear : String(thisYear);
+  }
+
   if(!dates.length) return;
   document.getElementById('g9-date').value = dates.length >= 2 ? dates[dates.length-2] : dates[dates.length-1];
   var months = []; dates.forEach(function(d){ var m=d.slice(0,7); if(months.indexOf(m)<0) months.push(m); }); months.sort();
   document.getElementById('g9-month').value = months[months.length-1] || '';
-  var years = []; dates.forEach(function(d){ var y=d.slice(0,4); if(years.indexOf(y)<0) years.push(y); }); years.sort();
-  var ySel = document.getElementById('g9-year');
-  ySel.innerHTML = years.map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join('');
-  ySel.value = years[years.length-1] || '';
 }
 
 let g9ReqId = 0;
@@ -3026,6 +3930,156 @@ async function renderCmpChart(){
     sumEl.innerHTML = '<span class="chip chip-green">💧 รวม '+Math.round(total).toLocaleString()+' m³</span> ' + cmpAvgChips;
   }catch(e){ el.innerHTML='<div class="warn-box">❌ '+e.message+'</div>'; }
 }
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   REDESIGN SHIM — sidebar drawer + login toggle + search
+   No handler renames; every user action ultimately calls the
+   original functions (goTab, handleLogin, handleRecorderLogin).
+   =========================================================== */
+function rdOpenDrawer(){
+  document.getElementById('rd-drawer')?.classList.add('open');
+  document.getElementById('rd-drawer-overlay')?.classList.add('open');
+  rdSyncDrawerUser();
+  rdSyncDrawerActive();
+  rdApplyRoleVisibility();
+}
+function rdCloseDrawer(){
+  document.getElementById('rd-drawer')?.classList.remove('open');
+  document.getElementById('rd-drawer-overlay')?.classList.remove('open');
+}
+function rdGoTab(name){
+  try { goTab(name); } catch (e) { console.warn('goTab failed', e); }
+  rdCloseDrawer();
+  // update active item
+  document.querySelectorAll('.rd-drawer-item[data-rd-tab]').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('data-rd-tab') === name);
+  });
+}
+function rdSyncDrawerActive(){
+  // read the currently-visible panel to reflect it in the drawer
+  const active = document.querySelector('.panel.active');
+  if (!active) return;
+  const name = active.id.replace(/^panel-/, '');
+  document.querySelectorAll('.rd-drawer-item[data-rd-tab]').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('data-rd-tab') === name);
+  });
+}
+function rdSyncDrawerUser(){
+  // pull from existing globals set by the auth flow
+  const uname = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : '';
+  const mode  = (typeof appMode !== 'undefined') ? appMode : '';
+  const box   = document.getElementById('rd-drawer-user');
+  if (!box) return;
+  if (!uname && !mode) { box.style.display = 'none'; return; }
+  box.style.display = 'flex';
+  const av  = document.getElementById('rd-drawer-avatar');
+  const un  = document.getElementById('rd-drawer-username');
+  const rl  = document.getElementById('rd-drawer-role');
+  if (av) av.textContent = (uname || mode || 'U').substring(0, 1).toUpperCase();
+  if (un) un.textContent = uname || (mode === 'admin' ? 'Administrator' : 'Recorder');
+  if (rl) rl.textContent = mode === 'admin' ? 'Admin access' : 'Recorder';
+  const logout = document.getElementById('rd-logout-item');
+  if (logout) logout.style.display = 'flex';
+}
+function rdApplyRoleVisibility(){
+  // hide admin-only items when in recorder mode
+  const mode = (typeof appMode !== 'undefined') ? appMode : '';
+  document.querySelectorAll('.rd-admin-item').forEach(el => {
+    el.classList.toggle('hidden', mode !== 'admin');
+  });
+}
+// Login toggle handlers — delegate the actual show/hide to the ORIGINAL
+// showAdminLogin()/showRecorderLogin() functions (they already toggle
+// #login-choose/#login-recorder/#login-admin correctly and focus the
+// right field). We only layer the new title/subtitle text on top.
+function rdShowAdmin(){
+  showAdminLogin();
+  const tag = document.getElementById('rd-login-mode-tag');
+  const title = document.getElementById('rd-login-title');
+  const sub = document.getElementById('rd-login-subtitle');
+  if (tag)   tag.textContent   = 'Admin access';
+  if (title) title.textContent = 'Administrator sign-in';
+  if (sub)   sub.textContent   = 'สำหรับผู้ดูแลระบบ / ทีม IT';
+}
+function rdShowRecorder(){
+  showRecorderLogin();
+  const tag = document.getElementById('rd-login-mode-tag');
+  const title = document.getElementById('rd-login-title');
+  const sub = document.getElementById('rd-login-subtitle');
+  if (tag)   tag.textContent   = 'Recorder access';
+  if (title) title.textContent = 'Sign in to log readings';
+  if (sub)   sub.textContent   = 'กรอกรหัสผ่านทีมจดมิเตอร์เพื่อเริ่มบันทึกค่า';
+}
+// Keyboard: Enter in recorder passcode → submit
+document.addEventListener('DOMContentLoaded', () => {
+  // NOTE: Enter-key handlers for #login-user / #login-pass / #recorder-pass
+  // are already bound by the ORIGINAL app.js (see its own DOMContentLoaded
+  // listener near the bottom of the file). Since our markup now reuses those
+  // exact IDs, binding them again here would double-fire handleLogin() /
+  // handleRecorderLogin() on every Enter press — so we deliberately don't.
+
+  // ESC closes drawer
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') rdCloseDrawer();
+  });
+
+  // Search: live filter on meter cards + Enter opens first match
+  const search = document.getElementById('rd-search-input');
+  if (search) {
+    search.addEventListener('input', () => rdApplySearch(search.value));
+    search.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); rdOpenFirstMatch(); }
+      if (e.key === 'Escape') { search.value = ''; rdApplySearch(''); }
+    });
+  }
+
+  // Header title from CONFIG if present
+  const title = document.getElementById('hdr-title');
+  const code  = document.getElementById('rd-brand-code');
+  if (title && typeof SITE_NAME !== 'undefined') {
+    // rebuild inner: name + code badge
+    title.innerHTML = SITE_NAME + (typeof SITE_CODE !== 'undefined' ? '<span class="rd-brand-code">' + SITE_CODE + '</span>' : '');
+  }
+});
+function rdApplySearch(q){
+  const query = (q || '').trim().toLowerCase();
+  const cards = document.querySelectorAll('#zone-areas .sub-card');
+  let visible = 0;
+  cards.forEach(card => {
+    if (!query) { card.style.display = ''; visible++; return; }
+    const text = card.textContent.toLowerCase();
+    const show = text.includes(query);
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  // hide zone sections that have no visible cards
+  document.querySelectorAll('#zone-areas .zone-block').forEach(zone => {
+    const anyVisible = Array.from(zone.querySelectorAll('.sub-card')).some(c => c.style.display !== 'none');
+    zone.style.display = anyVisible ? '' : 'none';
+  });
+}
+function rdOpenFirstMatch(){
+  const first = Array.from(document.querySelectorAll('#zone-areas .sub-card'))
+    .find(c => c.style.display !== 'none');
+  if (first) first.click();
+}
+// Sync sync-dot status class from existing sync logic (poll)
+// The original code sets background-color; we mirror it as class for the new dot.
+setInterval(() => {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  const bg = getComputedStyle(dot).backgroundColor;
+  dot.classList.remove('ok','working','err');
+  // heuristic: existing app uses green/orange/red; classify by hue
+  const m = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!m) return;
+  const [_, r, g, b] = m.map(Number);
+  if (g > r && g > b) dot.classList.add('ok');
+  else if (r > 200 && g > 100 && b < 100) dot.classList.add('working');
+  else if (r > 200 && g < 100) dot.classList.add('err');
+}, 500);
 
 </script>
 </body>
