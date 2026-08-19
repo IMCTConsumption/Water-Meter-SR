@@ -995,6 +995,16 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
   </div>
 </div>
 
+
+<!-- Session-expired banner. NOTE: this element was accidentally removed during
+     the header/login redesign, which made show/hideSessionExpiredBanner() throw
+     on a null reference. Because logout() calls hide...() on its FIRST line,
+     the throw aborted logout before it cleared the stored token — the user
+     appeared to stay logged in after signing out. Guarded below as well. -->
+<div id="session-expired-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99998;background:#3a2416;border-bottom:1px solid #92400e;color:#fbbf24;padding:9px 14px;font-size:13px;font-weight:600;text-align:center;">
+  ⚠️ เซสชันหมดอายุแล้ว — <button onclick="rdShowRecorder(); document.getElementById('login-gate').style.display='flex';" style="background:#fbbf24;color:#1a1206;border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;font-size:12px;margin-left:4px;">เข้าสู่ระบบใหม่</button>
+</div>
+
 <!-- ── NEW HEADER + SIDEBAR DRAWER ── -->
 <header class="rd-header">
   <div class="rd-hdr-left">
@@ -1161,6 +1171,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         </div>
       </div>
 
+      <div class="warn-box" id="history-error-box" style="display:none">❌ โหลดประวัติมิเตอร์ไม่ได้ จึงยังบันทึกไม่ได้ (ระบบต้องมีค่าครั้งก่อนเพื่อตรวจสอบความถูกต้อง) <button class="btn btn-sm btn-yellow" style="margin-left:8px" onclick="retryLoadHistory()">🔄 ลองใหม่</button></div>
       <div class="card">
         <div class="card-title"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></i>บันทึกค่ามิเตอร์ใหม่</div>
         <div class="f-row">
@@ -1718,10 +1729,31 @@ function restoreSession(){
   return true;
 }
 function showSessionExpiredBanner(){
-  document.getElementById('session-expired-banner').style.display = 'block';
+  const el = document.getElementById('session-expired-banner');
+  if(el) el.style.display = 'block';
+  setWriteLock(true);      // an expired session must not be able to write
 }
 function hideSessionExpiredBanner(){
-  document.getElementById('session-expired-banner').style.display = 'none';
+  const el = document.getElementById('session-expired-banner');
+  if(el) el.style.display = 'none';
+  setWriteLock(false);
+}
+
+/* Disable every control that writes data while the session is invalid.
+   The banner alone was only a label — the save/edit/delete buttons stayed
+   live, so an expired session could still modify the sheet for as long as
+   the server-side token happened to outlast the client's own timer. */
+function setWriteLock(locked){
+  const ids = ['save-btn','unable-btn'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if(el){
+      el.disabled = locked;
+      el.title = locked ? 'เซสชันหมดอายุ — กรุณาเข้าสู่ระบบใหม่' : '';
+    }
+  });
+  document.querySelectorAll('[data-write-action]').forEach(el => { el.disabled = locked; });
+  window.__writeLocked = !!locked;
 }
 function checkSessionExpiry(){
   if(!sessionExpiresAt || sessionExpiryWarned) return;
@@ -1746,13 +1778,16 @@ function logout(){
   records = [];
   lsRemove('records');
   hideSessionExpiredBanner();
-  document.getElementById('login-admin').style.display    = 'none';
-  document.getElementById('login-recorder').style.display = 'none';
-  document.getElementById('login-choose').style.display   = 'block';
-  document.getElementById('login-err').style.display      = 'none';
+  // #login-choose is an empty compatibility stub after the login redesign —
+  // showing it left the gate visually blank. Land on the recorder form instead.
   const gate = document.getElementById('login-gate');
   gate.style.display = 'flex';
   gate.style.opacity = '1';
+  rdShowRecorder();
+  const errA = document.getElementById('login-err');
+  if(errA) errA.style.display = 'none';
+  const errR = document.getElementById('recorder-login-err');
+  if(errR) errR.style.display = 'none';
 }
 function showRecorderLogin(fromExpiredBanner){
   document.getElementById('login-choose').style.display   = 'none';
@@ -1930,7 +1965,7 @@ function perfEnd(name){
 async function apiPost(body, retries = 2){
   for(let attempt = 0; attempt <= retries; attempt++){
     const ctrl = new AbortController();
-    const tid  = setTimeout(() => ctrl.abort(), 20000);
+    const tid  = setTimeout(() => ctrl.abort(), 10000);
     try{
       const res  = await fetch(API_URL, { method:'POST', body:JSON.stringify(body), signal:ctrl.signal });
       clearTimeout(tid);
@@ -1941,7 +1976,10 @@ async function apiPost(body, retries = 2){
     }catch(e){
       clearTimeout(tid);
       if(attempt === retries) throw e;
-      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+      // Log retries: previously silent, which made a 404 in the console
+      // impossible to tell apart from a call that recovered on attempt 2.
+      console.warn('⚠️ apiPost[' + (body && body.action) + '] attempt ' + (attempt+1) + ' failed (' + e.message + ') — retrying...');
+      await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
     }
   }
 }
@@ -2134,10 +2172,13 @@ function setSyncStatus(status, msg){
    request the app makes on load. A single blip therefore dropped the app
    straight to cached data (blank on a fresh browser). Same backoff as apiPost. */
 async function _fetchDoGet(retries = 2){
+  // 8s, not 20s: a healthy Apps Script doGet answers in ~1-3s. Waiting 20s
+  // three times over meant a failing load could hang the app for a minute
+  // before falling back to cache — far worse than failing fast and retrying.
   let lastErr;
   for(let attempt = 0; attempt <= retries; attempt++){
     const ctrl = new AbortController();
-    const tid  = setTimeout(() => ctrl.abort(), 20000);
+    const tid  = setTimeout(() => ctrl.abort(), 8000);
     try{
       const res = await fetch(API_URL, { signal: ctrl.signal });
       clearTimeout(tid);
@@ -2148,7 +2189,7 @@ async function _fetchDoGet(retries = 2){
       lastErr = e;
       if(attempt < retries){
         console.warn('⚠️ loadFromServer attempt ' + (attempt+1) + ' failed (' + e.message + ') — retrying...');
-        await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+        await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
       }
     }
   }
@@ -2461,6 +2502,40 @@ function renderZoneAreas(){
     container.appendChild(block);
   });
 }
+let historyLoadFailed = false;   // true when the per-meter history fetch failed
+
+/* Reflect a failed history load in the entry screen: the save controls are
+   disabled and an explicit retry is offered, rather than letting the person
+   record a value with no previous reading to validate against. */
+function applyHistoryLoadState(){
+  const box = document.getElementById('history-error-box');
+  if(box) box.style.display = historyLoadFailed ? 'block' : 'none';
+  const sb = document.getElementById('save-btn');
+  const ub = document.getElementById('unable-btn');
+  if(historyLoadFailed){
+    if(sb){ sb.disabled = true; sb.innerHTML = '⛔ โหลดประวัติไม่ได้'; }
+    if(ub){ ub.disabled = true; }
+  } else if(!window.__writeLocked){
+    if(sb){ sb.disabled = false; sb.innerHTML = '✅ บันทึกข้อมูล'; }
+    if(ub){ ub.disabled = false; }
+  }
+}
+async function retryLoadHistory(){
+  if(!activeSub) return;
+  const box = document.getElementById('history-error-box');
+  if(box) box.innerHTML = '⏳ กำลังโหลดประวัติอีกครั้ง...';
+  try{
+    activeSubRecent = await loadRecentForSub(activeSub.id, 5);
+    historyLoadFailed = false;
+    toast('✅ โหลดประวัติสำเร็จ','ok');
+  }catch(e){
+    historyLoadFailed = true;
+    toast('❌ ยังโหลดประวัติไม่ได้','err');
+  }
+  if(box) box.innerHTML = '❌ โหลดประวัติมิเตอร์ไม่ได้ จึงยังบันทึกไม่ได้ (ระบบต้องมีค่าครั้งก่อนเพื่อตรวจสอบความถูกต้อง) <button class="btn btn-sm btn-yellow" style="margin-left:8px" onclick="retryLoadHistory()">🔄 ลองใหม่</button>';
+  applyHistoryLoadState(); updateMeterSummary(); renderRecent();
+}
+
 async function selectSub(meterId){
   activeSub = subs.find(s => s.id === meterId);
   if(!activeSub) return;
@@ -2483,13 +2558,23 @@ async function selectSub(meterId){
   sb.innerHTML = '⏳ กำลังโหลดประวัติมิเตอร์...';
   activeSubRecent = [];
   updateMeterSummary(); renderRecent(); renderZoneAreas();
+  // History load must succeed before entry is allowed. If it fails, the app
+  // has no previous reading to compare against, so BOTH safety checks are
+  // silently disabled — "value lower than last" and "abnormally high vs
+  // average". Worse, an empty activeSubRecent is indistinguishable from a
+  // genuinely new meter, so the UI would cheerfully say "first reading for
+  // this meter" and accept a mistyped number. Block the save instead.
+  historyLoadFailed = false;
   try{
     activeSubRecent = await loadRecentForSub(activeSub.id, 5);
   }catch(e){
-    toast('⚠️ โหลดประวัติมิเตอร์ไม่ได้: ' + e.message,'warn');
+    historyLoadFailed = true;
+    activeSubRecent = [];
+    toast('❌ โหลดประวัติมิเตอร์ไม่ได้ — ยังบันทึกไม่ได้','err');
   }
   sb.innerHTML = isConnected ? '✅ บันทึกข้อมูล' : '⚠️ บันทึก (Offline)';
   sb.disabled  = false;
+  applyHistoryLoadState();
   updateMeterSummary(); renderRecent();
 }
 function backToList(){
