@@ -2657,6 +2657,37 @@ function updateMeterSummary(){
   document.getElementById('prev-reading').textContent = prev ? fmtNum(prev.kwh, activeSub.id) : '—';
   document.getElementById('last-used').textContent    = prev ? fmtNum(prev.used||0, activeSub.id) : '—';
 }
+/* ── Meter value types ──
+   Mirrors VALUE_TYPES in Code.gs. A blank/unknown value means 'cumulative',
+   so the 66 existing meters keep behaving exactly as before.
+     cumulative — a totalising register; usage = difference between readings
+     demand     — kW peak that holds its highest value for the billing cycle
+                  and resets monthly; the difference between readings is
+                  meaningless, the monthly MAXIMUM is the figure that matters
+     counter    — an event count (e.g. OLTC tap changes); difference is valid
+                  but it is a count, never energy, so it must stay out of kWh
+     snapshot   — an instantaneous value recorded for reference only          */
+function meterValueType(meter){
+  const t = String((meter && meter.valueType) || '').trim().toLowerCase();
+  return ['cumulative','demand','counter','snapshot'].indexOf(t) >= 0 ? t : 'cumulative';
+}
+function activeValueType(){ return meterValueType(activeSub); }
+
+/* Peak-so-far for a demand meter within the current month, from the readings
+   already loaded for this meter. Lets the recorder see at a glance whether the
+   figure in front of them sets a new monthly peak. */
+function demandPeakThisMonth(){
+  const ym = new Date().toISOString().slice(0,7);
+  let peak = null, peakDate = null;
+  (activeSubRecent || []).forEach(r => {
+    if(String(r.date || '').slice(0,7) !== ym) return;
+    const v = parseFloat(r.kwh);
+    if(isNaN(v)) return;
+    if(peak === null || v > peak){ peak = v; peakDate = r.date; }
+  });
+  return { peak, peakDate };
+}
+
 function previewUsed(){
   if(!activeSub) return;
   const val  = parseFloat(document.getElementById('in-kwh').value);
@@ -2665,12 +2696,46 @@ function previewUsed(){
   if(isNaN(val) || val < 0){ box.style.display = 'none'; return; }
   const lastKwh    = activeSubRecent.length ? (parseFloat(activeSubRecent[0].kwh) || 0) : null;
   const multiplier = activeSub.multiplier !== undefined ? parseFloat(activeSub.multiplier) : 1;
+  const vtype = activeValueType();
   box.style.display = 'block';
+
+  if(vtype === 'demand'){
+    // No difference is shown: for a demand register the reading IS the value.
+    // What the recorder needs to know is whether it beats this month's peak.
+    const pk = demandPeakThisMonth();
+    if(pk.peak === null){
+      chip.className = 'chip chip-green';
+      chip.textContent = `📌 ค่าแรกของเดือนนี้: ${fmtNum(val, activeSub.id)}`;
+    } else if(val > pk.peak){
+      chip.className = 'chip chip-orange';
+      chip.textContent = `🔺 พีคใหม่ของเดือน! เดิม ${fmtNum(pk.peak, activeSub.id)} (${fmtDate(pk.peakDate)})`;
+    } else {
+      chip.className = 'chip chip-green';
+      chip.textContent = `✅ ไม่เกินพีคเดือนนี้ (${fmtNum(pk.peak, activeSub.id)} เมื่อ ${fmtDate(pk.peakDate)})`;
+    }
+    return;
+  }
+
+  if(vtype === 'counter'){
+    if(lastKwh === null){ chip.className='chip chip-green'; chip.textContent='📌 บันทึกครั้งแรกของ Meter นี้'; return; }
+    const times = val - lastKwh;
+    if(times < 0){ chip.className='chip chip-orange'; chip.textContent=`⚠️ ค่าน้อยกว่าครั้งก่อน (${fmtNum(lastKwh, activeSub.id)})`; }
+    else { chip.className='chip chip-green'; chip.textContent = times === 0 ? '➖ ไม่เปลี่ยนแปลงจากครั้งก่อน' : `🔁 เพิ่มขึ้น ${Math.round(times).toLocaleString()} ครั้ง`; }
+    return;
+  }
+
+  if(vtype === 'snapshot'){
+    chip.className='chip chip-green';
+    chip.textContent = lastKwh === null ? '📌 บันทึกครั้งแรกของ Meter นี้'
+                                        : `📄 ค่าครั้งก่อน: ${fmtNum(lastKwh, activeSub.id)}`;
+    return;
+  }
+
   if(lastKwh === null){ chip.className = 'chip chip-green'; chip.textContent = '📌 บันทึกครั้งแรกของ Meter นี้'; }
   else {
     const diff = (val - lastKwh) * multiplier;
     chip.className = diff >= 0 ? 'chip chip-green' : 'chip chip-orange';
-    chip.textContent = diff >= 0 ? `💧 ใช้น้ำไปรอบนี้: +${fmtNum(diff, activeSub.id)} m³` : `⚠️ ค่าน้อยกว่าครั้งก่อน (${fmtNum(lastKwh, activeSub.id)})`;
+    chip.textContent = diff >= 0 ? `⚡ ใช้ไฟฟ้าไปรอบนี้: +${fmtNum(diff, activeSub.id)} ${UNIT}` : `⚠️ ค่าน้อยกว่าครั้งก่อน (${fmtNum(lastKwh, activeSub.id)})`;
   }
 }
 function renderRecent(){
@@ -2704,8 +2769,26 @@ async function saveRecord(){
   const dupe = activeSubRecent.find(r => r.date === date);
   if(dupe){ if(!confirm(`⚠️ Meter ${activeSub.id} วันที่ ${fmtDate(date)} มีการบันทึกแล้ว (${fmtNum(dupe.kwh, activeSub.id)} m³)\nบันทึกเพิ่มอีกหรือไม่?`)) return; }
   const lastKwh = activeSubRecent.length ? (parseFloat(activeSubRecent[0].kwh) || 0) : null;
-  if(lastKwh !== null && kwh < lastKwh){ if(!confirm(`ค่าที่กรอก (${kwh}) น้อยกว่าครั้งก่อน (${lastKwh})\nบันทึกต่อหรือไม่?`)) return; }
-  if(lastKwh !== null && kwh > lastKwh){
+  const vtype = activeValueType();
+
+  /* Validation depends on what kind of register this is.
+     A demand meter holds its peak for the whole billing cycle, so an
+     unchanged reading is the NORMAL case — real data shows the same value for
+     22 days running. Prompting on every one of those would train the recorder
+     to dismiss the dialog without reading it, and the genuine mistakes would
+     be waved through with the rest. Same for a tap-change counter, which
+     often does not move for days. For those two, only a DECREASE is worth
+     interrupting for: it means either a misread or a cycle reset. */
+  if(lastKwh !== null && kwh < lastKwh){
+    const msg = (vtype === 'demand')
+      ? `ค่าที่กรอก (${kwh}) น้อยกว่าครั้งก่อน (${lastKwh})\n\nถ้าเป็นต้นรอบบิลใหม่ (มิเตอร์เพิ่งรีเซ็ต) ถือว่าปกติ\nบันทึกต่อหรือไม่?`
+      : `ค่าที่กรอก (${kwh}) น้อยกว่าครั้งก่อน (${lastKwh})\nบันทึกต่อหรือไม่?`;
+    if(!confirm(msg)) return;
+  }
+
+  // The "abnormally high" check compares consumption deltas, which only mean
+  // something for a totalising register.
+  if(vtype === 'cumulative' && lastKwh !== null && kwh > lastKwh){
     const multiplier = activeSub.multiplier !== undefined ? parseFloat(activeSub.multiplier) : 1;
     const diff       = (kwh - lastKwh) * multiplier;
     const recentUsed = getRecentAvgUsed(activeSub.id);
