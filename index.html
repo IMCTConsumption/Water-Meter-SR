@@ -1034,7 +1034,6 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
     <div class="rd-status-dot" id="sync-dot" title="Sync status"></div>
-    <span class="rec-badge" id="hdr-badge" style="display:none">0 rec</span>
     <span id="hdr-small" style="display:none"></span>
   </div>
 </header>
@@ -1130,7 +1129,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     <div id="sub-list-screen">
       <div class="card">
         <div class="card-title">📍 เลือก Meter</div>
-        <div class="rec-badge" id="hdr-badge">0 rec</div>
+        <div class="rec-badge" id="entry-record-badge">0 rec</div>
         <!-- Search lives here, not in the global header: it only ever filters
              the meter cards below it, so putting it beside the thing it acts
              on avoids showing a dead control on the Data/Charts/Summary tabs. -->
@@ -1691,12 +1690,29 @@ function fmtChartDate(dateStr){
   if(isNaN(obj.getTime())) return String(dateStr);
   return `${String(obj.getDate()).padStart(2,'0')}/${String(obj.getMonth()+1).padStart(2,'0')}`;
 }
+/* Local-date helper. toISOString() formats in UTC, so using it to derive
+   "today" or a date-range boundary silently shifts the answer back a day for
+   the seven hours after Thai midnight. Every date this app exchanges with the
+   sheet is an Asia/Bangkok calendar date, so all of them are built from the
+   local clock instead. */
+function ymdLocal(d){
+  const dt = d || new Date();
+  const pad = v => String(v).padStart(2, '0');
+  return dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
+}
+
 function setNow(){
+  // toISOString() reports UTC. Paired with toTimeString()'s local clock it
+  // produced a date and a time from two different days for any reading taken
+  // between midnight and 07:00 Thai time — the time said 01:00 while the date
+  // had already rolled back to the previous day. The backend decides "today"
+  // in Asia/Bangkok, so the client has to agree with it.
   const n  = new Date();
   const ed = document.getElementById('in-date');
   const et = document.getElementById('in-time');
-  if(ed) ed.value = n.toISOString().split('T')[0];
-  if(et) et.value = n.toTimeString().slice(0,5);
+  const pad = v => String(v).padStart(2, '0');
+  if(ed) ed.value = n.getFullYear() + '-' + pad(n.getMonth()+1) + '-' + pad(n.getDate());
+  if(et) et.value = pad(n.getHours()) + ':' + pad(n.getMinutes());
 }
 function getLastKwh(meterId){
   const sorted = records.filter(r => r.meterId === meterId)
@@ -2127,7 +2143,7 @@ let recordsWindowFrom = null;   // 'YYYY-MM-DD', or null when the full set is lo
 function _windowStartDate(days){
   const d = new Date();
   d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
+  return ymdLocal(d);
 }
 
 /* Guards against the same heavy pull running twice concurrently. handleLogin()
@@ -2299,7 +2315,14 @@ function loadFromServer(){
     })
     .then(async data => {
       if(!data || data.status === 'error') throw new Error(data?.message || 'Server error');
-      if(data.app && data.app !== APP_ID) toast('⚠️ Backend ผิดแอป: ได้ '+data.app+' คาดว่า '+APP_ID,'err');
+      // Wrong backend means the API_URL points at another app's deployment.
+      // Loading its meters would leave this app showing another site's data
+      // and persist it under this app's localStorage namespace, so refuse the
+      // payload entirely rather than warn and carry on. The `data.app &&`
+      // guard lets a backend that predates this field through untouched.
+      if(data.app && data.app !== APP_ID){
+        throw new Error('Backend ผิดแอป: ได้ ' + data.app + ' คาดว่า ' + APP_ID);
+      }
       if(data.meters       && Array.isArray(data.meters))       subs         = data.meters;
       if(data.reportGroups && Array.isArray(data.reportGroups)) reportGroups = data.reportGroups;
       if(data.calendar     && Array.isArray(data.calendar))     workCalendar = data.calendar;
@@ -2327,7 +2350,14 @@ function refreshData(){
     })
     .then(async data => {
       if(!data || data.status === 'error') throw new Error(data?.message || 'Server error');
-      if(data.app && data.app !== APP_ID) toast('⚠️ Backend ผิดแอป: ได้ '+data.app+' คาดว่า '+APP_ID,'err');
+      // Wrong backend means the API_URL points at another app's deployment.
+      // Loading its meters would leave this app showing another site's data
+      // and persist it under this app's localStorage namespace, so refuse the
+      // payload entirely rather than warn and carry on. The `data.app &&`
+      // guard lets a backend that predates this field through untouched.
+      if(data.app && data.app !== APP_ID){
+        throw new Error('Backend ผิดแอป: ได้ ' + data.app + ' คาดว่า ' + APP_ID);
+      }
       if(data.meters       && Array.isArray(data.meters))       subs         = data.meters;
       if(data.reportGroups && Array.isArray(data.reportGroups)) reportGroups = data.reportGroups;
       if(data.calendar     && Array.isArray(data.calendar))     workCalendar = data.calendar;
@@ -2371,10 +2401,24 @@ function computeUsed(rawRecords){
   Object.keys(groups).forEach(meterId => {
     const sub        = subMap[meterId];
     const multiplier = sub?.multiplier !== undefined ? parseFloat(sub.multiplier) : 1;
+    const vt         = meterValueType(sub);
     const chain = groups[meterId].sort((a,b) => (`${a.date} ${a.time||'00:00'}`).localeCompare(`${b.date} ${b.time||'00:00'}`));
     chain.forEach((rec, i) => {
+      // `used` means "energy consumed since the previous reading". That only
+      // exists for a totalising register. A demand meter's reading is a kW
+      // peak and a snapshot is an instantaneous value — subtracting two of
+      // them produces a number with no physical meaning, which would then
+      // flow into the Data table, the charts and the group totals as if it
+      // were kWh. null keeps them out and lets the UI render "—".
+      if(vt === 'demand' || vt === 'snapshot'){ rec.used = null; return; }
       if(i === chain.length - 1){ rec.used = 0; }
-      else { const diff = parseFloat(chain[i+1].kwh) - parseFloat(rec.kwh); rec.used = Math.max(0, diff) * multiplier; }
+      else {
+        const diff = parseFloat(chain[i+1].kwh) - parseFloat(rec.kwh);
+        // A counter's difference IS meaningful (events elapsed), so it is
+        // computed — but it is a count, not energy, and callers that total
+        // kWh must exclude it. See sumGroupOnDay().
+        rec.used = Math.max(0, diff) * (vt === 'counter' ? 1 : multiplier);
+      }
     });
   });
   const _out = Object.values(groups).flat();
@@ -2741,7 +2785,7 @@ function activeValueType(){ return meterValueType(activeSub); }
    already loaded for this meter. Lets the recorder see at a glance whether the
    figure in front of them sets a new monthly peak. */
 function demandPeakThisMonth(){
-  const ym = new Date().toISOString().slice(0,7);
+  const ym = ymdLocal().slice(0,7);   // local month, matching the sheet's dates
   let peak = null, peakDate = null;
   (activeSubRecent || []).forEach(r => {
     if(String(r.date || '').slice(0,7) !== ym) return;
@@ -2967,10 +3011,18 @@ function updateEditKwhStep(meterId){
 }
 function closeEdit(){ currentEditingRecordId = null; const modal = document.getElementById('edit-modal'); modal.style.display = 'none'; modal.classList.remove('open'); }
 function closeEditIf(event){ if(event.target.id === 'edit-modal') closeEdit(); }
+/* Everything here addresses records by id, never by array position.
+   computeUsed() rebuilds the array by grouping per meter, so an index taken
+   before it points at a different record afterwards. The old code captured
+   `idx` up front and then used it both to read back what to send to the server
+   AND to roll back on failure — so a failed edit could transmit one record's
+   values under another record's id, and the rollback would overwrite a third,
+   unrelated record. */
 async function saveEdit(){
   if(!currentEditingRecordId) return;
-  const idx = records.findIndex(r => r.id === currentEditingRecordId);
-  if(idx < 0) return toast('❌ ไม่พบรายการ','err');
+  const recordId = currentEditingRecordId;
+  const target = records.find(r => r.id === recordId);
+  if(!target) return toast('❌ ไม่พบรายการ','err');
   const newSubId = document.getElementById('edit-sub').value;
   const kwh      = parseFloat(document.getElementById('edit-kwh').value);
   const date     = document.getElementById('edit-date').value;
@@ -2980,10 +3032,23 @@ async function saveEdit(){
   if(isNaN(kwh) || kwh < 0) return toast('กรอกค่ามิเตอร์ให้ถูกต้อง','err');
   if(!date) return toast('เลือกวันที่ด้วย','err');
   const sub = subs.find(s => s.id === newSubId);
-  const originalRecord = { ...records[idx] };
-  records[idx] = { ...records[idx], meterId: newSubId, meterName: sub?.name || records[idx].meterName, zone: sub?.zone || records[idx].zone, kwh, date, time, user, note, editedTs: new Date().toISOString(), editedBy: currentUser || 'ผู้บันทึก' };
+  const originalRecord = { ...target };
+
+  // Mutate the object itself — it keeps its identity through computeUsed()'s
+  // regrouping, so no position needs tracking.
+  target.meterId   = newSubId;
+  target.meterName = sub?.name || target.meterName;
+  target.zone      = sub?.zone || target.zone;
+  target.kwh       = kwh;
+  target.date      = date;
+  target.time      = time;
+  target.user      = user;
+  target.note      = note;
+  target.editedTs  = new Date().toISOString();
+  target.editedBy  = currentUser || 'ผู้บันทึก';
+
   records = computeUsed(records); persist();
-  const saved = records[idx];
+  const saved = records.find(r => r.id === recordId) || target;
   closeEdit(); renderAll(); toast('✅ แก้ไขแล้ว (กำลัง sync...)','ok');
   setSyncStatus('busy','กำลังซิงค์...');
   try{
@@ -2992,7 +3057,9 @@ async function saveEdit(){
     invalidateSummaryCache('editRecord:'+saved.meterId+'@'+saved.date);
     setSyncStatus('ok','แก้ไขสำเร็จ');
   }catch(e){
-    records[idx] = originalRecord;
+    // Restore by id: drop whatever now carries this id and put the original back.
+    records = records.filter(r => r.id !== recordId);
+    records.push(originalRecord);
     records = computeUsed(records); persist(); renderAll();
     setSyncStatus('error','แก้ไขไม่สำเร็จ — ยกเลิกการเปลี่ยนแปลงในเครื่องแล้ว');
   }
@@ -3001,7 +3068,6 @@ async function deleteRecord(id){
   if(!confirm('ลบรายการนี้?')) return;
   const target = records.find(r => r.id === id);
   if(!target) return;
-  const targetIdx = records.indexOf(target);
   records = records.filter(r => r.id !== id);
   records = computeUsed(records); persist();
   toast('ลบแล้ว (กำลัง sync...)'); renderAll();
@@ -3011,7 +3077,10 @@ async function deleteRecord(id){
     invalidateSummaryCache('deleteRecord:'+id);
     setSyncStatus('ok','ลบสำเร็จ');
   }catch(e){
-    records.splice(targetIdx, 0, target);
+    // Put it back by identity, not by the position it used to occupy:
+    // computeUsed() has regrouped the array since, so that index now belongs
+    // to a different record and splicing there would corrupt the neighbour.
+    records.push(target);
     records = computeUsed(records); persist(); renderAll();
     setSyncStatus('error','ลบไม่สำเร็จ — กู้คืนรายการในเครื่องแล้ว');
   }
@@ -3103,7 +3172,7 @@ function renderStats(){ return;
 
   const total    = records.length;
   const subsDone = new Set(records.map(r => r.meterId)).size;
-  const today    = new Date().toISOString().split('T')[0];
+  const today    = ymdLocal();
   const todayN   = records.filter(r => r.date === today).length;
   const totalUsed = records.reduce((a,r) => a + (parseFloat(r.used)||0), 0);
   document.getElementById('stats-row').innerHTML = `
@@ -3112,7 +3181,15 @@ function renderStats(){ return;
     <div class="stat"><div class="stat-val">${todayN}</div><div class="stat-lbl">บันทึกวันนี้</div></div>
     <div class="stat"><div class="stat-val" style="color:var(--green)">${Math.round(totalUsed).toLocaleString()}</div><div class="stat-lbl">รวมใช้น้ำ (m³)</div></div>`;
 }
-function updateBadge(){ document.getElementById('hdr-badge').textContent = records.length + ' rec'; }
+/* Two elements shared the id "hdr-badge" after the header redesign: a hidden
+   leftover in the header and the visible one on the Entry card. getElementById
+   returns the first match, so every update landed on the invisible one and the
+   badge the user actually sees never changed. The header copy is gone and the
+   remaining one has its own id. */
+function updateBadge(){
+  const el = document.getElementById('entry-record-badge');
+  if(el) el.textContent = records.length + ' rec';
+}
 
 /* ════════════ QR ════════════ */
 function renderQR(){
@@ -3378,7 +3455,7 @@ async function renderSummary(){
   const [y,m] = monthVal.split('-').map(Number);
   const nextMonthStart = new Date(y, m, 1);         // first day AFTER the target month
   nextMonthStart.setDate(nextMonthStart.getDate() + 7);
-  const dateTo = nextMonthStart.toISOString().slice(0,10);
+  const dateTo = ymdLocal(nextMonthStart);
 
   t1.innerHTML = '<div class="section-empty">⏳ กำลังโหลด...</div>';
   t2.innerHTML = '<div class="section-empty">⏳ กำลังโหลด...</div>';
@@ -3667,9 +3744,9 @@ function getThemeColors(){
 }
 
 function getQuickRange(key){
-  var today = new Date().toISOString().slice(0,10);
+  var today = ymdLocal();
   var t = new Date(today+'T00:00:00');
-  var fmt = function(dt){ return dt.toISOString().slice(0,10); };
+  var fmt = function(dt){ return ymdLocal(dt); };
   if(key==='7d'){ var f=new Date(t);f.setDate(f.getDate()-6); return [fmt(f),today]; }
   if(key==='30d'){ var f=new Date(t);f.setDate(f.getDate()-29); return [fmt(f),today]; }
   if(key==='thisM') return [today.slice(0,8)+'01',today];
@@ -3680,7 +3757,7 @@ function getQuickRange(key){
 
 function aggregateRecords(recs, period, dateFrom, dateTo){
   var MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  var fmt = function(dt){ return dt.toISOString().slice(0,10); };
+  var fmt = function(dt){ return ymdLocal(dt); };
   if(period === 'day'){
     var byDate = {};
     recs.forEach(function(r){
@@ -3895,7 +3972,7 @@ function navG9(dir){
   if(g9State.period === 'day'){
     var el = document.getElementById('g9-date');
     var d = new Date(el.value); d.setDate(d.getDate()+dir);
-    el.value = d.toISOString().slice(0,10);
+    el.value = ymdLocal(d);
   } else if(g9State.period === 'month'){
     var el = document.getElementById('g9-month');
     var p = el.value.split('-').map(Number);
@@ -3961,12 +4038,12 @@ async function renderG9Chart(){
   if(g9State.period==='day'){
     dateFrom = pick;
     var d = new Date(pick); d.setDate(d.getDate()+7);
-    dateTo = d.toISOString().slice(0,10);
+    dateTo = ymdLocal(d);
   } else if(g9State.period==='month'){
     var pp = pick.split('-');
     dateFrom = pick+'-01';
     var nd = new Date(parseInt(pp[0]),parseInt(pp[1]),7);
-    dateTo = nd.toISOString().slice(0,10);
+    dateTo = ymdLocal(nd);
   } else {
     dateFrom = pick+'-01-01';
     dateTo = (parseInt(pick)+1)+'-01-07';
@@ -3988,8 +4065,8 @@ async function renderG9Chart(){
     var groupVals = _mainOnly.map(function(col){
       var total = 0;
       countPeriods.forEach(function(p){
-        (col.meters||[]).forEach(function(id){ var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) total+=u; });
-        (col.minus||[]).forEach(function(id){ var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) total-=u; });
+        (col.meters||[]).forEach(function(id){ if(!_countsTowardEnergy(id)) return; var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) total+=u; });
+        (col.minus||[]).forEach(function(id){ if(!_countsTowardEnergy(id)) return; var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) total-=u; });
       });
       return { name:col.name, value:total, color:col.color||TC.accent };
     });
@@ -4057,9 +4134,22 @@ function _isUsableReading(meterId, v){
   return Number(v) !== 0;
 }
 
+/* Group totals are kWh — only a totalising register may contribute.
+   meterUsedOnDay() already returns null for demand/snapshot, but a counter
+   legitimately returns a number (events elapsed), and if one is listed in a
+   group's `meters` that count would be summed into the energy figure with no
+   visible sign. Every place that adds meters together goes through this. */
+function _countsTowardEnergy(meterId){
+  return meterValueType(subs.find(s => s.id === meterId)) === 'cumulative';
+}
+
 function meterUsedOnDay(meterMap, meterId, dateStr, allDates){
   const cur = meterMap[meterId]?.[dateStr];
   if(!cur || !_isUsableReading(meterId, cur.firstKwh)) return null;
+  // Reports and charts consume this directly; demand/snapshot have no daily
+  // consumption to report, so they must not produce a number here either.
+  const _vt = meterValueType(subs.find(s => s.id === meterId));
+  if(_vt === 'demand' || _vt === 'snapshot') return null;
   const sub  = subs.find(s => s.id === meterId);
   const mult = sub?.multiplier !== undefined ? parseFloat(sub.multiplier) : 1;
   const idx = allDates.indexOf(dateStr);
@@ -4173,7 +4263,7 @@ async function renderCmpChart(){
     if(toVal){
       var extD = new Date(toVal+'T00:00:00');
       extD.setDate(extD.getDate() + 7);
-      apiToVal = extD.toISOString().slice(0,10);
+      apiToVal = ymdLocal(extD);
     }
     var res = await getSummaryCached(fromVal, apiToVal, gran);
     if(thisReq !== cmpReqId) return;
@@ -4190,13 +4280,13 @@ async function renderCmpChart(){
         return true;
       });
       var byYear = {};
-      displayPeriods.forEach(function(p){ ids.forEach(function(id){ var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) byYear[p.slice(0,4)]=(byYear[p.slice(0,4)]||0)+u; }); });
+      displayPeriods.forEach(function(p){ ids.forEach(function(id){ if(!_countsTowardEnergy(id)) return; var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) byYear[p.slice(0,4)]=(byYear[p.slice(0,4)]||0)+u; }); });
       dataPoints = Object.entries(byYear).map(function(e){return {label:e[0],value:e[1]};});
     } else {
       var valByPeriod = {};
       allPeriods.forEach(function(p){
         var total=0, has=false;
-        ids.forEach(function(id){ var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null){total+=u;has=true;} });
+        ids.forEach(function(id){ if(!_countsTowardEnergy(id)) return; var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null){total+=u;has=true;} });
         valByPeriod[p] = has ? total : 0;
       });
       var fullPeriods = _cmpFillPeriods(allPeriods, fromVal, toVal, cmpState.period);
