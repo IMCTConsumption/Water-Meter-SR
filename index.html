@@ -1182,7 +1182,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <div class="card">
         <div class="card-title"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></i>บันทึกค่ามิเตอร์ใหม่</div>
         <div class="f-row">
-          <label class="f-label">📟 ค่าที่อ่านได้ (m³ สะสม)</label>
+          <label class="f-label" id="in-kwh-label">📟 ค่าที่อ่านได้ (m³ สะสม)</label>
           <input class="f-input kwh-input" type="number" id="in-kwh" placeholder="0" step="1" inputmode="decimal" oninput="previewUsed()">
         </div>
         <div id="preview-box" style="display:none;margin-bottom:12px">
@@ -1983,9 +1983,23 @@ function perfEnd(name){
 /* Per-action timeout. getRawRecords walks the whole sheet server-side and
    legitimately takes longer than a status ping, so a single flat ceiling
    either cut off the heavy call or made the light ones hang. */
-const SLOW_ACTIONS = { getRawRecords: 45000, getMonthlySummary: 30000, getAvailableMonths: 20000 };
+const SLOW_ACTIONS = { getRawRecords: 45000, getRecentRecordsAll: 45000, getMonthlySummary: 30000, getAvailableMonths: 20000 };
 
-async function apiPost(body, retries = 2){
+/* Apps Script runs one execution at a time per script. Issuing several heavy
+   calls at once therefore does not make them finish sooner — it makes the ones
+   behind the first sit idle until they blow their own timeout, and their
+   single-use /exec redirect target 404s by the time the browser follows it.
+   Everything goes through one chain so each call gets its full budget for its
+   own work rather than spending it queued behind someone else's. */
+let _apiChain = Promise.resolve();
+function apiPost(body, retries = 2){
+  const run = () => _apiPostNow(body, retries);
+  const queued = _apiChain.then(run, run);
+  _apiChain = queued.catch(() => {});   // a failure must not break the chain
+  return queued;
+}
+
+async function _apiPostNow(body, retries = 2){
   const timeoutMs = (body && SLOW_ACTIONS[body.action]) || 12000;
   for(let attempt = 0; attempt <= retries; attempt++){
     const ctrl = new AbortController();
@@ -2008,12 +2022,24 @@ async function apiPost(body, retries = 2){
   }
 }
 
-async function apiPostAuthed(body){
+/* opts.background — for prefetches the person did not ask for.
+   A background call that comes back with a session error must NOT tear down
+   the session: the prefetch can lose a race with login, or simply arrive
+   while the token is being refreshed, and signing the user out because an
+   optional optimisation failed is far worse than skipping the optimisation.
+   Only work the person actually initiated is allowed to trigger a logout. */
+async function apiPostAuthed(body, opts){
+  const background = !!(opts && opts.background);
   const res = await apiPost(Object.assign({}, body, { token: sessionToken }));
   if(!res || res.success === false){
     const msg = (res && res.error) || 'การดำเนินการล้มเหลว';
+    const isSessionErr = res && /session|เข้าสู่ระบบ/i.test(res.error || '');
+    if(background){
+      console.warn('⚠️ background ' + (body && body.action) + ' failed: ' + msg);
+      throw new Error(msg);
+    }
     toast('❌ ' + msg, 'err');
-    if(res && /session|เข้าสู่ระบบ/i.test(res.error || '')){
+    if(isSessionErr){
       sessionToken = null;
       setTimeout(() => { logout(); }, 1200);
     }
@@ -2048,9 +2074,19 @@ async function loadAvailableMonths(){
    doesn't contain the meter (e.g. a meter added since the last fetch). */
 let bulkRecent = null;          // { meterId: [records newest-first] }
 
+let _bulkRecentInFlight = null;
+
 async function loadBulkRecent(){
+  if(_bulkRecentInFlight) return _bulkRecentInFlight;
+  _bulkRecentInFlight = _loadBulkRecentInner();
+  try { return await _bulkRecentInFlight; }
+  finally { _bulkRecentInFlight = null; }
+}
+
+async function _loadBulkRecentInner(){
+  if(!sessionToken) return null;   // nothing to authenticate with yet
   try{
-    const res = await apiPostAuthed({ action:'getRecentRecordsAll' });
+    const res = await apiPostAuthed({ action:'getRecentRecordsAll' }, { background:true });
     if(res && res.success && res.byMeter) bulkRecent = res.byMeter;
   }catch(e){ console.warn('⚠️ โหลดประวัติรวมไม่ได้ — จะดึงทีละมิเตอร์แทน:', e.message); }
   return bulkRecent;
@@ -2070,7 +2106,11 @@ async function loadMeterStatus(){
   // Month list is only needed by the admin report pickers — fetch it lazily
   // and never block the entry screen on it.
   if(appMode === 'admin' && !availableMonths) loadAvailableMonths();
-  if(sessionToken) await loadBulkRecent();   // one call replaces one-per-meter later
+  // Deliberately NOT awaited: this is a prefetch that saves a request when a
+  // meter is later opened, not something the entry screen needs in order to
+  // paint. Awaiting it here put a whole-sheet read on the critical path next
+  // to the other heavy calls, which is what pushed them into timeouts.
+  if(sessionToken) loadBulkRecent();
 }
 /* ── Admin record window ──
    The full history is thousands of rows and is the single slowest thing in
@@ -2323,8 +2363,13 @@ function computeUsed(rawRecords){
   rawRecords.forEach(r => { if(r.date && String(r.date).includes('T')) r.date = String(r.date).slice(0, 10); });
   const groups = {};
   rawRecords.forEach(r => { if(!groups[r.meterId]) groups[r.meterId]=[]; groups[r.meterId].push(r); });
+  // Index the meter list once. This used to call subs.find() inside the loop,
+  // which is a linear scan per meter — fine at a handful of meters, but with
+  // ~66 meters over thousands of records it is a lot of pointless comparing.
+  const subMap = {};
+  subs.forEach(s => { subMap[s.id] = s; });
   Object.keys(groups).forEach(meterId => {
-    const sub        = subs.find(s => s.id === meterId);
+    const sub        = subMap[meterId];
     const multiplier = sub?.multiplier !== undefined ? parseFloat(sub.multiplier) : 1;
     const chain = groups[meterId].sort((a,b) => (`${a.date} ${a.time||'00:00'}`).localeCompare(`${b.date} ${b.time||'00:00'}`));
     chain.forEach((rec, i) => {
@@ -2561,6 +2606,23 @@ let historyLoadFailed = false;   // true when the per-meter history fetch failed
 /* Reflect a failed history load in the entry screen: the save controls are
    disabled and an explicit retry is offered, rather than letting the person
    record a value with no previous reading to validate against. */
+/* The reading label is per-meter, not global: a demand register is read in
+   kW and a tap counter in events, so calling everything a cumulative volume
+   mislabels them. Unit text comes from the meter's own `unit` column, so it
+   can be corrected in the sheet without touching code. */
+function applyReadingLabel(){
+  const el = document.getElementById('in-kwh-label');
+  if(!el || !activeSub) return;
+  const unit = String(activeSub.unit || '').trim();
+  const vt = activeValueType();
+  let txt;
+  if(vt === 'demand')       txt = `ค่าที่อ่านได้ (${unit || 'kW'})`;
+  else if(vt === 'counter') txt = `ค่าที่อ่านได้ (${unit || 'ครั้ง'})`;
+  else if(vt === 'snapshot')txt = `ค่าที่อ่านได้ (${unit || 'หน่วยตามมิเตอร์'})`;
+  else                      txt = `ค่าที่อ่านได้ (${unit || UNIT} สะสม)`;
+  el.innerHTML = '📟 ' + esc(txt);
+}
+
 function applyHistoryLoadState(){
   const box = document.getElementById('history-error-box');
   if(box) box.style.display = historyLoadFailed ? 'block' : 'none';
@@ -2622,6 +2684,7 @@ async function selectSub(meterId){
   // Served from the bulk set when available — no network call on meter open.
   if(bulkRecent && Object.prototype.hasOwnProperty.call(bulkRecent, activeSub.id)){
     activeSubRecent = bulkRecent[activeSub.id] || [];
+    applyReadingLabel();
     applyHistoryLoadState(); updateMeterSummary(); renderRecent();
     const sbFast = document.getElementById('save-btn');
     if(sbFast){ sbFast.innerHTML = isConnected ? '✅ บันทึกข้อมูล' : '⚠️ บันทึก (Offline)'; sbFast.disabled = false; }
@@ -2636,6 +2699,7 @@ async function selectSub(meterId){
   }
   sb.innerHTML = isConnected ? '✅ บันทึกข้อมูล' : '⚠️ บันทึก (Offline)';
   sb.disabled  = false;
+  applyReadingLabel();
   applyHistoryLoadState();
   updateMeterSummary(); renderRecent();
 }
@@ -2705,7 +2769,9 @@ function previewUsed(){
     const pk = demandPeakThisMonth();
     if(pk.peak === null){
       chip.className = 'chip chip-green';
-      chip.textContent = `📌 ค่าแรกของเดือนนี้: ${fmtNum(val, activeSub.id)}`;
+      chip.textContent = activeSubRecent.length
+        ? `📌 ค่าแรกของเดือนนี้: ${fmtNum(val, activeSub.id)}`
+        : `📌 ค่าแรกของมิเตอร์นี้: ${fmtNum(val, activeSub.id)}`;
     } else if(val > pk.peak){
       chip.className = 'chip chip-orange';
       chip.textContent = `🔺 พีคใหม่ของเดือน! เดิม ${fmtNum(pk.peak, activeSub.id)} (${fmtDate(pk.peakDate)})`;
@@ -3975,17 +4041,55 @@ function getColIds(key){
   const col = reportGroups.find(c => c.key === key);
   return col ? (col.meters || []) : [];
 }
+/* A totalising register that is in service never legitimately reads 0, so a 0
+   here means "nobody wrote anything down", not "nothing was used". Treating it
+   as a real reading is actively destructive: the day before it computes
+   max(0, 0 − R) = 0 and silently loses that day's real consumption, while the
+   day itself computes R(next) − 0 and invents a spike the size of the entire
+   lifetime register. Both the monthly total and any peak analysis would be
+   wrong. Demand meters are excluded from this rule — they genuinely do read 0
+   at the start of a billing cycle, right after the monthly reset. */
+function _isUsableReading(meterId, v){
+  if(v === null || v === undefined || isNaN(v)) return false;
+  const meter = subs.find(s => s.id === meterId);
+  const vt = meterValueType(meter);
+  if(vt === 'demand') return true;          // 0 is a real value at cycle start
+  return Number(v) !== 0;
+}
+
 function meterUsedOnDay(meterMap, meterId, dateStr, allDates){
   const cur = meterMap[meterId]?.[dateStr];
-  if(!cur) return null;
+  if(!cur || !_isUsableReading(meterId, cur.firstKwh)) return null;
   const sub  = subs.find(s => s.id === meterId);
   const mult = sub?.multiplier !== undefined ? parseFloat(sub.multiplier) : 1;
   const idx = allDates.indexOf(dateStr);
   for(let k = idx+1; k < allDates.length; k++){
     const next = meterMap[meterId]?.[allDates[k]];
-    if(next) return Math.max(0, next.firstKwh - cur.firstKwh) * mult;
+    if(next && _isUsableReading(meterId, next.firstKwh)){
+      return Math.max(0, next.firstKwh - cur.firstKwh) * mult;
+    }
   }
   return Math.max(0, cur.lastKwh - cur.firstKwh) * mult;
+}
+
+/* How many calendar days the figure from meterUsedOnDay actually covers.
+   1 = normal. Greater than 1 means readings in between were missing or unusable,
+   so the whole gap has been attributed to this one day. The tables mark those
+   cells rather than quietly showing an inflated number as if it were a
+   single day's use. */
+function meterSpanOnDay(meterMap, meterId, dateStr, allDates){
+  const cur = meterMap[meterId]?.[dateStr];
+  if(!cur || !_isUsableReading(meterId, cur.firstKwh)) return 0;
+  const idx = allDates.indexOf(dateStr);
+  for(let k = idx+1; k < allDates.length; k++){
+    const next = meterMap[meterId]?.[allDates[k]];
+    if(next && _isUsableReading(meterId, next.firstKwh)){
+      const d1 = new Date(dateStr + 'T00:00:00');
+      const d2 = new Date(allDates[k] + 'T00:00:00');
+      return Math.max(1, Math.round((d2 - d1) / 86400000));
+    }
+  }
+  return 1;
 }
 
 var cmpState = { period:'day', type:'bar', showAvg:true };
