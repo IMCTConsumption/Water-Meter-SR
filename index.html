@@ -8,6 +8,12 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 
+/* ═══════════════════════════════════════════════════════════
+   REDESIGN LAYER — SESSION 1
+   Design tokens matched to the IMCT Consumption hub (navy + cyan + off-white),
+   with dark-mode parity. Component styles for the new header + sidebar drawer +
+   centered login. All original panel/card/button styles below remain untouched.
+   =========================================================== */
 :root {
   --rd-ink:          #0A1628;
   --rd-ink-2:        #3A4A5F;
@@ -943,6 +949,38 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
   font-size: 14px;
   font-weight: 700;
 }
+
+/* Three-way role picker on the login screen. Each button carries equal
+   visual weight — recorder, viewer, and admin are a deliberate choice, not a
+   default with two small escape-hatch links underneath it. */
+.rd-role-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rd-role-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1.5px solid var(--rd-line);
+  background: var(--rd-surface-2);
+  color: var(--rd-ink);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--rd-transition);
+}
+.rd-role-btn:hover {
+  border-color: var(--rd-accent);
+  background: var(--rd-accent-soft);
+  transform: translateY(-1px);
+}
+.rd-role-btn svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--rd-accent-ink); }
+.rd-role-btn-txt { display: flex; flex-direction: column; gap: 2px; }
+.rd-role-btn-txt strong { font-family: var(--rd-font-display); font-size: 15px; font-weight: 700; }
+.rd-role-btn-txt small { font-family: var(--rd-font-th); font-size: 12px; color: var(--rd-ink-3); }
 </style>
 </head>
 <body>
@@ -964,12 +1002,31 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <div class="rd-login-title" id="rd-login-title">Sign in to log readings</div>
       <div class="rd-login-subtitle" id="rd-login-subtitle">กรอกรหัสผ่านทีมจดมิเตอร์เพื่อเริ่มบันทึกค่า</div>
 
-      <!-- The original 2-button "choose" screen is superseded by the toggle
-           links below, but its ID must stay in the DOM: showRecorderLogin(),
-           showAdminLogin() and backToChoose() all reference #login-choose
-           directly (they just don't run any code that requires it to be
-           visible — they only ever set its style.display). -->
-      <div id="login-choose" style="display:none"></div>
+<div id="login-choose">
+        <div class="rd-role-pick">
+          <button class="rd-role-btn" onclick="rdShowRecorder()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            <span class="rd-role-btn-txt">
+              <strong>ทีมจดมิเตอร์</strong>
+              <small>บันทึกค่ามิเตอร์ประจำวัน</small>
+            </span>
+          </button>
+          <button class="rd-role-btn" onclick="rdShowViewer()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span class="rd-role-btn-txt">
+              <strong>ดูรายงาน</strong>
+              <small>กราฟและสรุปการใช้พลังงาน</small>
+            </span>
+          </button>
+          <button class="rd-role-btn" onclick="rdShowAdmin()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.5 4.5L12 5l5.5 6.5L22 7v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z"/></svg>
+            <span class="rd-role-btn-txt">
+              <strong>แอดมิน</strong>
+              <small>จัดการมิเตอร์และระบบ</small>
+            </span>
+          </button>
+        </div>
+      </div>
 
       <!-- RECORDER form — default visible. Every element ID below matches the
            ORIGINAL app.js exactly (#recorder-pass / #recorder-login-err /
@@ -985,8 +1042,25 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
         <div class="rd-login-toggle">
-          <span class="rd-login-toggle-txt">แอดมิน / IT?</span>
-          <button class="rd-login-toggle-link" onclick="rdShowAdmin()">Admin access</button>
+          <button class="rd-login-toggle-link" onclick="backToChoose()">← เลือกโหมดอื่น</button>
+        </div>
+      </div>
+
+      <!-- VIEWER form — report-only account. IDs are new (this role did not
+           exist before): #viewer-pass / #viewer-login-err / #viewer-login-btn.
+           handleViewerLogin() reads exactly these three. -->
+      <div class="rd-login-body" id="login-viewer" style="display:none">
+        <div class="rd-field">
+          <label class="rd-field-label" for="viewer-pass">Passcode</label>
+          <input class="rd-field-input" type="password" id="viewer-pass" placeholder="กรอกรหัสผ่านผู้ดูรายงาน" autocomplete="current-password">
+        </div>
+        <div class="rd-login-err" id="viewer-login-err"></div>
+        <button class="rd-btn-primary" id="viewer-login-btn" onclick="handleViewerLogin()">
+          ดูรายงาน
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <div class="rd-login-toggle">
+          <button class="rd-login-toggle-link" onclick="backToChoose()">← เลือกโหมดอื่น</button>
         </div>
       </div>
 
@@ -1008,8 +1082,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
         <div class="rd-login-toggle">
-          <span class="rd-login-toggle-txt">Not an admin?</span>
-          <button class="rd-login-toggle-link" onclick="rdShowRecorder()">Back to recorder</button>
+          <button class="rd-login-toggle-link" onclick="backToChoose()">← เลือกโหมดอื่น</button>
         </div>
       </div>
     </div>
@@ -1082,7 +1155,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     </a>
 
     <div class="rd-drawer-section">Workspace</div>
-    <button class="rd-drawer-item active" data-rd-tab="entry" onclick="rdGoTab('entry')">
+    <button class="rd-drawer-item active rd-recorder-item" data-rd-tab="entry" onclick="rdGoTab('entry')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
       Entry <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">บันทึก</span>
     </button>
@@ -1090,11 +1163,11 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
       Data <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">ข้อมูล</span>
     </button>
-    <button class="rd-drawer-item rd-admin-item" data-rd-tab="chart" onclick="rdGoTab('chart')">
+    <button class="rd-drawer-item rd-admin-item rd-viewer-item" data-rd-tab="chart" onclick="rdGoTab('chart')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 4-6"/></svg>
       Charts <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">กราฟ</span>
     </button>
-    <button class="rd-drawer-item rd-admin-item" data-rd-tab="summary" onclick="rdGoTab('summary')">
+    <button class="rd-drawer-item rd-admin-item rd-viewer-item" data-rd-tab="summary" onclick="rdGoTab('summary')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/></svg>
       Summary <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">สรุป</span>
     </button>
@@ -1318,34 +1391,6 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 
   <div class="panel" id="panel-chart">
     <div class="card">
-      <div class="card-title">เทียบการใช้น้ำกลุ่มหลัก</div>
-      <div class="chart-ctrl">
-        <span class="chart-ctrl-label">มุมมอง:</span>
-        <button class="ctrl-btn green" id="g9-p-day" onclick="setG9Period('day')">รายวัน</button>
-        <button class="ctrl-btn" id="g9-p-month" onclick="setG9Period('month')">รายเดือน</button>
-        <button class="ctrl-btn" id="g9-p-year" onclick="setG9Period('year')">รายปี</button>
-      </div>
-      <div class="chart-ctrl">
-        <button class="ctrl-nav" onclick="navG9(-1)">◀</button>
-        <input class="ctrl-date" type="date" id="g9-date" onchange="renderG9Chart()">
-        <input class="ctrl-date" type="month" id="g9-month" onchange="renderG9Chart()" style="display:none">
-        <select class="ctrl-date" id="g9-year" onchange="renderG9Chart()" style="display:none"></select>
-        <button class="ctrl-nav" onclick="navG9(1)">▶</button>
-        <span style="font-size:11px;color:var(--accent);font-weight:700" id="g9-label"></span>
-      </div>
-      <div class="chart-ctrl">
-        <span class="chart-ctrl-label">เรียง:</span>
-        <button class="ctrl-btn green" id="g9-s-default" onclick="setG9Sort('default')">ตามกลุ่ม</button>
-        <button class="ctrl-btn" id="g9-s-desc" onclick="setG9Sort('desc')">มาก→น้อย</button>
-        <button class="ctrl-btn" id="g9-s-asc" onclick="setG9Sort('asc')">น้อย→มาก</button>
-        <div class="ctrl-sep"></div>
-        <button class="ctrl-btn" id="g9-pct" onclick="toggleG9Pct()">แสดง %</button>
-      </div>
-      <div class="chart-container" id="g9-chart-el"></div>
-      <div id="g9-chart-summary" style="margin-top:8px"></div>
-    </div>
-
-    <div class="card">
       <div class="card-title">กราฟเทียบการใช้น้ำแต่ละกลุ่ม</div>
       <div class="info-box" style="margin-bottom:10px">👇 เลือกโรง/กลุ่มที่ต้องการดูจากรายการด้านล่าง</div>
       <div class="f-row">
@@ -1381,8 +1426,35 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <div class="chart-container" id="cmp-chart-el"></div>
       <div id="cmp-chart-summary" style="margin-top:8px"></div>
     </div>
-  </div>
+  
 
+        <div class="card">
+      <div class="card-title">เทียบการใช้น้ำกลุ่มหลัก</div>
+      <div class="chart-ctrl">
+        <span class="chart-ctrl-label">มุมมอง:</span>
+        <button class="ctrl-btn green" id="g9-p-day" onclick="setG9Period('day')">รายวัน</button>
+        <button class="ctrl-btn" id="g9-p-month" onclick="setG9Period('month')">รายเดือน</button>
+        <button class="ctrl-btn" id="g9-p-year" onclick="setG9Period('year')">รายปี</button>
+      </div>
+      <div class="chart-ctrl">
+        <button class="ctrl-nav" onclick="navG9(-1)">◀</button>
+        <input class="ctrl-date" type="date" id="g9-date" onchange="renderG9Chart()">
+        <input class="ctrl-date" type="month" id="g9-month" onchange="renderG9Chart()" style="display:none">
+        <select class="ctrl-date" id="g9-year" onchange="renderG9Chart()" style="display:none"></select>
+        <button class="ctrl-nav" onclick="navG9(1)">▶</button>
+        <span style="font-size:11px;color:var(--accent);font-weight:700" id="g9-label"></span>
+      </div>
+      <div class="chart-ctrl">
+        <span class="chart-ctrl-label">เรียง:</span>
+        <button class="ctrl-btn green" id="g9-s-default" onclick="setG9Sort('default')">ตามกลุ่ม</button>
+        <button class="ctrl-btn" id="g9-s-desc" onclick="setG9Sort('desc')">มาก→น้อย</button>
+        <button class="ctrl-btn" id="g9-s-asc" onclick="setG9Sort('asc')">น้อย→มาก</button>
+        <div class="ctrl-sep"></div>
+        <button class="ctrl-btn" id="g9-pct" onclick="toggleG9Pct()">แสดง %</button>
+      </div>
+      <div class="chart-container" id="g9-chart-el"></div>
+      <div id="g9-chart-summary" style="margin-top:8px"></div>
+    </div>
 
     <div class="card">
       <div class="card-title"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 4-6"/></svg></i> การใช้น้ำรายวัน (m³)</div>
@@ -1420,7 +1492,9 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <div class="chart-container" id="sub-chart-el"></div>
       <div id="sub-chart-summary" style="margin-top:8px"></div>
     </div>
-<div class="panel" id="panel-summary">
+  </div>
+
+  <div class="panel" id="panel-summary">
   <div class="card">
     <div class="card-title">📊 สรุปการใช้น้ำรายเดือน</div>
     <div class="info-box">รายละเอียดรายมิเตอร์แยกตาม Zone + สรุปรายเดือนแต่ละ Zone รายวัน — หัก minus อัตโนมัติจาก <strong>_REPORT_GROUPS</strong> sheet</div>
@@ -1781,8 +1855,15 @@ function restoreSession(){
   sessionToken     = saved.token;
   currentUser      = saved.name || '';
   sessionExpiresAt = saved.expiresAt;
-  applyAppMode(saved.role === 'admin' ? 'admin' : 'basic');
+  // A viewer's saved role must restore to 'viewer', not fall through to
+  // recorder mode — that would silently hand a report-only account the entry
+  // screen (and hide the reports it signed in for) on every reopened tab.
+  const restoredMode = (saved.role === 'admin' || saved.role === 'viewer') ? saved.role : 'basic';
+  applyAppMode(restoredMode);
   closeLoginGate();
+  if(restoredMode === 'viewer' && !ROLE_TABS.viewer.includes(document.querySelector('.panel.active')?.id?.replace('panel-',''))){
+    goTab('chart');
+  }
   return true;
 }
 function showSessionExpiredBanner(){
@@ -1842,12 +1923,12 @@ function logout(){
   activeSubRecent = [];
   lsRemove('records');
   hideSessionExpiredBanner();
-  // #login-choose is an empty compatibility stub after the login redesign —
-  // showing it left the gate visually blank. Land on the recorder form instead.
+  // Land on the three-way picker so recorder/viewer/admin are an explicit
+  // choice, not a default someone has to notice a small link to get past.
   const gate = document.getElementById('login-gate');
   gate.style.display = 'flex';
   gate.style.opacity = '1';
-  rdShowRecorder();
+  backToChoose();
   const errA = document.getElementById('login-err');
   if(errA) errA.style.display = 'none';
   const errR = document.getElementById('recorder-login-err');
@@ -1856,6 +1937,7 @@ function logout(){
 function showRecorderLogin(fromExpiredBanner){
   document.getElementById('login-choose').style.display   = 'none';
   document.getElementById('login-admin').style.display    = 'none';
+  document.getElementById('login-viewer').style.display   = 'none';
   document.getElementById('login-recorder').style.display = 'block';
   if(fromExpiredBanner){
     const gate = document.getElementById('login-gate');
@@ -1903,15 +1985,61 @@ async function handleRecorderLogin(){
 function showAdminLogin(){
   document.getElementById('login-choose').style.display   = 'none';
   document.getElementById('login-recorder').style.display = 'none';
+  document.getElementById('login-viewer').style.display   = 'none';
   document.getElementById('login-admin').style.display    = 'block';
   setTimeout(() => document.getElementById('login-user')?.focus(), 100);
+}
+function showViewerLogin(){
+  document.getElementById('login-choose').style.display   = 'none';
+  document.getElementById('login-recorder').style.display = 'none';
+  document.getElementById('login-admin').style.display    = 'none';
+  document.getElementById('login-viewer').style.display   = 'block';
+  setTimeout(() => document.getElementById('viewer-pass')?.focus(), 100);
 }
 function backToChoose(){
   document.getElementById('login-admin').style.display    = 'none';
   document.getElementById('login-recorder').style.display = 'none';
+  document.getElementById('login-viewer').style.display   = 'none';
   document.getElementById('login-choose').style.display   = 'block';
   document.getElementById('login-err').style.display      = 'none';
   document.getElementById('recorder-login-err').style.display = 'none';
+  const ve = document.getElementById('viewer-login-err'); if(ve) ve.style.display = 'none';
+}
+/* Mirrors handleRecorderLogin() exactly, against the viewer account instead.
+   A viewer's session behaves like any other — same token, same expiry — the
+   difference is entirely in what role-gated endpoints and tabs will accept. */
+async function handleViewerLogin(){
+  const passVal  = document.getElementById('viewer-pass').value.trim();
+  const errDiv   = document.getElementById('viewer-login-err');
+  const loginBtn = document.getElementById('viewer-login-btn');
+  if(!passVal){ errDiv.style.display = 'block'; errDiv.innerText = '⚠️ กรุณากรอกรหัสผ่าน'; return; }
+  errDiv.style.display = 'none';
+  const originalHTML = loginBtn.innerHTML;
+  loginBtn.disabled = true; loginBtn.innerHTML = '⏳ กำลังตรวจสอบ...';
+  try{
+    const res = await apiPost({ action:'login', username:'viewer', password:passVal });
+    if(res && res.success && res.role === 'viewer'){
+      currentUser = res.name || 'ผู้ดูรายงาน';
+      sessionToken = res.token || null;
+      persistSession(res.token, 'viewer', currentUser);
+      applyAppMode('viewer');
+      lsSetRaw('loginMode','viewer');
+      document.getElementById('viewer-pass').value = '';
+      closeLoginGate();
+      goTab('chart');   // the report views are what this role signs in for
+      renderAll();
+    } else if(res && res.success){
+      errDiv.style.display = 'block'; errDiv.innerText = '⚠️ บัญชีนี้ไม่ใช่บัญชีผู้ดูรายงาน';
+    } else {
+      errDiv.style.display = 'block'; errDiv.innerText = '❌ ' + (res?.error || 'รหัสผ่านไม่ถูกต้อง');
+      const el = document.getElementById('viewer-pass');
+      el.style.animation = 'shake 0.4s ease'; setTimeout(() => { el.style.animation = ''; }, 400);
+    }
+  }catch(e){
+    errDiv.style.display = 'block'; errDiv.innerText = '❌ เชื่อมต่อ Server ไม่ได้';
+  }finally{
+    loginBtn.disabled = false; loginBtn.innerHTML = originalHTML;
+  }
 }
 async function handleLogin(){
   const userVal  = document.getElementById('login-user').value.trim();
@@ -1974,6 +2102,8 @@ function applyAppMode(mode){
   if(hdrSmall){
     if(mode === 'admin'){
       hdrSmall.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:3px"><path d="m2 7 4.5 4.5L12 5l5.5 6.5L22 7v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z"/></svg>แอดมิน: ${esc(currentUser)}`;
+    } else if(mode === 'viewer'){
+      hdrSmall.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:3px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>ดูรายงาน${currentUser ? ' — '+esc(currentUser) : ''}`;
     } else {
       hdrSmall.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>โหมดบันทึก${currentUser ? ' — '+esc(currentUser) : ''}`;
     }
@@ -2536,10 +2666,15 @@ async function init(){
       }
     } else {
       await loadFromServer();
-      showRecorderLogin();
+      backToChoose();
     }
   } else {
     loadFromServer();
+    // No QR param and no restored session: this is a bare app open, so land
+    // on the three-way picker. Without this, the recorder form was left
+    // showing by default (its only "hidden" state came from the query-param
+    // branch above), so a bare open silently skipped the picker entirely.
+    if(!hasSession) backToChoose();
   }
 }
 
@@ -2561,7 +2696,20 @@ function renderAll(){
 }
 
 const TAB_ORDER = ["entry","data","chart","summary","qr","settings"];
+/* Tabs a role may open, independent of what the drawer happens to show. The
+   drawer hides buttons a role shouldn't use, but hiding a button is not
+   access control — someone could still call goTab('entry') from the console
+   or a stale bookmark, so the boundary is enforced here too. */
+const ROLE_TABS = {
+  admin:    ['entry','data','chart','summary','cost','qr','settings'],
+  viewer:   ['chart','summary','cost'],
+  basic:    ['entry']     // recorder
+};
 function goTab(name){
+  const allowed = ROLE_TABS[appMode] || ROLE_TABS.basic;
+  if(allowed.indexOf(name) === -1){
+    name = allowed[0];    // fall back to the first tab this role may see
+  }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t   => t.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
@@ -2569,7 +2717,16 @@ function goTab(name){
   const tabEl = document.querySelectorAll('.tab')[idx];
   if(tabEl) tabEl.classList.add('active');
   if(name === 'data')     { ensureAdminRecords(); renderData(); renderStats(); updateRecordWindowNotice(); }
-  if(name === 'chart')    { ensureAdminRecords(); populateDDs(); setSubQuick('30d'); buildCompareGroupOptions(); initG9Pickers(); renderG9Chart(); }
+  if(name === 'chart'){
+    ensureAdminRecords(); populateDDs(); setSubQuick('30d'); buildCompareGroupOptions(); initG9Pickers();
+    /* The card the person sees first — "กราฟเทียบการใช้ไฟฟ้าแต่ละกลุ่ม" — is
+       rendered to completion before the second chart even starts. Both used to
+       fire together; they hit getSummaryCached with different date ranges (so
+       different cache keys), meaning two heavy summary requests queued back to
+       back with no ordering guarantee. Awaiting the first means the chart at
+       the top of the screen is never left waiting behind one lower down. */
+    (async () => { await renderCmpChart(); renderG9Chart(); })();
+  }
   if(name === 'qr')       { renderQR(); }
   if(name === 'settings') { renderSubList(); renderCalendarList(); }
   if(name === 'summary')  { onTabSummary(); }
@@ -3434,7 +3591,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if(recorderPassEl) recorderPassEl.addEventListener('keydown', e => { if(e.key === 'Enter') handleRecorderLogin(); });
 });
 
-init();
+// init() is called at the very end of the concatenated script (core-tail.js),
+// not here — see the note there for why.
 
 
 
@@ -4127,7 +4285,7 @@ function renderSubChart(){
     grid:{ borderColor:TC.border, strokeDashArray:3, xaxis:{lines:{show:false}}, yaxis:{lines:{show:true}} },
     tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'}, y:{formatter:function(v){return v!=null?Math.round(v).toLocaleString()+' '+UNIT:'—';}} },
     colors: chartColors,
-    responsive:[{ breakpoint:640, options:{ chart:{height:300}, xaxis:{labels:{rotate:-45, rotateAlways:true, hideOverlappingLabels:true, style:{fontSize:'8px'}}}, plotOptions:{bar:{horizontal:true, borderRadius:4, barHeight:'70%', distributed:true, dataLabels:{position:'top'}}} } }],
+    responsive:[{ breakpoint:640, options:{ chart:{height:300}, xaxis:{labels:{rotate:-45, rotateAlways:true, hideOverlappingLabels:true, style:{fontSize:'8px'}}}, plotOptions:{bar:{columnWidth:'80%'}} } }],
     plotOptions:{ bar:{borderRadius:4,columnWidth:'70%'} },
     stroke:{ width:strokeW, dashArray:strokeDash },
     fill:{ opacity:chartType==='bar'?0.7:0.8 },
@@ -4294,9 +4452,13 @@ async function renderG9Chart(){
         background:'transparent', animations:{enabled:true,speed:400} },
       series:[{ name:UNIT_WORD+' ('+UNIT+')', data:groupVals.map(function(g){return Math.round(g.value);}) }],
       /* Horizontal bars: group names are words, not dates, and rotating them to
-         -45° at 9px made the busiest chart on the page the hardest to read. */
+         -45° at 9px made the busiest chart on the page the hardest to read.
+         NOTE: when horizontal, ApexCharts still renders the category names
+         through xaxis.labels — a numeric formatter here (Math.round, etc.)
+         gets called with the group NAME and returns NaN. This formatter must
+         stay a pass-through; the numeric axis is yaxis below. */
       xaxis:{ categories:groupVals.map(function(g){return g.name;}), axisBorder:{color:TC.border}, axisTicks:{show:false},
-              labels:{ style:{fontSize:'12px',colors:TC.text2}, formatter:function(v){ return Math.round(v).toLocaleString(); } } },
+              labels:{ style:{fontSize:'12px',colors:TC.text2} } },
       /* The axis carries the unit so a reader never has to guess whether a
          bar is kWh, kW or cubic metres — the same chart component is used by
          both the electricity and water apps. */
@@ -4306,7 +4468,7 @@ async function renderG9Chart(){
       tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'}, y:{formatter:tooltipFmt} },
       colors:groupVals.map(function(g){return g.color;}),
       responsive:[{ breakpoint:640, options:{ dataLabels:{style:{fontSize:'10px'}}, xaxis:{labels:{style:{fontSize:'10px'}}} } }],
-      plotOptions:{ bar:{borderRadius:6,columnWidth:'65%',distributed:true} },
+      plotOptions:{ bar:{horizontal:true, borderRadius:6, barHeight:'70%', distributed:true, dataLabels:{position:'top'}} },
       fill:{ opacity:0.7 },
       legend:{ show:false },
       dataLabels:{ enabled:true, textAnchor:'start', offsetX:6,
@@ -4647,11 +4809,22 @@ function rdSyncDrawerUser(){
   const logout = document.getElementById('rd-logout-item');
   if (logout) logout.style.display = 'flex';
 }
+/* Three roles, three different slices of the drawer:
+     admin    — everything (rd-admin-item includes Entry-adjacent items)
+     viewer   — chart/summary/cost only (rd-viewer-item); never Entry, Data,
+                QR or Settings — a report-only account should have no path to
+                a screen that writes or exposes raw records
+     recorder — Entry only (rd-recorder-item); nothing marked admin or viewer
+   This runs on every login and logout, not just once, because the same
+   drawer DOM persists across role switches in one browser tab. */
 function rdApplyRoleVisibility(){
-  // hide admin-only items when in recorder mode
   const mode = (typeof appMode !== 'undefined') ? appMode : '';
   document.querySelectorAll('.rd-admin-item').forEach(el => {
-    el.classList.toggle('hidden', mode !== 'admin');
+    const viewerOk = mode === 'viewer' && el.classList.contains('rd-viewer-item');
+    el.classList.toggle('hidden', mode !== 'admin' && !viewerOk);
+  });
+  document.querySelectorAll('.rd-recorder-item').forEach(el => {
+    el.classList.toggle('hidden', mode === 'viewer');
   });
 }
 // Login toggle handlers — delegate the actual show/hide to the ORIGINAL
@@ -4675,6 +4848,15 @@ function rdShowRecorder(){
   if (tag)   tag.textContent   = 'Recorder access';
   if (title) title.textContent = 'Sign in to log readings';
   if (sub)   sub.textContent   = 'กรอกรหัสผ่านทีมจดมิเตอร์เพื่อเริ่มบันทึกค่า';
+}
+function rdShowViewer(){
+  showViewerLogin();
+  const tag = document.getElementById('rd-login-mode-tag');
+  const title = document.getElementById('rd-login-title');
+  const sub = document.getElementById('rd-login-subtitle');
+  if (tag)   tag.textContent   = 'Report viewer';
+  if (title) title.textContent = 'Sign in to view reports';
+  if (sub)   sub.textContent   = 'สำหรับผู้บริหาร / ผู้ที่มาดูรายงานการใช้พลังงาน';
 }
 // Keyboard: Enter in recorder passcode → submit
 document.addEventListener('DOMContentLoaded', () => {
@@ -4745,9 +4927,9 @@ setInterval(() => {
   else if (r > 200 && g < 100) dot.classList.add('err');
 }, 500);
 
-
 /* ── generated tab hooks (see build.js) ── */
 function onTabSummary(){ renderSummary(); }
-function onTabCost(){ /* no cost module in this build */ }</script>
+function onTabCost(){ /* no cost module in this build */ }
+init();</script>
 </body>
 </html>
