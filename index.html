@@ -1419,6 +1419,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <button class="ctrl-btn" id="cmp-p-year" onclick="setCmpPeriod('year')">รายปี</button>
         <div class="ctrl-sep"></div>
         <button class="ctrl-btn on" id="cmp-avg" onclick="toggleCmpOpt('avg')">เส้นเฉลี่ย</button>
+        <button class="ctrl-btn on" id="cmp-hol" onclick="toggleCmpOpt('hol')">แยกสีวันหยุด</button>
         <div class="ctrl-sep"></div>
         <button class="ctrl-btn green" id="cmp-t-bar" onclick="setCmpType('bar')">แท่ง</button>
         <button class="ctrl-btn" id="cmp-t-line" onclick="setCmpType('line')">เส้น</button>
@@ -2345,14 +2346,16 @@ let _adminRecordsInFlight = null;
    two minutes. It is now pulled the first time a tab that needs it is opened. */
 let _adminRecordsLoaded = false;
 
+/* Admin or report-viewer — see the matching comment in the Electric app. */
 async function ensureAdminRecords(){
-  if(_adminRecordsLoaded || appMode !== 'admin' || !sessionToken) return;
+  const allowed = appMode === 'admin' || appMode === 'viewer';
+  if(_adminRecordsLoaded || !allowed || !sessionToken) return;
   setSyncStatus('busy','กำลังโหลดข้อมูล...');
   try{
     await loadAdminRecords();
     _adminRecordsLoaded = true;
     setSyncStatus('ok','โหลดข้อมูลแล้ว');
-    renderData(); updateRecordWindowNotice(); updateBadge();
+    if(appMode === 'admin'){ renderData(); updateRecordWindowNotice(); updateBadge(); }
     if(document.querySelector('.panel.active')?.id === 'panel-chart'){
       populateDDs(); initG9Pickers(); renderSubChart();
     }
@@ -2718,7 +2721,7 @@ function goTab(name){
   if(tabEl) tabEl.classList.add('active');
   if(name === 'data')     { ensureAdminRecords(); renderData(); renderStats(); updateRecordWindowNotice(); }
   if(name === 'chart'){
-    ensureAdminRecords(); populateDDs(); setSubQuick('30d'); buildCompareGroupOptions(); initG9Pickers();
+    ensureAdminRecords(); populateDDs(); setSubQuick('30d'); buildCompareGroupOptions(); initG9Pickers(); initCmpPickers();
     /* The card the person sees first — "กราฟเทียบการใช้ไฟฟ้าแต่ละกลุ่ม" — is
        rendered to completion before the second chart even starts. Both used to
        fire together; they hit getSummaryCached with different date ranges (so
@@ -4463,7 +4466,14 @@ async function renderG9Chart(){
          bar is kWh, kW or cubic metres — the same chart component is used by
          both the electricity and water apps. */
       yaxis:{ title:{ text: UNIT, style:{fontSize:'12px', fontWeight:700, color:TC.text2} },
-              labels:{style:{fontSize:'12px',colors:TC.text2}, formatter:function(v){return Math.round(v).toLocaleString();}}, axisBorder:{show:false} },
+      /* Horizontal bars swap which axis object controls the visible label
+         style: the category names (declared in xaxis.categories) render on
+         the left, but ApexCharts pulls their formatting from yaxis.labels —
+         not xaxis.labels. A numeric Math.round() formatter here ran on the
+         group NAME and printed "NaN" for every row. Pass-through only.
+         (renderSubChart/renderCmpChart below are ordinary vertical bars —
+         their yaxis really is numeric, so their formatters stay as-is.) */
+              labels:{style:{fontSize:'12px',colors:TC.text2}}, axisBorder:{show:false} },
       grid:{ borderColor:TC.border, strokeDashArray:3, xaxis:{lines:{show:false}}, yaxis:{lines:{show:true}} },
       tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'}, y:{formatter:tooltipFmt} },
       colors:groupVals.map(function(g){return g.color;}),
@@ -4566,7 +4576,7 @@ function meterSpanOnDay(meterMap, meterId, dateStr, allDates){
   return 1;
 }
 
-var cmpState = { period:'day', type:'bar', showAvg:true };
+var cmpState = { period:'day', type:'bar', showAvg:true, showHol:true };
 function setCmpQuick(key){
   var r = getQuickRange(key);
   document.getElementById('cmp-from').value = r[0];
@@ -4589,7 +4599,18 @@ function setCmpType(t){
   });
   renderCmpChart();
 }
-function toggleCmpOpt(){
+function toggleCmpOpt(opt){
+  // The button already passed 'avg' as an argument; this just never had a
+  // parameter to receive it, so every call silently toggled showAvg
+  // regardless of which button was clicked. Harmless while there was only
+  // one option — not once a second (hol) button exists.
+  if(opt==='hol'){
+    cmpState.showHol = !cmpState.showHol;
+    var elH = document.getElementById('cmp-hol');
+    if(elH) elH.className = cmpState.showHol ? 'ctrl-btn on' : 'ctrl-btn';
+    renderCmpChart();
+    return;
+  }
   cmpState.showAvg = !cmpState.showAvg;
   var el = document.getElementById('cmp-avg');
   if(el) el.className = cmpState.showAvg ? 'ctrl-btn on' : 'ctrl-btn';
@@ -4627,6 +4648,22 @@ function _cmpFillPeriods(allPeriods, fromVal, toVal, period){
     m++; if(m>12){ m=1; y++; }
   }
   return out2;
+}
+
+/* Defaults the group-comparison range to the current calendar month — the 1st
+   through the last day, even on the 1st itself, rather than "30 days back
+   from today" which used to spill into the previous month's data every time
+   the month was young. Only fills in blanks: a range the person picked by
+   hand is never overwritten. */
+function initCmpPickers(){
+  var fromEl = document.getElementById('cmp-from');
+  var toEl   = document.getElementById('cmp-to');
+  if(!fromEl || !toEl) return;
+  var now = new Date();
+  var first = new Date(now.getFullYear(), now.getMonth(), 1);
+  var last  = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  if(!fromEl.value) fromEl.value = ymdLocal(first);
+  if(!toEl.value)   toEl.value   = ymdLocal(last);
 }
 
 async function renderCmpChart(){
@@ -4697,18 +4734,37 @@ async function renderCmpChart(){
     }
     var values = dataPoints.map(function(d){return Math.round(d.value);});
     var labels = dataPoints.map(function(d){return d.label;});
-    var series = [{ name:UNIT_WORD+' ('+UNIT+'/'+pl+')', data:values }];
-    var chartColors = [TC.accent];
-    var strokeW = cmpState.type==='bar' ? [0] : [2.5];
-    var strokeDash = [0];
+    /* Same split as renderSubChart's "แยกสีวันหยุด": two series sharing one
+       axis, each with a null where the other day-type belongs. ApexCharts
+       renders that as a single bar per day, coloured by which series actually
+       has a value there — TC.green for a workday, TC.orange for a holiday.
+       Kept identical between the two charts on purpose, so the same toggle
+       means the same thing wherever it appears. */
+    var useHolSplit = cmpState.period==='day' && cmpState.showHol && cmpState.type==='bar';
+    var series, chartColors;
+    if(useHolSplit){
+      var workData = dataPoints.map(function(d){ return d.hol ? null : Math.round(d.value); });
+      var holData  = dataPoints.map(function(d){ return d.hol ? Math.round(d.value) : null; });
+      series = [
+        { name:UNIT_WORD+' (วันทำงาน)', data:workData },
+        { name:UNIT_WORD+' (วันหยุด)',  data:holData  }
+      ];
+      chartColors = [TC.green, TC.orange];
+    } else {
+      series = [{ name:UNIT_WORD+' ('+UNIT+'/'+pl+')', data:values }];
+      chartColors = [TC.accent];
+    }
+    var strokeW = cmpState.type==='bar' ? series.map(function(){return 0;}) : series.map(function(){return 2.5;});
+    var strokeDash = series.map(function(){return 0;});
     if(cmpState.showAvg){
       var cmpAvgLine = Math.round(cmpState.period === 'day' ? cmpAvgWork : avg);
       series.push({ name:'ค่าเฉลี่ย', data:dataPoints.map(function(){return cmpAvgLine;}), type:'line' });
       chartColors.push(TC.orange+'77');
-      strokeW = cmpState.type==='bar' ? [0,2] : [2.5,2]; strokeDash = [0,5];
+      strokeW.push(cmpState.type==='bar' ? 2 : 2); strokeDash.push(5);
     }
     var opts = {
       chart:{ type:cmpState.type==='bar'?'bar':'line', height:340, fontFamily:'IBM Plex Mono,monospace', foreColor:TC.text2,
+        stacked: useHolSplit,
         toolbar:{ show:true, tools:{download:true,zoom:true,zoomin:true,zoomout:true,pan:true,reset:true} },
         background:'transparent', animations:{enabled:true,speed:400} },
       series: series,
@@ -4927,7 +4983,6 @@ setInterval(() => {
   else if (r > 200 && g < 100) dot.classList.add('err');
 }, 500);
 
-/* ── generated tab hooks (see build.js) ── */
 function onTabSummary(){ renderSummary(); }
 function onTabCost(){ /* no cost module in this build */ }
 init();</script>
