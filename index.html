@@ -804,6 +804,13 @@ body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;backgro
 .f-input.kwh-input{font-size:var(--fs-2xl);font-weight:700;text-align:center;color:var(--green);letter-spacing:3px;padding:16px;background:var(--surface-2);border-radius:var(--r-lg);font-family:var(--font-mono);min-height:72px}
 .f-input:disabled{opacity:.5;cursor:not-allowed}
 select.f-input option{background:var(--surface-2)}
+select.rd-select-hint{
+  appearance:none; -webkit-appearance:none;
+  border-color:var(--accent-border);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300D4FF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 12px center; background-size:16px;
+  padding-right:38px;
+}
 .f-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .f-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 #entry-section{display:none;position:fixed;top:52px;left:0;right:0;bottom:0;background:var(--bg);z-index:100;padding:12px 12px 90px;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:fadeIn .18s ease-out}
@@ -1124,6 +1131,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     <button class="rd-icon-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
+    <span id="rd-last-sync" title="เวลาที่ข้อมูลอัปเดตล่าสุด" style="font-family:var(--rd-font-mono);font-size:11px;color:var(--rd-ink-3);white-space:nowrap;margin-right:2px"></span>
     <div class="rd-status-dot" id="sync-dot" title="Sync status"></div>
     <span id="hdr-small" style="display:none"></span>
   </div>
@@ -1152,6 +1160,10 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     <a class="rd-drawer-item" href="https://imctconsumption.github.io/IMCT_HUB/" title="Back to hub">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
       Home
+    </a>
+    <a class="rd-drawer-item" href="https://imctconsumption.github.io/Electric-Meter-SR/" title="สลับไปแอปมิเตอร์ไฟฟ้า SR">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>
+      สลับไปมิเตอร์ไฟฟ้า <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">Electric</span>
     </a>
 
     <div class="rd-drawer-section">Workspace</div>
@@ -1391,11 +1403,12 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 
   <div class="panel" id="panel-chart">
     <div class="card">
-      <div class="card-title">กราฟเทียบการใช้น้ำแต่ละกลุ่ม</div>
-      <div class="info-box" style="margin-bottom:10px">👇 เลือกโรง/กลุ่มที่ต้องการดูจากรายการด้านล่าง</div>
+      <div class="card-title">กราฟเทียบการใช้น้ำแต่ละกลุ่ม
+        <button class="btn btn-ghost btn-sm" style="text-transform:none;letter-spacing:0;padding:3px 8px;min-height:auto" id="cmp-refresh-btn" onclick="refreshCmpChart()" title="ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์">🔄</button>
+      </div>
       <div class="f-row">
         <label class="f-label">🏭 เลือกโรง / กลุ่ม</label>
-        <select class="f-input" id="cmp-group" onchange="renderCmpChart()"></select>
+        <select class="f-input rd-select-hint" id="cmp-group" onchange="renderCmpChart()"></select>
       </div>
       <div class="chart-ctrl">
         <span class="chart-ctrl-label">ช่วงเร็ว:</span>
@@ -1430,7 +1443,9 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
   
 
         <div class="card">
-      <div class="card-title">เทียบการใช้น้ำกลุ่มหลัก</div>
+      <div class="card-title">เทียบการใช้น้ำกลุ่มหลัก
+        <button class="btn btn-ghost btn-sm" style="text-transform:none;letter-spacing:0;padding:3px 8px;min-height:auto" id="g9-refresh-btn" onclick="refreshG9Chart()" title="ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์">🔄</button>
+      </div>
       <div class="chart-ctrl">
         <span class="chart-ctrl-label">มุมมอง:</span>
         <button class="ctrl-btn green" id="g9-p-day" onclick="setG9Period('day')">รายวัน</button>
@@ -1458,7 +1473,9 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     </div>
 
     <div class="card">
-      <div class="card-title"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 4-6"/></svg></i> การใช้น้ำรายวัน (m³)</div>
+      <div class="card-title"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 4-6"/></svg></i> กราฟรายมิเตอร์
+        <button class="btn btn-ghost btn-sm" style="text-transform:none;letter-spacing:0;padding:3px 8px;min-height:auto" id="sub-refresh-btn" onclick="refreshSubChart()" title="ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์">🔄</button>
+      </div>
       <div class="f-row">
         <label class="f-label">เลือก Meter</label>
         <select class="f-input" id="chart-sub" onchange="renderSubChart()"><option value="">เลือก Sub...</option></select>
@@ -1786,6 +1803,11 @@ function fmtUsedCell(used, meterId){
   return fmtNum(used, meterId);
 }
 
+/* See the matching comment in the Electric app. */
+function meterNameById(meterId){
+  const sub = subs.find(s => s.id === meterId);
+  return sub ? sub.name : (meterId || '—');
+}
 function fmtNum(val, meterId){
   const sub = subs.find(s => s.id === meterId);
   const dec = sub && sub.decimal !== undefined ? sub.decimal : 0;
@@ -2443,6 +2465,54 @@ function invalidateSummaryCache(reason){
   console.log(`🗑 invalidateSummaryCache — ล้าง ${keys} keys, reason: ${reason||'ไม่ระบุ'}`);
 }
 
+/* See the matching comment in the Electric app for why this is manual, not
+   polled. */
+async function _withRefreshSpin(btnId, fn){
+  const btn = document.getElementById(btnId);
+  if(btn){ btn.disabled = true; btn.style.animation = 'spin 0.8s linear infinite'; }
+  try { await fn(); }
+  finally { if(btn){ btn.disabled = false; btn.style.animation = ''; } }
+}
+function refreshCmpChart(){
+  return _withRefreshSpin('cmp-refresh-btn', async () => {
+    invalidateSummaryCache('manual-refresh:cmp');
+    await renderCmpChart();
+  });
+}
+function refreshG9Chart(){
+  return _withRefreshSpin('g9-refresh-btn', async () => {
+    invalidateSummaryCache('manual-refresh:g9');
+    await renderG9Chart();
+  });
+}
+/* See the matching comment in the Electric app. */
+async function refreshRecordsIncremental(){
+  if(!records.length){ await loadAdminRecords(); return; }
+  let maxDate = records[0].date;
+  records.forEach(r => { if(r.date > maxDate) maxDate = r.date; });
+  try{
+    const res = await apiPostAuthed({ action:'getRawRecords', dateFrom: maxDate });
+    const server = res.records || [];
+    /* See the matching comment in the Electric app: within the >= maxDate
+       window the server list is complete truth, so take it verbatim (which
+       drops rows deleted elsewhere) and keep only older local rows. */
+    const older = records.filter(r => r.date < maxDate);
+    const byId = {};
+    older.forEach(r => { byId[r.id] = r; });
+    server.forEach(r => { byId[r.id] = r; });
+    records = computeUsed(Object.values(byId));
+    persist();
+    updateRecordWindowNotice();
+  }catch(e){ /* apiPostAuthed already surfaced the error toast */ }
+}
+
+function refreshSubChart(){
+  return _withRefreshSpin('sub-refresh-btn', async () => {
+    await refreshRecordsIncremental();
+    renderSubChart();
+  });
+}
+
 function safeDestroyChart(inst){
   if(!inst) return;
   try{ inst.destroy(); }
@@ -2471,6 +2541,14 @@ function ensureQRCode(){    return (typeof QRCode!=='undefined')    ? Promise.re
 function ensureXLSX(){      return (typeof XLSX!=='undefined')      ? Promise.resolve() : loadScript(CDN.xlsx); }
 function ensureApex(){      return (typeof ApexCharts!=='undefined') ? Promise.resolve() : loadScript(CDN.apexcharts); }
 
+/* See the matching comment in the Electric app. */
+function updateLastSyncTime(){
+  const el = document.getElementById('rd-last-sync');
+  if(!el) return;
+  const now = new Date();
+  const pad = v => String(v).padStart(2,'0');
+  el.textContent = 'อัปเดต ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+}
 function setSyncStatus(status, msg){
   const dot = document.getElementById('sync-dot');
   const ban = document.getElementById('sync-banner');
@@ -2485,6 +2563,7 @@ function setSyncStatus(status, msg){
   } else {
     ban.className = 'sync-banner show success'; ico.textContent = '✅'; bm.textContent = msg || 'Sync สำเร็จ';
     setTimeout(() => { ban.className = 'sync-banner'; }, 2500);
+    updateLastSyncTime();
   }
 }
 /* Fetch the doGet payload with retries.
@@ -2548,6 +2627,7 @@ function loadFromServer(){
         if(sb && !sb.disabled){ sb.innerHTML = '✅ บันทึกข้อมูล'; }
       }
       console.log(`✅ Sync — ${subs.length} subs, ${workCalendar.length} cal${appMode==='admin' ? ', '+records.length+' records' : ''}`);
+      updateLastSyncTime();
     })
     .catch(err => { console.warn('⚠️ โหลด Server ไม่ได้ ใช้ Cache:', err.message); isConnected = false; });
 }
@@ -2624,14 +2704,31 @@ function computeUsed(rawRecords){
       // flow into the Data table, the charts and the group totals as if it
       // were kWh. null keeps them out and lets the UI render "—".
       if(vt === 'demand' || vt === 'snapshot'){ rec.used = null; return; }
-      if(i === chain.length - 1){ rec.used = 0; }
-      else {
-        const diff = parseFloat(chain[i+1].kwh) - parseFloat(rec.kwh);
-        // A counter's difference IS meaningful (events elapsed), so it is
-        // computed — but it is a count, not energy, and callers that total
-        // kWh must exclude it. See sumGroupOnDay().
-        rec.used = Math.max(0, diff) * (vt === 'counter' ? 1 : multiplier);
+
+      /* A cumulative register in service never legitimately reads 0, so a 0
+         here means "not read", not "nothing was used" — see
+         _isUsableReading(). This used to only be enforced server-side
+         (meterUsedOnDay, which the group charts and monthly report read
+         from), while this client-side path — the per-meter chart and the
+         Data table — computed straight off whatever was typed, zero
+         included. A single 0 in the middle of a chain produced two wrong
+         numbers here that the group total never had: the day before it
+         clamped to 0 (losing that day's real usage) and the 0 day itself
+         invented a spike equal to the meter's entire lifetime reading. */
+      if(!_isUsableReading(meterId, parseFloat(rec.kwh))){ rec.used = null; return; }
+
+      let nextVal = null;
+      for(let k = i + 1; k < chain.length; k++){
+        const v = parseFloat(chain[k].kwh);
+        if(_isUsableReading(meterId, v)){ nextVal = v; break; }
       }
+      if(nextVal === null){ rec.used = 0; return; }
+
+      const diff = nextVal - parseFloat(rec.kwh);
+      // A counter's difference IS meaningful (events elapsed), so it is
+      // computed — but it is a count, not energy, and callers that total
+      // kWh must exclude it. See sumGroupOnDay().
+      rec.used = Math.max(0, diff) * (vt === 'counter' ? 1 : multiplier);
     });
   });
   const _out = Object.values(groups).flat();
@@ -2685,6 +2782,7 @@ function renderAll(){
   if(!DEBUG_PERF){
     renderZoneAreas(); renderData(); renderStats(); populateDDs(); updateBadge();
     if(activeSub){ updateMeterSummary(); renderRecent(); }
+    refreshSubChartIfVisible();
     return;
   }
   const seg = (name, fn) => { const l=perfLabel('renderAll:'+name); perfStart(l); fn(); perfEnd(l); };
@@ -2695,7 +2793,15 @@ function renderAll(){
   seg('populateDDs', populateDDs);
   seg('updateBadge', updateBadge);
   if(activeSub){ seg('meterSummary', updateMeterSummary); seg('recent', renderRecent); }
+  seg('subChart', refreshSubChartIfVisible);
   console.log(`⏱ renderAll TOTAL: ${(performance.now()-_t0).toFixed(2)} ms`);
+}
+
+/* See the matching comment in the Electric app. */
+function refreshSubChartIfVisible(){
+  if(typeof subChartInst !== 'undefined' && subChartInst){
+    try { renderSubChart(); } catch(e){ /* chart redraw is best-effort */ }
+  }
 }
 
 const TAB_ORDER = ["entry","data","chart","summary","qr","settings"];
@@ -2721,14 +2827,12 @@ function goTab(name){
   if(tabEl) tabEl.classList.add('active');
   if(name === 'data')     { ensureAdminRecords(); renderData(); renderStats(); updateRecordWindowNotice(); }
   if(name === 'chart'){
-    ensureAdminRecords(); populateDDs(); setSubQuick('30d'); buildCompareGroupOptions(); initG9Pickers(); initCmpPickers();
-    /* The card the person sees first — "กราฟเทียบการใช้ไฟฟ้าแต่ละกลุ่ม" — is
-       rendered to completion before the second chart even starts. Both used to
-       fire together; they hit getSummaryCached with different date ranges (so
-       different cache keys), meaning two heavy summary requests queued back to
-       back with no ordering guarantee. Awaiting the first means the chart at
-       the top of the screen is never left waiting behind one lower down. */
-    (async () => { await renderCmpChart(); renderG9Chart(); })();
+    /* See the matching comment in the Electric app. */
+    (async () => {
+      await ensureAdminRecords();
+      populateDDs(); setSubQuick('30d'); buildCompareGroupOptions(); initG9Pickers(); initCmpPickers();
+      await renderCmpChart(); renderG9Chart();
+    })();
   }
   if(name === 'qr')       { renderQR(); }
   if(name === 'settings') { renderSubList(); renderCalendarList(); }
@@ -2824,7 +2928,7 @@ function renderTable(){
   if(total === 0){ emptyBox.style.display = 'block'; if(document.getElementById('pageNav')) document.getElementById('pageNav').innerHTML = ''; perfEnd(_plT); return; }
   emptyBox.style.display = 'none';
   tbody.innerHTML = pageItems.map(r => `<tr>
-    <td class="td-sub">${r.meterId}</td><td>${fmtDate(r.date)}</td><td>${fmtTime(r.time)}</td>
+    <td class="td-sub" title="${r.meterId}">${esc(meterNameById(r.meterId))}</td><td>${fmtDate(r.date)}</td><td>${fmtTime(r.time)}</td>
     <td class="td-kwh">${fmtNum(r.kwh, r.meterId)}</td>
     <td class="td-used"><strong>${fmtUsedCell(r.used, r.meterId)}</strong></td>
     <td class="desktop-only">${esc(r.user)||'—'}</td><td class="desktop-only">${esc(r.note)||'—'}</td>
@@ -4187,6 +4291,86 @@ function aggregateRecords(recs, period, dateFrom, dateTo){
   });
 }
 
+/* See the matching comment in the Electric app. */
+function buildChartOpts(dataPoints, state, TC){
+  const total = dataPoints.reduce((a,d) => a + d.value, 0);
+  const avg = dataPoints.length ? total / dataPoints.length : 0;
+  const pl = state.period === 'day' ? 'วัน' : state.period === 'month' ? 'เดือน' : 'ปี';
+
+  let avgWork = 0, avgHol = 0, nWork = 0, nHol = 0;
+  if(state.period === 'day'){
+    let sumWork = 0, sumHol = 0;
+    dataPoints.forEach(d => { if(d.hol){ sumHol += d.value; nHol++; } else { sumWork += d.value; nWork++; } });
+    avgWork = nWork ? sumWork / nWork : 0;
+    avgHol  = nHol  ? sumHol  / nHol  : 0;
+  }
+
+  const labels = dataPoints.map(d => d.label);
+  const chartType = state.type === 'bar' ? 'bar' : 'line';
+  const useHolSplit = state.period === 'day' && state.showHol && chartType === 'bar';
+
+  let series, chartColors;
+  if(useHolSplit){
+    const workData = dataPoints.map(d => d.hol ? null : Math.round(d.value));
+    const holData  = dataPoints.map(d => d.hol ? Math.round(d.value) : null);
+    series = [
+      { name:UNIT_WORD+' (วันทำงาน)', data:workData },
+      { name:UNIT_WORD+' (วันหยุด)',  data:holData  }
+    ];
+    chartColors = [TC.green, TC.orange];
+  } else {
+    const values = dataPoints.map(d => Math.round(d.value));
+    series = [{ name:UNIT_WORD+' ('+UNIT+'/'+pl+')', data:values }];
+    chartColors = [chartType === 'bar' ? TC.green : TC.accent];
+  }
+  let strokeW = series.map(() => chartType === 'bar' ? 0 : 2.5);
+  let strokeDash = series.map(() => 0);
+  if(state.showAvg){
+    const avgLine = Math.round(state.period === 'day' ? avgWork : avg);
+    series.push({ name:'ค่าเฉลี่ย', data:dataPoints.map(() => avgLine), type:'line' });
+    chartColors.push(TC.orange+'77');
+    strokeW.push(2); strokeDash.push(5);
+  }
+
+  const chartOpts = {
+    chart:{ type:chartType, height:340, fontFamily:'IBM Plex Mono,monospace', foreColor:TC.text2,
+      stacked: useHolSplit,
+      toolbar:{ show:true, tools:{download:true,zoom:true,zoomin:true,zoomout:true,pan:true,reset:true} },
+      background:'transparent', animations:{enabled:true,speed:400} },
+    series: series,
+    xaxis:{ categories:labels, axisBorder:{color:TC.border}, axisTicks:{show:false},
+            tickAmount: Math.min(labels.length, 8),
+            labels:{ rotate:0, rotateAlways:false, hideOverlappingLabels:true, trim:false,
+                     style:{fontSize:'11px',colors:TC.text2} } },
+    yaxis:{ title:{ text: UNIT, style:{fontSize:'12px', fontWeight:700, color:TC.text2} },
+            labels:{style:{fontSize:'12px',colors:TC.text2}, formatter:v => Math.round(v).toLocaleString()},
+            axisBorder:{show:false} },
+    grid:{ borderColor:TC.border, strokeDashArray:3, xaxis:{lines:{show:false}}, yaxis:{lines:{show:true}} },
+    tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'}, y:{formatter:v => v!=null?Math.round(v).toLocaleString()+' '+UNIT:'—'} },
+    colors: chartColors,
+    responsive:[{ breakpoint:640, options:{ chart:{height:300}, xaxis:{labels:{rotate:-45, rotateAlways:true, hideOverlappingLabels:true, style:{fontSize:'8px'}}}, plotOptions:{bar:{columnWidth:'80%'}} } }],
+    plotOptions:{ bar:{borderRadius:4,columnWidth:'70%'} },
+    stroke:{ width:strokeW, dashArray:strokeDash },
+    fill:{ opacity:chartType==='bar'?0.7:0.8 },
+    legend:{ show:series.length>1, fontSize:'11px', labels:{colors:TC.text2}, markers:{shape:'square',size:6} },
+    dataLabels:{ enabled:false },
+    states:{ hover:{filter:{type:'lighten',value:0.08}} }
+  };
+
+  let avgChips;
+  if(state.period === 'day' && (nWork || nHol)){
+    avgChips = '<span class="chip chip-green">เฉลี่ยวันทำงาน '+Math.round(avgWork).toLocaleString()+' '+UNIT+' ('+nWork+' วัน)</span> '+
+               '<span class="chip" style="background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.4)">เฉลี่ยวันหยุด '+Math.round(avgHol).toLocaleString()+' '+UNIT+' ('+nHol+' วัน)</span>';
+  } else {
+    avgChips = '<span class="chip chip-green">เฉลี่ย '+Math.round(avg).toLocaleString()+' '+UNIT+'/'+pl+'</span>';
+  }
+  const summaryHtml = '<span class="chip chip-green">'+UNIT_ICON+' รวม '+Math.round(total).toLocaleString()+' '+UNIT+'</span> ' +
+    avgChips + ' ' +
+    '<span class="chip" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border)">'+dataPoints.length+' '+pl+'</span>';
+
+  return { chartOpts, summaryHtml };
+}
+
 var subChartState = { period:'day', type:'bar', showAvg:true, showHol:true };
 function setSubQuick(key){
   var r = getQuickRange(key);
@@ -4234,86 +4418,15 @@ function renderSubChart(){
   var data = aggregateRecords(recs, subChartState.period, fromVal, toVal);
   if(!data.length){ el.innerHTML='<div class="section-empty">ไม่มีข้อมูล</div>'; sumEl.innerHTML=''; return; }
   var TC = getThemeColors();
-  var total = data.reduce(function(a,d){return a+d.value;},0);
-  var avg = data.length ? total/data.length : 0;
-  var pl = subChartState.period==='day'?'วัน':subChartState.period==='month'?'เดือน':'ปี';
-  var avgWork = null, avgHol = null, nWork = 0, nHol = 0;
-  if(subChartState.period === 'day'){
-    var sumWork = 0, sumHol = 0;
-    data.forEach(function(d){
-      if(d.hol){ sumHol += d.value; nHol++; }
-      else { sumWork += d.value; nWork++; }
-    });
-    avgWork = nWork ? sumWork/nWork : 0;
-    avgHol  = nHol  ? sumHol/nHol  : 0;
-  }
-  var labels = data.map(function(d){return d.label;});
-  var chartType = subChartState.type==='bar' ? 'bar' : 'line';
-  var useHolSplit = subChartState.period==='day' && subChartState.showHol && chartType==='bar';
-  var series, chartColors, strokeW, strokeDash;
-  if(useHolSplit){
-    var workData = data.map(function(d){ return d.hol ? null : Math.round(d.value); });
-    var holData  = data.map(function(d){ return d.hol ? Math.round(d.value) : null; });
-    series = [
-      { name:''+UNIT_WORD+' (วันทำงาน)', data:workData, type:'bar' },
-      { name:''+UNIT_WORD+' (วันหยุด)',  data:holData,  type:'bar' }
-    ];
-    chartColors = [TC.green, TC.orange];
-    strokeW = [0,0]; strokeDash = [0,0];
-    if(subChartState.showAvg){
-      var avgRoundS = Math.round(avgWork);
-      series.push({ name:'ค่าเฉลี่ย', data:data.map(function(){return avgRoundS;}), type:'line' });
-      chartColors.push(TC.accent+'77'); strokeW.push(2); strokeDash.push(5);
-    }
-  } else {
-    var values = data.map(function(d){return Math.round(d.value);});
-    series = [{ name:UNIT_WORD+' ('+UNIT+'/'+pl+')', data:values, type:chartType }];
-    chartColors = [TC.green];
-    strokeW = chartType==='bar' ? [0] : [2.5]; strokeDash = [0];
-    if(subChartState.showAvg){
-      var avgRound = Math.round(subChartState.period==='day' ? avgWork : avg);
-      series.push({ name:'ค่าเฉลี่ย', data:data.map(function(){return avgRound;}), type:'line' });
-      chartColors.push(TC.accent+'77');
-      strokeW = chartType==='bar' ? [0,2] : [2.5,2]; strokeDash = [0,5];
-    }
-  }
-  var opts = {
-    chart:{ type:'bar', height:340, fontFamily:'IBM Plex Mono,monospace', foreColor:TC.text2,
-      stacked: useHolSplit,
-      toolbar:{ show:true, tools:{download:true,zoom:true,zoomin:true,zoomout:true,pan:true,reset:true} },
-      background:'transparent', animations:{enabled:true,speed:400} },
-    series: series,
-    xaxis:{ categories:labels, axisBorder:{color:TC.border}, axisTicks:{show:false}, labels:{rotate:0, rotateAlways:false, hideOverlappingLabels:true, trim:false, style:{fontSize:'10px',colors:TC.text3}} },
-    yaxis:{ labels:{style:{fontSize:'11px',colors:TC.text2}, formatter:function(v){return Math.round(v).toLocaleString();}}, axisBorder:{show:false} },
-    grid:{ borderColor:TC.border, strokeDashArray:3, xaxis:{lines:{show:false}}, yaxis:{lines:{show:true}} },
-    tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'}, y:{formatter:function(v){return v!=null?Math.round(v).toLocaleString()+' '+UNIT:'—';}} },
-    colors: chartColors,
-    responsive:[{ breakpoint:640, options:{ chart:{height:300}, xaxis:{labels:{rotate:-45, rotateAlways:true, hideOverlappingLabels:true, style:{fontSize:'8px'}}}, plotOptions:{bar:{columnWidth:'80%'}} } }],
-    plotOptions:{ bar:{borderRadius:4,columnWidth:'70%'} },
-    stroke:{ width:strokeW, dashArray:strokeDash },
-    fill:{ opacity:chartType==='bar'?0.7:0.8 },
-    legend:{ show:series.length>1, fontSize:'11px', labels:{colors:TC.text2}, markers:{shape:'square',size:6} },
-    dataLabels:{ enabled:false },
-    states:{ hover:{filter:{type:'lighten',value:0.08}} }
-  };
+  var built = buildChartOpts(data, subChartState, TC);
   ensureApex().then(function(){
     safeDestroyChart(subChartInst);
     el.innerHTML = '';
-    subChartInst = new ApexCharts(el, opts);
+    subChartInst = new ApexCharts(el, built.chartOpts);
     subChartInst.render();
   }).catch(function(e){ el.innerHTML = '<div class="warn-box">❌ โหลดกราฟไม่ได้: '+(e&&e.message||'')+'</div>'; });
-  var avgChips;
-  if(subChartState.period === 'day' && (nWork || nHol)){
-    avgChips = '<span class="chip chip-green">เฉลี่ยวันทำงาน '+Math.round(avgWork).toLocaleString()+' '+UNIT+' ('+nWork+' วัน)</span> '+
-               '<span class="chip" style="background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.4)">เฉลี่ยวันหยุด '+Math.round(avgHol).toLocaleString()+' '+UNIT+' ('+nHol+' วัน)</span>';
-  } else {
-    avgChips = '<span class="chip chip-green">เฉลี่ย '+Math.round(avg).toLocaleString()+' '+UNIT+'/'+pl+'</span>';
-  }
-  sumEl.innerHTML = '<span class="chip chip-green">'+UNIT_ICON+' รวม '+Math.round(total).toLocaleString()+' kWh</span> '+
-    avgChips + ' '+
-    '<span class="chip" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border)">'+data.length+' '+pl+'</span>';
+  sumEl.innerHTML = built.summaryHtml;
 }
-
 var g9State = { period:'day', sort:'default', showPct:false };
 function setG9Period(p){
   g9State.period = p;
@@ -4719,90 +4832,15 @@ async function renderCmpChart(){
       });
     }
     if(!dataPoints.length){ el.innerHTML='<div class="section-empty">ไม่มีข้อมูล</div>'; return; }
-    var total = dataPoints.reduce(function(a,d){return a+d.value;},0);
-    var avg = dataPoints.length ? total/dataPoints.length : 0;
-    var pl = cmpState.period==='day'?'วัน':cmpState.period==='month'?'เดือน':'ปี';
-    var cmpAvgWork = 0, cmpAvgHol = 0, cmpNWork = 0, cmpNHol = 0;
-    if(cmpState.period === 'day'){
-      var cSumW = 0, cSumH = 0;
-      dataPoints.forEach(function(d){
-        if(d.hol){ cSumH += d.value; cmpNHol++; }
-        else { cSumW += d.value; cmpNWork++; }
-      });
-      cmpAvgWork = cmpNWork ? cSumW/cmpNWork : 0;
-      cmpAvgHol  = cmpNHol  ? cSumH/cmpNHol  : 0;
-    }
-    var values = dataPoints.map(function(d){return Math.round(d.value);});
-    var labels = dataPoints.map(function(d){return d.label;});
-    /* Same split as renderSubChart's "แยกสีวันหยุด": two series sharing one
-       axis, each with a null where the other day-type belongs. ApexCharts
-       renders that as a single bar per day, coloured by which series actually
-       has a value there — TC.green for a workday, TC.orange for a holiday.
-       Kept identical between the two charts on purpose, so the same toggle
-       means the same thing wherever it appears. */
-    var useHolSplit = cmpState.period==='day' && cmpState.showHol && cmpState.type==='bar';
-    var series, chartColors;
-    if(useHolSplit){
-      var workData = dataPoints.map(function(d){ return d.hol ? null : Math.round(d.value); });
-      var holData  = dataPoints.map(function(d){ return d.hol ? Math.round(d.value) : null; });
-      series = [
-        { name:UNIT_WORD+' (วันทำงาน)', data:workData },
-        { name:UNIT_WORD+' (วันหยุด)',  data:holData  }
-      ];
-      chartColors = [TC.green, TC.orange];
-    } else {
-      series = [{ name:UNIT_WORD+' ('+UNIT+'/'+pl+')', data:values }];
-      chartColors = [TC.accent];
-    }
-    var strokeW = cmpState.type==='bar' ? series.map(function(){return 0;}) : series.map(function(){return 2.5;});
-    var strokeDash = series.map(function(){return 0;});
-    if(cmpState.showAvg){
-      var cmpAvgLine = Math.round(cmpState.period === 'day' ? cmpAvgWork : avg);
-      series.push({ name:'ค่าเฉลี่ย', data:dataPoints.map(function(){return cmpAvgLine;}), type:'line' });
-      chartColors.push(TC.orange+'77');
-      strokeW.push(cmpState.type==='bar' ? 2 : 2); strokeDash.push(5);
-    }
-    var opts = {
-      chart:{ type:cmpState.type==='bar'?'bar':'line', height:340, fontFamily:'IBM Plex Mono,monospace', foreColor:TC.text2,
-        stacked: useHolSplit,
-        toolbar:{ show:true, tools:{download:true,zoom:true,zoomin:true,zoomout:true,pan:true,reset:true} },
-        background:'transparent', animations:{enabled:true,speed:400} },
-      series: series,
-      /* A month of daily bars is 31 labels in the width of a phone. Rather than
-         shrinking or rotating them into illegibility, only every Nth date is
-         drawn — the bars still show every day, the axis just stops trying to
-         name all of them. */
-      xaxis:{ categories:labels, axisBorder:{color:TC.border}, axisTicks:{show:false},
-              tickAmount: Math.min(labels.length, 8),
-              labels:{ rotate:0, rotateAlways:false, hideOverlappingLabels:true, trim:false,
-                       style:{fontSize:'11px',colors:TC.text2} } },
-      yaxis:{ title:{ text: UNIT, style:{fontSize:'12px', fontWeight:700, color:TC.text2} },
-              labels:{style:{fontSize:'12px',colors:TC.text2}, formatter:function(v){return Math.round(v).toLocaleString();}}, axisBorder:{show:false} },
-      grid:{ borderColor:TC.border, strokeDashArray:3, xaxis:{lines:{show:false}}, yaxis:{lines:{show:true}} },
-      tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'}, y:{formatter:function(v){return v!=null?Math.round(v).toLocaleString()+' '+UNIT:'—';}} },
-      colors: chartColors,
-      responsive:[{ breakpoint:640, options:{ chart:{height:300}, xaxis:{labels:{rotate:-45, rotateAlways:true, hideOverlappingLabels:true, style:{fontSize:'8px'}}}, plotOptions:{bar:{columnWidth:'80%'}} } }],
-      plotOptions:{ bar:{borderRadius:4,columnWidth:'70%'} },
-      stroke:{ width:strokeW, dashArray:strokeDash },
-      fill:{ opacity:cmpState.type==='bar'?0.6:0.7 },
-      legend:{ fontSize:'11px', labels:{colors:TC.text2}, markers:{shape:'square',size:6} },
-      dataLabels:{ enabled:false },
-      states:{ hover:{filter:{type:'lighten',value:0.08}} }
-    };
+    var TC = getThemeColors();
+    var built = buildChartOpts(dataPoints, cmpState, TC);
     await ensureApex();
     if(thisReq !== cmpReqId) return;
     safeDestroyChart(cmpChartInst);
     el.innerHTML = '';
-    cmpChartInst = new ApexCharts(el, opts);
+    cmpChartInst = new ApexCharts(el, built.chartOpts);
     cmpChartInst.render();
-    var cmpAvgChips;
-    if(cmpState.period === 'day' && (cmpNWork || cmpNHol)){
-      cmpAvgChips = '<span class="chip chip-green">เฉลี่ยวันทำงาน '+Math.round(cmpAvgWork).toLocaleString()+' '+UNIT+' ('+cmpNWork+' วัน)</span> '+
-                    '<span class="chip" style="background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.4)">เฉลี่ยวันหยุด '+Math.round(cmpAvgHol).toLocaleString()+' '+UNIT+' ('+cmpNHol+' วัน)</span>';
-    } else {
-      cmpAvgChips = '<span class="chip chip-green">เฉลี่ย '+Math.round(avg).toLocaleString()+' '+UNIT+'/'+pl+'</span>';
-    }
-    sumEl.innerHTML = '<span class="chip chip-green">'+UNIT_ICON+' รวม '+Math.round(total).toLocaleString()+' kWh</span> ' + cmpAvgChips;
+    sumEl.innerHTML = built.summaryHtml;
   }catch(e){ el.innerHTML='<div class="warn-box">❌ '+e.message+'</div>'; }
 }
 
