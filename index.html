@@ -6,16 +6,9 @@
 <title>💧 ระบบจดบันทึกมิเตอร์น้ำ Water Meter SR Plant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Single combined font request — see the matching comment in the Electric app. -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 
-/* ═══════════════════════════════════════════════════════════
-   REDESIGN LAYER — SESSION 1
-   Design tokens matched to the IMCT Consumption hub (navy + cyan + off-white),
-   with dark-mode parity. Component styles for the new header + sidebar drawer +
-   centered login. All original panel/card/button styles below remain untouched.
-   =========================================================== */
 :root {
   --rd-ink:          #0A1628;
   --rd-ink-2:        #3A4A5F;
@@ -881,7 +874,8 @@ tr:hover td{background:var(--surface-2)}
 .warn-box{background:var(--orange-dim);border:1px solid rgba(251,146,60,.3);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px;font-size:var(--fs-sm);color:var(--orange);line-height:1.7}
 .empty{text-align:center;padding:28px;color:var(--text-3)}
 .empty i{font-size:28px;display:block;margin-bottom:6px;font-style:normal}
-.section-empty{padding:14px;text-align:center;color:var(--text-3);font-size:var(--fs-sm)}
+.section-empty{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px 14px;text-align:center;color:var(--text-3);font-size:var(--fs-sm)}
+.section-empty::before{content:'📊';font-size:32px;opacity:.4}
 @media(max-width:480px){
   .panel{padding:10px 10px 90px}
   .f-2col,.f-3col{grid-template-columns:1fr;gap:8px}
@@ -932,11 +926,28 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 .rd-search-input{width:100%;padding:11px 12px 11px 36px;background:var(--surface-2);border:1px solid var(--accent-border);border-radius:10px;color:var(--text-1);font-size:14px;font-family:inherit}
 .rd-search-input:focus{outline:none;border-color:var(--accent)}
 .rd-segment{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;margin-bottom:8px}
-.rd-segment button{flex:1;border:none;background:transparent;color:var(--text-2);font-size:13px;font-family:inherit;padding:8px 4px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s;white-space:nowrap}
+.rd-segment button{flex:1;border:none;background:transparent;color:var(--text-2);font-size:13px;font-family:inherit;padding:8px 4px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
 .rd-segment button:hover{color:var(--text-1)}
 .rd-segment button.on{background:var(--accent);color:var(--bg);font-weight:700}
+/* Custom picker dropdown — see the matching comments in the Electric app. */
+.rd-picker{position:relative}
+.rd-picker-btn{width:100%;display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--surface-2);border:1px solid var(--accent-border);border-radius:10px;color:var(--text-1);font-size:14px;font-family:inherit;cursor:pointer;text-align:left}
+.rd-picker-btn:focus{outline:none;border-color:var(--accent)}
+.rd-picker-btn .rd-picker-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd-picker-btn .rd-picker-label.placeholder{color:var(--text-3)}
+.rd-picker-btn .rd-picker-caret{color:var(--accent);font-size:12px;transition:transform .15s}
+.rd-picker.open .rd-picker-caret{transform:rotate(180deg)}
+.rd-picker-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;background:var(--surface-1);border:1px solid var(--border-hi);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);max-height:280px;overflow:hidden;flex-direction:column}
+.rd-picker.open .rd-picker-panel{display:flex}
+.rd-picker-search{margin:8px;padding:9px 11px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:13px;font-family:inherit}
+.rd-picker-search:focus{outline:none;border-color:var(--accent)}
+.rd-picker-list{overflow-y:auto;overflow-x:hidden}
+.rd-picker-opt{padding:11px 14px;font-size:14px;color:var(--text-1);cursor:pointer;border-top:1px solid var(--border)}
+.rd-picker-opt:hover,.rd-picker-opt.active{background:var(--accent-dim);color:var(--accent)}
+.rd-picker-opt.sel{background:var(--accent-dim);color:var(--accent);font-weight:700}
+.rd-picker-empty{padding:14px;text-align:center;color:var(--text-3);font-size:13px}
 .chart-ctrl-label{font-size:11px;color:var(--text-3);margin-right:4px;white-space:nowrap}
-.ctrl-btn{padding:6px 11px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-3);transition:all .15s;white-space:nowrap;font-family:var(--font-body)}
+.ctrl-btn{padding:6px 11px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-3);transition:all .15s;white-space:nowrap;font-family:var(--font-body);touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
 .ctrl-btn:hover{border-color:var(--border-hi);color:var(--text-2)}
 .ctrl-btn.on{border-color:rgba(0,212,255,.4);background:rgba(0,212,255,.12);color:var(--accent)}
 .ctrl-btn.green{border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.12);color:var(--green)}
@@ -948,8 +959,8 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 .ctrl-nav:hover{background:var(--surface-3)}
 .chart-container{min-height:320px;position:relative}
 /* Skeleton loader — see the matching comment in the Electric app. */
-.chart-skeleton{min-height:320px;display:flex;align-items:flex-end;justify-content:space-around;gap:6px;padding:24px 12px 40px}
-.chart-skeleton .sk-bar{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--surface-2),var(--surface-1));animation:sk-pulse 1.2s ease-in-out infinite}
+.chart-skeleton{height:320px;min-height:320px;display:flex;align-items:flex-end;justify-content:space-around;gap:6px;padding:24px 12px 40px;box-sizing:border-box}
+.chart-skeleton .sk-bar{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--surface-4),var(--surface-3));animation:sk-pulse 1.2s ease-in-out infinite}
 .chart-skeleton .sk-bar:nth-child(1){height:55%;animation-delay:0s}
 .chart-skeleton .sk-bar:nth-child(2){height:80%;animation-delay:.1s}
 .chart-skeleton .sk-bar:nth-child(3){height:40%;animation-delay:.2s}
@@ -958,7 +969,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 .chart-skeleton .sk-bar:nth-child(6){height:50%;animation-delay:.5s}
 .chart-skeleton .sk-bar:nth-child(7){height:65%;animation-delay:.6s}
 .chart-skeleton .sk-bar:nth-child(8){height:35%;animation-delay:.7s}
-@keyframes sk-pulse{0%,100%{opacity:.35}50%{opacity:.7}}
+@keyframes sk-pulse{0%,100%{opacity:.55}50%{opacity:.9}}
 .apexcharts-tooltip{font-family:var(--font-mono)!important;font-size:12px!important}
 .apexcharts-menu{background:var(--surface-2)!important;border-color:var(--border)!important}
 .apexcharts-menu-item:hover{background:var(--surface-3)!important}
@@ -1441,27 +1452,24 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <div class="chart-desc">ภาพรวมการใช้น้ำของแต่ละกลุ่ม เทียบตามช่วงเวลา</div>
       <div class="f-row">
         <label class="f-label">🏭 เลือกโรง / กลุ่ม</label>
-        <div class="rd-search-wrap">
-          <i class="ti ti-search" aria-hidden="true">🔍</i>
-          <input class="rd-search-input" id="cmp-group-search" list="cmp-group-list" placeholder="พิมพ์ค้นหากลุ่ม เช่น PT7..." autocomplete="off" oninput="onCmpGroupSearch()">
-          <datalist id="cmp-group-list"></datalist>
+        <div class="rd-picker" id="cmp-group-picker">
+          <button type="button" class="rd-picker-btn" onclick="togglePicker('cmp-group-picker')">
+            <span class="rd-picker-label placeholder" id="cmp-group-label">เลือกกลุ่ม...</span>
+            <span class="rd-picker-caret">▼</span>
+          </button>
+          <div class="rd-picker-panel">
+            <input class="rd-picker-search" id="cmp-group-psearch" placeholder="🔍 ค้นหากลุ่ม..." autocomplete="off" oninput="filterPicker('cmp-group-picker')">
+            <div class="rd-picker-list" id="cmp-group-plist"></div>
+          </div>
         </div>
-        <select class="f-input rd-select-hint" id="cmp-group" onchange="renderCmpChart()" style="display:none"></select>
+        <select class="f-input rd-select-hint" id="cmp-group" onchange="renderCmpChartDebounced()" style="display:none"></select>
       </div>
       <div class="rd-segment" id="cmp-segment">
-        <button data-range="thisM" onclick="setCmpQuickSeg('thisM')">เดือนนี้</button>
-        <button data-range="lastM" onclick="setCmpQuickSeg('lastM')">เดือนก่อน</button>
-        <button data-range="3m" onclick="setCmpQuickSeg('3m')">3 เดือน</button>
+        <button data-slot="0" class="on" onclick="setCmpQuickSeg(0)">เดือนนี้</button>
+        <button data-slot="1" onclick="setCmpQuickSeg(1)">เดือนก่อน</button>
+        <button data-slot="2" onclick="setCmpQuickSeg(2)">3 เดือน</button>
       </div>
             <details class="chart-filters"><summary>ตัวกรอง (ช่วงวัน · มุมมอง · รูปแบบ)</summary>
-<div class="chart-ctrl">
-        <span class="chart-ctrl-label">ช่วงเร็ว:</span>
-        <button class="ctrl-btn yellow" onclick="setCmpQuick('7d')">7 วัน</button>
-        <button class="ctrl-btn yellow" onclick="setCmpQuick('30d')">30 วัน</button>
-        <button class="ctrl-btn yellow" onclick="setCmpQuick('thisM')">เดือนนี้</button>
-        <button class="ctrl-btn yellow" onclick="setCmpQuick('lastM')">เดือนก่อน</button>
-        <button class="ctrl-btn yellow" onclick="setCmpQuick('3m')">3 เดือน</button>
-      </div>
       <div class="chart-ctrl">
         <span class="chart-ctrl-label">จาก:</span>
         <input class="ctrl-date" type="date" id="cmp-from" onchange="renderCmpChartDebounced()">
@@ -1472,7 +1480,6 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <span class="chart-ctrl-label">มุมมอง:</span>
         <button class="ctrl-btn green" id="cmp-p-day" onclick="setCmpPeriod('day')">รายวัน</button>
         <button class="ctrl-btn" id="cmp-p-month" onclick="setCmpPeriod('month')">รายเดือน</button>
-        <button class="ctrl-btn" id="cmp-p-year" onclick="setCmpPeriod('year')">รายปี</button>
         <div class="ctrl-sep"></div>
         <button class="ctrl-btn on" id="cmp-avg" onclick="toggleCmpOpt('avg')">เส้นเฉลี่ย</button>
         <button class="ctrl-btn on" id="cmp-hol" onclick="toggleCmpOpt('hol')">แยกสีวันหยุด</button>
@@ -1525,27 +1532,24 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <div class="chart-desc">เจาะจงมิเตอร์ตัวเดียว ดูการใช้ตามช่วงเวลา</div>
       <div class="f-row">
         <label class="f-label">🔌 เลือกมิเตอร์</label>
-        <div class="rd-search-wrap">
-          <i class="ti ti-search" aria-hidden="true">🔍</i>
-          <input class="rd-search-input" id="chart-sub-search" list="chart-sub-list" placeholder="พิมพ์ค้นหามิเตอร์ เช่น WM-05..." autocomplete="off" oninput="onSubSearch()">
-          <datalist id="chart-sub-list"></datalist>
+        <div class="rd-picker" id="chart-sub-picker">
+          <button type="button" class="rd-picker-btn" onclick="togglePicker('chart-sub-picker')">
+            <span class="rd-picker-label placeholder" id="chart-sub-label">เลือกมิเตอร์...</span>
+            <span class="rd-picker-caret">▼</span>
+          </button>
+          <div class="rd-picker-panel">
+            <input class="rd-picker-search" id="chart-sub-psearch" placeholder="🔍 ค้นหามิเตอร์..." autocomplete="off" oninput="filterPicker('chart-sub-picker')">
+            <div class="rd-picker-list" id="chart-sub-plist"></div>
+          </div>
         </div>
         <select class="f-input" id="chart-sub" onchange="onSubChartMeterChange()" style="display:none"><option value="">เลือก Sub...</option></select>
       </div>
       <div class="rd-segment" id="sub-segment">
-        <button data-range="thisM" onclick="setSubQuickSeg('thisM')">เดือนนี้</button>
-        <button data-range="lastM" onclick="setSubQuickSeg('lastM')">เดือนก่อน</button>
-        <button data-range="3m" onclick="setSubQuickSeg('3m')">3 เดือน</button>
+        <button data-slot="0" class="on" onclick="setSubQuickSeg(0)">เดือนนี้</button>
+        <button data-slot="1" onclick="setSubQuickSeg(1)">เดือนก่อน</button>
+        <button data-slot="2" onclick="setSubQuickSeg(2)">3 เดือน</button>
       </div>
             <details class="chart-filters"><summary>ตัวกรอง (ช่วงวัน · มุมมอง · รูปแบบ)</summary>
-<div class="chart-ctrl">
-        <span class="chart-ctrl-label">ช่วงเร็ว:</span>
-        <button class="ctrl-btn yellow" onclick="setSubQuick('7d')">7 วัน</button>
-        <button class="ctrl-btn yellow" onclick="setSubQuick('30d')">30 วัน</button>
-        <button class="ctrl-btn yellow" onclick="setSubQuick('thisM')">เดือนนี้</button>
-        <button class="ctrl-btn yellow" onclick="setSubQuick('lastM')">เดือนก่อน</button>
-        <button class="ctrl-btn yellow" onclick="setSubQuick('3m')">3 เดือน</button>
-      </div>
       <div class="chart-ctrl">
         <span class="chart-ctrl-label">จาก:</span>
         <input class="ctrl-date" type="date" id="sub-from" onchange="renderSubChart()">
@@ -1556,7 +1560,6 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <span class="chart-ctrl-label">มุมมอง:</span>
         <button class="ctrl-btn green" id="sub-p-day" onclick="setSubPeriod('day')">รายวัน</button>
         <button class="ctrl-btn" id="sub-p-month" onclick="setSubPeriod('month')">รายเดือน</button>
-        <button class="ctrl-btn" id="sub-p-year" onclick="setSubPeriod('year')">รายปี</button>
         <div class="ctrl-sep"></div>
         <button class="ctrl-btn on" id="sub-avg" onclick="toggleSubOpt('avg')">เส้นเฉลี่ย</button>
         <button class="ctrl-btn on" id="sub-hol" onclick="toggleSubOpt('hol')">แยกสีวันหยุด</button>
@@ -2052,6 +2055,9 @@ async function handleRecorderLogin(){
         const found = subs.find(s => s.id === pendingQrSub);
         if(found){ await selectSub(found.id); toast('📍 เปิด ' + found.id + ' จาก QR','ok'); }
         pendingQrSub = null;
+      } else {
+        // Always land a recorder on entry — see the Electric comment.
+        goTab('entry');
       }
       renderAll();
     } else {
@@ -2552,7 +2558,10 @@ async function onSubChartMeterChange(){
   if(!meterId){ renderSubChart(); return; }
   if(el && !subChartRecords[meterId]) el.innerHTML = chartSkeletonHTML();
   try { await loadSubChartRecords(meterId); }
-  catch(e){ /* fall back to global records */ }
+  catch(e){ /* fall back to whatever getSubRecs can find in global records */ }
+  // If the user switched to another meter while this one was loading, drop
+  // this stale result — the newer selection's own call will render.
+  if(document.getElementById('chart-sub').value !== meterId) return;
   renderSubChart();
   preloadAdjacentMeter(meterId);
 }
@@ -2624,12 +2633,14 @@ var CHART_DEBOUNCE_MS = 220;
 function renderCmpChartDebounced(){
   var el = document.getElementById('cmp-chart-el');
   if(el && document.getElementById('cmp-group').value) el.innerHTML = chartSkeletonHTML();
+  cmpReqId++;   // invalidate any in-flight render — see the Electric version's comment
   if(_cmpDebounceTimer) clearTimeout(_cmpDebounceTimer);
   _cmpDebounceTimer = setTimeout(function(){ _cmpDebounceTimer = null; renderCmpChart(); }, CHART_DEBOUNCE_MS);
 }
 function renderG9ChartDebounced(){
   var el = document.getElementById('g9-chart-el');
   if(el) el.innerHTML = chartSkeletonHTML();
+  g9ReqId++;
   if(_g9DebounceTimer) clearTimeout(_g9DebounceTimer);
   _g9DebounceTimer = setTimeout(function(){ _g9DebounceTimer = null; renderG9Chart(); }, CHART_DEBOUNCE_MS);
 }
@@ -2859,15 +2870,12 @@ async function init(){
         pendingQrSub = null;
       }
     } else {
-      await loadFromServer();
+      // Show picker immediately, load in background — see Electric comment.
       backToChoose();
+      loadFromServer();
     }
   } else {
     loadFromServer();
-    // No QR param and no restored session: this is a bare app open, so land
-    // on the three-way picker. Without this, the recorder form was left
-    // showing by default (its only "hidden" state came from the query-param
-    // branch above), so a bare open silently skipped the picker entirely.
     if(!hasSession) backToChoose();
   }
 }
@@ -3481,6 +3489,8 @@ async function saveEdit(){
   if(!date) return toast('เลือกวันที่ด้วย','err');
   const sub = subs.find(s => s.id === newSubId);
   const originalRecord = { ...target };
+  // Version marker for optimistic lock — see the matching comment in Electric.
+  const baseTs = originalRecord.editedTs || originalRecord.ts || '';
 
   // Mutate the object itself — it keeps its identity through computeUsed()'s
   // regrouping, so no position needs tracking.
@@ -3500,8 +3510,16 @@ async function saveEdit(){
   closeEdit(); renderAll(); toast('✅ แก้ไขแล้ว (กำลัง sync...)','ok');
   setSyncStatus('busy','กำลังซิงค์...');
   try{
-    const payload = { id:saved.id, meterId:saved.meterId, meterName:saved.meterName, zone:saved.zone, date:saved.date, time:saved.time, kwh:saved.kwh, user:saved.user, note:saved.note, ts:saved.ts, editedTs:saved.editedTs, editedBy:saved.editedBy };
-    await apiPostAuthed({ action:'editRecord', record:payload });
+    const payload = { id:saved.id, meterId:saved.meterId, meterName:saved.meterName, zone:saved.zone, date:saved.date, time:saved.time, kwh:saved.kwh, user:saved.user, note:saved.note, ts:saved.ts, editedTs:saved.editedTs, editedBy:saved.editedBy, baseTs:baseTs };
+    const editRes = await apiPostAuthed({ action:'editRecord', record:payload });
+    if(editRes && editRes.conflict){
+      records = records.filter(r => r.id !== recordId);
+      records.push(originalRecord);
+      records = computeUsed(records); persist(); renderAll();
+      setSyncStatus('error','มีการแก้ไขชนกัน');
+      toast('⚠️ ' + (editRes.error || 'รายการถูกแก้โดยผู้อื่น กรุณาโหลดใหม่'), 'err');
+      return;
+    }
     invalidateSummaryCache('editRecord:'+saved.meterId+'@'+saved.date);
     setSyncStatus('ok','แก้ไขสำเร็จ');
   }catch(e){
@@ -3610,30 +3628,25 @@ function populateDDs(){
   document.getElementById('fl-sub').innerHTML = sOpts;
   const cs = document.getElementById('chart-sub');
   if(cs) cs.innerHTML = cOpts;
-  const list = document.getElementById('chart-sub-list');
-  if(list){ list.innerHTML = subs.map(s => `<option value="${esc(s.name)} (${s.id})">`).join(''); }
+  if(document.getElementById('chart-sub-picker')){
+    _pickerData['chart-sub-picker'] = {
+      items: subs.map(s => ({ key:s.id, label:`${s.name} (${s.id})` })),
+      onPick: function(id){
+        cs.value = id; syncPickerLabel('chart-sub-picker'); onSubChartMeterChange();
+      }
+    };
+    renderPickerList('chart-sub-picker');
+    syncPickerLabel('chart-sub-picker');
+  }
 }
 
-/* See the matching comments in the Electric app. */
-function onSubSearch(){
-  const searchEl = document.getElementById('chart-sub-search');
-  const sel = document.getElementById('chart-sub');
-  if(!searchEl || !sel) return;
-  const typed = searchEl.value.trim();
-  if(!typed) return;
-  const low = typed.toLowerCase();
-  let match = subs.find(s => `${s.name} (${s.id})` === typed);
-  if(!match) match = subs.find(s => s.id.toLowerCase() === low || s.name.toLowerCase() === low);
-  if(!match){
-    const hits = subs.filter(s => s.id.toLowerCase().includes(low) || s.name.toLowerCase().includes(low));
-    if(hits.length === 1) match = hits[0];
-  }
-  if(match){ sel.value = match.id; onSubChartMeterChange(); }
-}
-function setSubQuickSeg(key){
-  setSubQuick(key);
+function setSubQuickSeg(slot){
+  var r = getQuickRangeForPeriod(subChartState.period, slot);
+  document.getElementById('sub-from').value = _fitRangeToPeriod(r[0], subChartState.period);
+  document.getElementById('sub-to').value   = _fitRangeToPeriod(r[1], subChartState.period);
   const seg = document.getElementById('sub-segment');
-  if(seg) seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.getAttribute('data-range') === key));
+  if(seg) seg.querySelectorAll('button').forEach((b,i) => b.classList.toggle('on', i===slot));
+  renderSubChart();
 }
 /* The Data-tab stat tiles were removed: after the rolling 90-day record
    window was introduced, three of the four counters (total records,
@@ -4335,6 +4348,7 @@ async function exportSummaryT2(){
    ════════════════════════════════════════════════════════════ */
 let subChartInst = null;
 let _subChartStructKey = null;   // 'type:seriesCount' of the live chart, for safe updateOptions reuse
+let subReqId = 0;                // guards against out-of-order renders (rapid meter/period switching)
 let g9ChartInst = null;
 let cmpChartInst = null;
 
@@ -4442,9 +4456,12 @@ function aggregateRecords(recs, period, dateFrom, dateTo){
 /* See the matching comment in the Electric app. */
 function buildChartOpts(dataPoints, state, TC){
   const total = dataPoints.reduce((a,d) => a + d.value, 0);
-  /* See the matching comment in the Electric app — average over days with data,
-     not every slot on the axis, so empty future days in a this-month range
-     don't drag it down. */
+  /* Average must divide by days that actually have a reading, not by every
+     slot on the axis. "This month" spans day 1 to the last day of the month,
+     so mid-month the range includes future days with value 0 (no data yet).
+     Counting those in the denominator dragged the average down artificially.
+     hasData (set by aggregateRecords) marks the real ones; empty future/blank
+     days still render on the axis, they just don't dilute the average. */
   const withData = dataPoints.filter(d => d.hasData);
   const avg = withData.length ? total / withData.length : 0;
   const pl = state.period === 'day' ? 'วัน' : state.period === 'month' ? 'เดือน' : 'ปี';
@@ -4453,7 +4470,7 @@ function buildChartOpts(dataPoints, state, TC){
   if(state.period === 'day'){
     let sumWork = 0, sumHol = 0;
     dataPoints.forEach(d => {
-      if(!d.hasData) return;
+      if(!d.hasData) return;   // skip empty days in both the average and the day count
       if(d.hol){ sumHol += d.value; nHol++; } else { sumWork += d.value; nWork++; }
     });
     avgWork = nWork ? sumWork / nWork : 0;
@@ -4463,6 +4480,20 @@ function buildChartOpts(dataPoints, state, TC){
   const labels = dataPoints.map(d => d.label);
   const chartType = state.type === 'bar' ? 'bar' : 'line';
   const useHolSplit = state.period === 'day' && state.showHol && chartType === 'bar';
+
+  /* Cap the Y axis just above the tallest value (bar or the average line,
+     whichever is higher) so bars fill the plot instead of sitting at ~40%
+     height. ApexCharts' automatic max leaves a lot of empty headroom; pinning
+     it to peak × 1.15 keeps a small margin above the top bar without the waste.
+     Falls back to undefined (auto) when there's no positive value, so an
+     all-zero range still renders sanely. */
+  let _peak = 0;
+  dataPoints.forEach(d => { if(d.value > _peak) _peak = d.value; });
+  if(state.showAvg){
+    const _avgForMax = state.period === 'day' ? Math.max(avgWork, avgHol) : avg;
+    if(_avgForMax > _peak) _peak = _avgForMax;
+  }
+  const yMax = _peak > 0 ? _niceCeil(_peak * 1.1) : undefined;
 
   let series, chartColors;
   if(useHolSplit){
@@ -4493,12 +4524,19 @@ function buildChartOpts(dataPoints, state, TC){
       toolbar:{ show:true, tools:{download:true,zoom:true,zoomin:true,zoomout:true,pan:true,reset:true} },
       background:'transparent', animations:{enabled:true,speed:400} },
     series: series,
+    /* Same reasoning on both charts: a month of daily bars is too many labels
+       for the width available, so only ~8 are drawn — every bar still shows,
+       the axis just stops trying to caption all of them. */
     xaxis:{ categories:labels, axisBorder:{color:TC.border}, axisTicks:{show:false},
             tickAmount: Math.min(labels.length, 8),
             labels:{ rotate:0, rotateAlways:false, hideOverlappingLabels:true, trim:false,
                      style:{fontSize:'11px',colors:TC.text2} } },
     yaxis:{ title:{ text: UNIT, style:{fontSize:'12px', fontWeight:700, color:TC.text2} },
-            labels:{style:{fontSize:'12px',colors:TC.text2}, formatter:v => Math.round(v).toLocaleString()},
+            min: 0,
+            max: yMax,
+            tickAmount: 5,
+            forceNiceScale: true,
+            labels:{style:{fontSize:'12px',colors:TC.text2}, formatter:v => _fmtAxisNum(v)},
             axisBorder:{show:false} },
     grid:{ borderColor:TC.border, strokeDashArray:3, xaxis:{lines:{show:false}}, yaxis:{lines:{show:true}} },
     tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'}, y:{formatter:v => v!=null?Math.round(v).toLocaleString()+' '+UNIT:'—'} },
@@ -4541,6 +4579,13 @@ function setSubPeriod(p){
   });
   var holBtn = document.getElementById('sub-hol');
   if(holBtn) holBtn.style.display = p==='day' ? '' : 'none';
+  // Switch inputs to match period before the segment writes range values.
+  setRangeInputType('sub', p);
+  applySegmentForPeriod('sub-segment', p, function(slot){
+    var r = getQuickRangeForPeriod(p, slot);
+    document.getElementById('sub-from').value = _fitRangeToPeriod(r[0], p);
+    document.getElementById('sub-to').value   = _fitRangeToPeriod(r[1], p);
+  });
   renderSubChart();
 }
 function setSubType(t){
@@ -4559,13 +4604,15 @@ function toggleSubOpt(opt){
   if(el) el.className = on ? 'ctrl-btn on' : 'ctrl-btn';
   renderSubChart();
 }
-function renderSubChart(){
+async function renderSubChart(){
+  var thisReq = ++subReqId;
   var meterId = document.getElementById('chart-sub').value;
   var el = document.getElementById('sub-chart-el');
   var sumEl = document.getElementById('sub-chart-summary');
   if(!meterId){ el.innerHTML='<div class="section-empty">เลือก Meter เพื่อดูกราฟ</div>'; sumEl.innerHTML=''; return; }
-  var fromVal = document.getElementById('sub-from').value || '';
-  var toVal = document.getElementById('sub-to').value || '';
+  el.innerHTML = chartSkeletonHTML();
+  var fromVal = _normRangeStart(document.getElementById('sub-from').value || '');
+  var toVal = _normRangeEnd(document.getElementById('sub-to').value || '');
   var recs = getSubRecs(meterId);
   if(fromVal) recs = recs.filter(function(r){return r.date >= fromVal;});
   if(toVal) recs = recs.filter(function(r){return r.date <= toVal;});
@@ -4575,8 +4622,17 @@ function renderSubChart(){
   var TC = getThemeColors();
   var built = buildChartOpts(data, subChartState, TC);
   ensureApex().then(function(){
-    /* See the matching comment in the Electric app — reuse via updateOptions
-       when type + series count are unchanged, otherwise a clean rebuild. */
+    // Bail if a newer render started while ApexCharts was loading — prevents a
+    // stale meter/range (from a quick switch) overwriting the current one.
+    if(thisReq !== subReqId) return;
+    /* Reuse the existing chart instance via updateOptions when the structure
+       is unchanged — far smoother and cheaper than destroy+new+render on every
+       date-range tweak or refresh. But updateOptions cannot safely morph across
+       a chart-type change (bar<->line) or a series-count change (holiday split
+       on/off produces 1 vs 2 data series): ApexCharts leaves stale paths/state
+       behind. So we fingerprint those two structural traits and only reuse when
+       they match; otherwise fall back to a clean rebuild. The element must also
+       still belong to the current instance (not have been blanked out). */
     var structKey = (built.chartOpts.chart.type) + ':' + built.chartOpts.series.length;
     var canReuse = subChartInst && _subChartStructKey === structKey && el.querySelector('.apexcharts-canvas');
     if(canReuse){
@@ -4587,7 +4643,7 @@ function renderSubChart(){
         colors: built.chartOpts.colors,
         stroke: built.chartOpts.stroke,
         fill:   built.chartOpts.fill
-      }, false, true);
+      }, false, true);   // (options, redrawPaths=false, animate=true)
     } else {
       safeDestroyChart(subChartInst);
       el.innerHTML = '';
@@ -4788,36 +4844,77 @@ function buildCompareGroupOptions(){
   sel.innerHTML = reportGroups.map(c => `<option value="${c.key}">${esc(c.name)}</option>`).join('')
     + '<option value="__TOTAL__">TOTAL (ทุกกลุ่ม)</option>';
   if(prev) sel.value = prev;
-  const list = document.getElementById('cmp-group-list');
-  if(list){
-    list.innerHTML = reportGroups.map(c => `<option value="${esc(c.name)}">`).join('') + '<option value="TOTAL (ทุกกลุ่ม)">';
-  }
-  const searchEl = document.getElementById('cmp-group-search');
-  if(searchEl && !searchEl.value){
-    const cur = reportGroups.find(c => c.key === sel.value);
-    searchEl.value = cur ? cur.name : (sel.value === '__TOTAL__' ? 'TOTAL (ทุกกลุ่ม)' : '');
-  }
+  const items = reportGroups.map(c => ({ key:c.key, label:c.name }));
+  items.push({ key:'__TOTAL__', label:'TOTAL (ทุกกลุ่ม)' });
+  _pickerData['cmp-group-picker'] = { items, onPick: function(key){
+    sel.value = key; syncPickerLabel('cmp-group-picker'); renderCmpChartDebounced();
+  }};
+  renderPickerList('cmp-group-picker');
+  syncPickerLabel('cmp-group-picker');
 }
 
-/* See the matching comments in the Electric app. */
-function onCmpGroupSearch(){
-  const searchEl = document.getElementById('cmp-group-search');
-  const sel = document.getElementById('cmp-group');
-  if(!searchEl || !sel) return;
-  const typed = searchEl.value.trim();
-  if(!typed) return;
-  if(typed === 'TOTAL (ทุกกลุ่ม)'){ sel.value = '__TOTAL__'; renderCmpChartDebounced(); return; }
-  let match = reportGroups.find(c => c.name === typed);
-  if(!match){
-    const hits = reportGroups.filter(c => c.name.toLowerCase().includes(typed.toLowerCase()));
-    if(hits.length === 1) match = hits[0];
-  }
-  if(match){ sel.value = match.key; renderCmpChartDebounced(); }
+/* ─── Custom picker component — see the matching comments in the Electric app. ─── */
+var _pickerData = {};
+function renderPickerList(id, filter){
+  const d = _pickerData[id]; if(!d) return;
+  const listEl = document.getElementById(id.replace('-picker','-plist'));
+  if(!listEl) return;
+  const sel = document.getElementById(id.replace('-picker',''));
+  const cur = sel ? sel.value : '';
+  const f = (filter||'').toLowerCase();
+  const rows = d.items.filter(it => !f || it.label.toLowerCase().includes(f) || it.key.toLowerCase().includes(f));
+  if(!rows.length){ listEl.innerHTML = '<div class="rd-picker-empty">ไม่พบ</div>'; return; }
+  listEl.innerHTML = rows.map(it =>
+    `<div class="rd-picker-opt${it.key===cur?' sel':''}" data-key="${esc(it.key)}" onclick="pickerChoose('${id}', this.getAttribute('data-key'))">${esc(it.label)}</div>`
+  ).join('');
 }
-function setCmpQuickSeg(key){
-  setCmpQuick(key);
+function syncPickerLabel(id){
+  const d = _pickerData[id]; if(!d) return;
+  const sel = document.getElementById(id.replace('-picker',''));
+  const labelEl = document.getElementById(id.replace('-picker','-label'));
+  if(!sel || !labelEl) return;
+  const found = d.items.find(it => it.key === sel.value);
+  if(found){ labelEl.textContent = found.label; labelEl.classList.remove('placeholder'); }
+  else { labelEl.classList.add('placeholder'); }
+}
+function togglePicker(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const wasOpen = el.classList.contains('open');
+  document.querySelectorAll('.rd-picker.open').forEach(p => p.classList.remove('open'));
+  if(!wasOpen){
+    el.classList.add('open');
+    renderPickerList(id, '');
+    const s = document.getElementById(id.replace('-picker','-psearch'));
+    if(s){ s.value=''; setTimeout(()=>s.focus(), 30); }
+  }
+}
+function filterPicker(id){
+  const s = document.getElementById(id.replace('-picker','-psearch'));
+  renderPickerList(id, s ? s.value : '');
+}
+function pickerChoose(id, key){
+  const d = _pickerData[id]; if(!d) return;
+  const el = document.getElementById(id);
+  if(el) el.classList.remove('open');
+  if(d.onPick) d.onPick(key);
+}
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.rd-picker')){
+    document.querySelectorAll('.rd-picker.open').forEach(p => p.classList.remove('open'));
+  }
+});
+
+function setCmpQuickSeg(slot){
+  var r = getQuickRangeForPeriod(cmpState.period, slot);
+  // Fit to the input granularity — a <input type=month> silently drops a full
+  // yyyy-mm-dd value, which left the range blank and made the chart fall back
+  // to whatever data existed (so "last year" showed this year's data).
+  document.getElementById('cmp-from').value = _fitRangeToPeriod(r[0], cmpState.period);
+  document.getElementById('cmp-to').value   = _fitRangeToPeriod(r[1], cmpState.period);
   const seg = document.getElementById('cmp-segment');
-  if(seg) seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.getAttribute('data-range') === key));
+  if(seg) seg.querySelectorAll('button').forEach((b,i) => b.classList.toggle('on', i===slot));
+  renderCmpChartDebounced();
 }
 function getColIds(key){
   if(key === '__TOTAL__') return reportGroups.flatMap(c => c.meters || []);
@@ -4871,6 +4968,128 @@ function meterUsedOnDay(meterMap, meterId, dateStr, allDates){
 }
 
 var cmpState = { period:'day', type:'bar', showAvg:true, showHol:true };
+/* Rounds a max value UP to a "nice" round number so the axis ticks land on
+   clean figures (250,000 rather than 229,658). Picks a step of 1, 2, or 5 ×
+   the appropriate power of ten — the steps people naturally read a scale in —
+   and rounds the value up to a multiple of it. */
+function _niceCeil(v){
+  v = Number(v) || 0;
+  if(v <= 0) return 0;
+  var mag = Math.pow(10, Math.floor(Math.log10(v)));
+  var norm = v / mag;                     // 1..10
+  // Finer steps than 1/2/5 so the axis doesn't overshoot the data (219k would
+  // jump to 500k on a 1/2/5 scale, squashing the bars); 2.5/3/4 keep the top
+  // close to the peak while still landing on a round tick.
+  var step;
+  if(norm <= 1)      step = 1;
+  else if(norm <= 1.5) step = 1.5;
+  else if(norm <= 2) step = 2;
+  else if(norm <= 2.5) step = 2.5;
+  else if(norm <= 3) step = 3;
+  else if(norm <= 4) step = 4;
+  else if(norm <= 5) step = 5;
+  else if(norm <= 6) step = 6;
+  else if(norm <= 8) step = 8;
+  else               step = 10;
+  return step * mag;
+}
+function _fmtAxisNum(v){
+  return Math.round(Number(v) || 0).toLocaleString();
+}
+function setRangeInputType(prefix, period){
+  var fromEl = document.getElementById(prefix+'-from');
+  var toEl   = document.getElementById(prefix+'-to');
+  if(!fromEl || !toEl) return;
+  var wantType = period === 'day' ? 'date' : period === 'month' ? 'month' : 'text';
+  [fromEl, toEl].forEach(function(el){
+    var v = el.value || '';
+    if(el.type !== wantType){
+      // convert current value to the granularity of the new type
+      if(wantType === 'month')      v = v.slice(0,7);                       // yyyy-mm-dd → yyyy-mm ; yyyy → yyyy (browser fills)
+      else if(wantType === 'text')  v = v.slice(0,4);                       // → yyyy
+      else if(wantType === 'date'){                                         // widen back to a real day
+        if(/^\d{4}-\d{2}$/.test(v)) v = v + '-01';
+        else if(/^\d{4}$/.test(v))  v = v + '-01-01';
+      }
+      el.type = wantType;
+      if(wantType === 'text'){ el.placeholder = 'ปี (พ.ศ.ค.ศ. เช่น 2026)'; el.setAttribute('inputmode','numeric'); el.maxLength = 4; }
+      else { el.removeAttribute('placeholder'); el.removeAttribute('inputmode'); el.removeAttribute('maxLength'); }
+    }
+    el.value = v;
+  });
+}
+/* Switches the from/to range inputs between date / month / year controls to
+   match the period, and converts whatever value they hold so it stays valid
+   for the new input type — a <input type=date> value "2026-09-15" becomes
+   "2026-09" for month, "2026" for year, and back to a real day on the way
+   down. Without the conversion the browser silently blanks a value that
+   doesn't fit the new type, which looked like the range had been lost. The
+   YEAR case has no native input, so it swaps in a plain text field range —
+   two 4-digit years — kept minimal on purpose. Prefix is 'cmp' or 'sub'. */
+function _fitRangeToPeriod(v, period){
+  v = String(v||'');
+  if(period === 'month') return v.slice(0,7);
+  if(period === 'year')  return v.slice(0,4);
+  return v;
+}
+function _normRangeStart(v){
+  v = String(v||'');
+  if(/^\d{4}$/.test(v)) return v+'-01-01';
+  if(/^\d{4}-\d{2}$/.test(v)) return v+'-01';
+  return v;
+}
+function _normRangeEnd(v){
+  v = String(v||'');
+  if(/^\d{4}$/.test(v)) return v+'-12-31';
+  if(/^\d{4}-\d{2}$/.test(v)){ var p=v.split('-'); var last=new Date(+p[0], +p[1], 0).getDate(); return v+'-'+String(last).padStart(2,'0'); }
+  return v;
+}
+/* Quick-range that respects the current period. The three segment buttons mean
+   different spans depending on whether you're looking at days, months, or
+   years — otherwise "this month" while viewing by-month shows a single bar and
+   looks broken. slot is 0/1/2 (the three buttons left→right); the labels are
+   kept in sync by segmentLabelsFor(). */
+function getQuickRangeForPeriod(period, slot){
+  var today = ymdLocal();
+  var t = new Date(today+'T00:00:00');
+  var fmt = function(dt){ return ymdLocal(dt); };
+  var y = t.getFullYear(), m = t.getMonth();
+  if(period === 'day'){
+    if(slot===0) return [today.slice(0,8)+'01', today];                                  // this month
+    if(slot===1){ var f=new Date(y,m-1,1),l=new Date(y,m,0); return [fmt(f),fmt(l)]; }    // last month
+    var f3=new Date(t); f3.setMonth(f3.getMonth()-2); f3.setDate(1); return [fmt(f3),today]; // 3 months
+  }
+  if(period === 'month'){
+    // Full calendar year for this/last year (Jan–Dec) so the chart always
+    // shows all 12 months of the chosen year, empty ones included.
+    if(slot===0) return [y+'-01-01', y+'-12-31'];                                         // this year
+    if(slot===1) return [(y-1)+'-01-01', (y-1)+'-12-31'];                                 // last year
+    return [(y-2)+'-01-01', y+'-12-31'];                                                  // 3 years
+  }
+  // year
+  if(slot===0) return [(y-2)+'-01-01', today];                                            // 3 years
+  if(slot===1) return [(y-4)+'-01-01', today];                                            // 5 years
+  return ['', today];                                                                     // all
+}
+function segmentLabelsFor(period){
+  if(period === 'day')   return ['เดือนนี้','เดือนก่อน','3 เดือน'];
+  if(period === 'month') return ['ปีนี้','ปีก่อน','3 ปี'];
+  return ['3 ปี','5 ปี','ทั้งหมด'];
+}
+/* Re-labels a segment control and applies the slot that's currently active
+   (default slot 0) for the new period. Called whenever period changes. */
+function applySegmentForPeriod(segId, period, applyFn){
+  var seg = document.getElementById(segId);
+  if(!seg) return;
+  var labels = segmentLabelsFor(period);
+  var btns = seg.querySelectorAll('button');
+  var activeSlot = 0;
+  btns.forEach(function(b,i){ if(b.classList.contains('on')) activeSlot=i; });
+  btns.forEach(function(b,i){ if(labels[i]!==undefined) b.textContent = labels[i]; b.setAttribute('data-slot', i); });
+  // re-apply the active slot's range under the new period
+  applyFn(activeSlot);
+}
+
 function setCmpQuick(key){
   var r = getQuickRange(key);
   document.getElementById('cmp-from').value = r[0];
@@ -4882,6 +5101,16 @@ function setCmpPeriod(p){
   ['day','month','year'].forEach(function(k){
     var el = document.getElementById('cmp-p-'+k);
     if(el) el.className = k===p ? 'ctrl-btn green' : 'ctrl-btn';
+  });
+  // Switch the from/to inputs to the right control BEFORE the segment writes
+  // its range values, so the values land in a matching input type.
+  setRangeInputType('cmp', p);
+  applySegmentForPeriod('cmp-segment', p, function(slot){
+    var r = getQuickRangeForPeriod(p, slot);
+    // Fit the range to the input granularity so a month/year control accepts it
+    // (a <input type=month> silently rejects "2026-01-01").
+    document.getElementById('cmp-from').value = _fitRangeToPeriod(r[0], p);
+    document.getElementById('cmp-to').value   = _fitRangeToPeriod(r[1], p);
   });
   renderCmpChartDebounced();
 }
@@ -5208,7 +5437,11 @@ setInterval(() => {
   else if (r > 200 && g < 100) dot.classList.add('err');
 }, 500);
 
-function onTabSummary(){ renderSummary(); }
+async function onTabSummary(){
+
+  if(!availableMonths) await loadAvailableMonths();
+  renderSummary();
+}
 function onTabCost(){ /* no cost module in this build */ }
 init();</script>
 </body>
