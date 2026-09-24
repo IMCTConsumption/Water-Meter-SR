@@ -3,12 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>💧 ระบบจดบันทึกมิเตอร์น้ำ Water Meter SR Plant</title>
+<title>⚡ ระบบจดบันทึกมิเตอร์ไฟฟ้า Electric Meter SR Plant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- One combined font request covering every family actually used: Inter (UI),
+     Sarabun (Thai body), IBM Plex Mono (numbers/timestamps). Previously the app
+     pulled fonts from TWO places — this <link> plus a CSS @import lower down —
+     and the first request also loaded IBM Plex Sans Thai at four weights that
+     no rule uses as a primary face (Sarabun covers Thai). The @import was the
+     slower of the two anyway: the browser can't discover it until the main CSS
+     has downloaded and parsed, so it serialised the font fetch behind the
+     stylesheet. Consolidating to this single <link> in <head> removes the
+     duplicate download and lets the fonts start loading immediately. -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 
+/* ═══════════════════════════════════════════════════════════
+   REDESIGN LAYER — SESSION 1
+   Design tokens matched to the IMCT Consumption hub (navy + cyan + off-white),
+   with dark-mode parity. Component styles for the new header + sidebar drawer +
+   centered login. All original panel/card/button styles below remain untouched.
+   =========================================================== */
 :root {
   --rd-ink:          #0A1628;
   --rd-ink-2:        #3A4A5F;
@@ -67,7 +82,8 @@
   --rd-shadow-lg:    0 12px 32px rgba(0,0,0,.45);
 }
 
-/* Fonts loaded via a single <link> in <head> — no @import here. See Electric. */
+/* Fonts are loaded via a single <link> in <head> (see the comment there) —
+   no @import here, which would serialise the fetch behind this stylesheet. */
 
 /* ─── New header ─── */
 .rd-header {
@@ -798,6 +814,9 @@ body{font-family:var(--font-body);font-size:var(--fs-md);line-height:1.5;backgro
 .f-input.kwh-input{font-size:var(--fs-2xl);font-weight:700;text-align:center;color:var(--green);letter-spacing:3px;padding:16px;background:var(--surface-2);border-radius:var(--r-lg);font-family:var(--font-mono);min-height:72px}
 .f-input:disabled{opacity:.5;cursor:not-allowed}
 select.f-input option{background:var(--surface-2)}
+/* Makes clear this is a picker, not just a labelled box — a visible chevron
+   plus an accent border, instead of relying on the browser's own tiny arrow
+   which people were missing entirely on the group-chart dropdown. */
 select.rd-select-hint{
   appearance:none; -webkit-appearance:none;
   border-color:var(--accent-border);
@@ -874,6 +893,9 @@ tr:hover td{background:var(--surface-2)}
 .warn-box{background:var(--orange-dim);border:1px solid rgba(251,146,60,.3);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px;font-size:var(--fs-sm);color:var(--orange);line-height:1.7}
 .empty{text-align:center;padding:28px;color:var(--text-3)}
 .empty i{font-size:28px;display:block;margin-bottom:6px;font-style:normal}
+/* Empty/placeholder state inside a chart area. Given a real min-height and
+   centering so it reads as a deliberate "no data" state instead of a blank
+   white panel that looks like the chart failed to load. */
 .section-empty{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px 14px;text-align:center;color:var(--text-3);font-size:var(--fs-sm)}
 .section-empty::before{content:'📊';font-size:32px;opacity:.4}
 @media(max-width:480px){
@@ -910,7 +932,10 @@ tr:hover td{background:var(--surface-2)}
 i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 .modal-head i svg,.card-title i svg{ width:18px; height:18px; vertical-align:-3px; margin-right:2px; }
 .chart-ctrl{display:flex;gap:6px;flex-wrap:wrap;padding:8px 10px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);margin-bottom:8px;align-items:center}
-/* See the matching comment in the Electric app — collapsible filter block. */
+/* Collapsible filter block — keeps the row of range/period/type buttons from
+   eating the vertical space the chart itself needs. Closed by default so the
+   chart is visible immediately on tab open; the defaults (this month, daily,
+   bar) are almost always what someone wants, so most people never open it. */
 .chart-filters{margin-bottom:8px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);overflow:hidden}
 .chart-filters>summary{cursor:pointer;list-style:none;padding:9px 12px;font-size:12px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:8px;user-select:none}
 .chart-filters>summary::-webkit-details-marker{display:none}
@@ -919,17 +944,31 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 .chart-filters>summary:hover{background:var(--surface-1)}
 .chart-filters .chart-ctrl{margin:0 8px 8px;background:var(--surface-1)}
 .chart-filters .chart-ctrl:first-of-type{margin-top:4px}
-/* See the matching comments in the Electric app. */
+/* Chart subtitle — one line under the card title explaining what the chart
+   shows, so a viewer isn't left guessing how the three charts differ. */
 .chart-desc{font-size:12px;color:var(--text-3);margin:-2px 0 12px;line-height:1.4}
+/* Searchable picker — an <input> backed by a <datalist>, so the native
+   browser control does the filtering (type "PT" → only PT groups show) with
+   zero custom dropdown JS. Looks like the other f-inputs; the resolved key is
+   applied on change. */
 .rd-search-wrap{position:relative;display:flex;align-items:center}
 .rd-search-wrap>i{position:absolute;left:12px;color:var(--text-3);font-size:16px;pointer-events:none}
 .rd-search-input{width:100%;padding:11px 12px 11px 36px;background:var(--surface-2);border:1px solid var(--accent-border);border-radius:10px;color:var(--text-1);font-size:14px;font-family:inherit}
 .rd-search-input:focus{outline:none;border-color:var(--accent)}
+/* Segmented control — the range presets as one connected bar with the active
+   segment filled, the enterprise-dashboard pattern (Power BI/Grafana). One tap
+   switches range; all options visible at once. */
 .rd-segment{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;margin-bottom:8px}
 .rd-segment button{flex:1;border:none;background:transparent;color:var(--text-2);font-size:13px;font-family:inherit;padding:8px 4px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
 .rd-segment button:hover{color:var(--text-1)}
 .rd-segment button.on{background:var(--accent);color:var(--bg);font-weight:700}
-/* Custom picker dropdown — see the matching comments in the Electric app. */
+/* Custom picker dropdown — replaces the <datalist> approach, which on real
+   devices didn't open on tap (you had to type first), fired a redraw on every
+   keystroke (deleting one char reset the chart), and gave no clear open state.
+   This one: tap the field → the full list drops open immediately; an optional
+   search box at the top filters as you type but does NOT touch the chart;
+   picking a row is what commits + redraws. Works identically on mobile and
+   desktop because it's plain DOM, not a native control. */
 .rd-picker{position:relative}
 .rd-picker-btn{width:100%;display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--surface-2);border:1px solid var(--accent-border);border-radius:10px;color:var(--text-1);font-size:14px;font-family:inherit;cursor:pointer;text-align:left}
 .rd-picker-btn:focus{outline:none;border-color:var(--accent)}
@@ -958,7 +997,12 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 .ctrl-nav{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface-1);color:var(--text-1);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px}
 .ctrl-nav:hover{background:var(--surface-3)}
 .chart-container{min-height:320px;position:relative}
-/* Skeleton loader — see the matching comment in the Electric app. */
+/* Skeleton loader — shown while a chart's data is being fetched, instead of a
+   bare "กำลังโหลด..." line or an empty box that makes the app feel stalled.
+   Faint animated bars of varying height read instantly as "a chart is coming",
+   which is the perceived-speed trick real dashboards use: the wait feels
+   shorter when the shape of the result is already on screen. Pure CSS, no JS,
+   no layout shift when the real chart replaces it (same min-height). */
 .chart-skeleton{height:320px;min-height:320px;display:flex;align-items:flex-end;justify-content:space-around;gap:6px;padding:24px 12px 40px;box-sizing:border-box}
 .chart-skeleton .sk-bar{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--surface-4),var(--surface-3));animation:sk-pulse 1.2s ease-in-out infinite}
 .chart-skeleton .sk-bar:nth-child(1){height:55%;animation-delay:0s}
@@ -1041,16 +1085,16 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     <a href="https://imctconsumption.github.io/IMCT_HUB/" class="rd-login-brand" title="Back to hub">
       <div class="rd-login-brand-mark">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2c-3.5 5-7 9.2-7 13.2A7 7 0 0 0 12 22a7 7 0 0 0 7-6.8C19 11.2 15.5 7 12 2Z"/>
+          <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/>
         </svg>
       </div>
       <div class="rd-login-brand-txt">IMCT Consumption</div>
     </a>
 
     <div class="rd-login-card">
-      <div class="rd-login-eyebrow" id="rd-login-mode-tag">Recorder access</div>
-      <div class="rd-login-title" id="rd-login-title">Sign in to log readings</div>
-      <div class="rd-login-subtitle" id="rd-login-subtitle">กรอกรหัสผ่านทีมจดมิเตอร์เพื่อเริ่มบันทึกค่า</div>
+      <div class="rd-login-eyebrow" id="rd-login-mode-tag">Select Access Mode</div>
+      <div class="rd-login-title" id="rd-login-title">Please select your access level to continue</div>
+      <div class="rd-login-subtitle" id="rd-login-subtitle">กรุณาเลือกประเภทการเข้าใช้งานเพื่อดำเนินการต่อ</div>
 
 <div id="login-choose">
         <div class="rd-role-pick">
@@ -1162,7 +1206,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     <div class="rd-brand">
       <div class="rd-brand-mark">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2c-3.5 5-7 9.2-7 13.2A7 7 0 0 0 12 22a7 7 0 0 0 7-6.8C19 11.2 15.5 7 12 2Z"/>
+          <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/>
         </svg>
       </div>
       <div class="rd-brand-title" id="hdr-title">Electric Meter<span class="rd-brand-code" id="rd-brand-code">SR</span></div>
@@ -1204,9 +1248,9 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
       Home
     </a>
-    <a class="rd-drawer-item" href="https://imctconsumption.github.io/Electric-Meter-SR/" title="สลับไปแอปมิเตอร์ไฟฟ้า SR">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>
-      สลับไปมิเตอร์ไฟฟ้า <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">Electric</span>
+    <a class="rd-drawer-item" href="https://imctconsumption.github.io/Water-Meter-SR/" title="สลับไปแอปมิเตอร์น้ำ SR">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69s5 5.5 5 9.31a5 5 0 0 1-10 0c0-3.81 5-9.31 5-9.31Z"/></svg>
+      สลับไปมิเตอร์น้ำ <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">Water</span>
     </a>
 
     <div class="rd-drawer-section">Workspace</div>
@@ -1225,6 +1269,10 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     <button class="rd-drawer-item rd-admin-item rd-viewer-item" data-rd-tab="summary" onclick="rdGoTab('summary')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/></svg>
       Summary <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">สรุป</span>
+    </button>
+    <button class="rd-drawer-item rd-admin-item rd-viewer-item" data-rd-tab="cost" onclick="rdGoTab('cost')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Cost <span style="margin-left:auto;font-family:var(--rd-font-th);font-size:11px;color:var(--rd-ink-3)">ค่าไฟ</span>
     </button>
     <button class="rd-drawer-item rd-admin-item" data-rd-tab="qr" onclick="rdGoTab('qr')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h.01M17 21h4v-4"/></svg>
@@ -1306,22 +1354,22 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       </div>
 
       <div class="meter-card" id="meter-summary" style="display:none">
-        <div class="card-title">💧 ค่ามิเตอร์ล่าสุด</div>
+        <div class="card-title">⚡ ค่ามิเตอร์ล่าสุด</div>
         <div class="meter-row">
           <div class="meter-box">
             <div class="mb-label">ครั้งก่อน</div>
             <div class="mb-val" style="color:var(--text-3)" id="prev-reading">—</div>
-            <div class="mb-unit">m³ สะสม</div>
+            <div class="mb-unit">kWh สะสม</div>
           </div>
           <div class="arrow-box">→</div>
           <div class="meter-box hi">
             <div class="mb-label">ล่าสุด</div>
             <div class="mb-val" style="color:var(--accent)" id="last-reading">—</div>
-            <div class="mb-unit">m³ สะสม</div>
+            <div class="mb-unit">kWh สะสม</div>
           </div>
         </div>
         <div class="chip-center">
-          <span class="chip chip-green">💧 ใช้น้ำล่าสุด: <span id="last-used">—</span> m³</span>
+          <span class="chip chip-green">⚡ ใช้ไฟฟ้าล่าสุด: <span id="last-used">—</span> kWh</span>
         </div>
       </div>
 
@@ -1329,7 +1377,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <div class="card">
         <div class="card-title"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></i>บันทึกค่ามิเตอร์ใหม่</div>
         <div class="f-row">
-          <label class="f-label" id="in-kwh-label">📟 ค่าที่อ่านได้ (m³ สะสม)</label>
+          <label class="f-label" id="in-kwh-label">📟 ค่าที่อ่านได้ (kWh สะสม)</label>
           <input class="f-input kwh-input" type="number" id="in-kwh" placeholder="0" step="1" inputmode="decimal" oninput="previewUsed()">
         </div>
         <div id="preview-box" style="display:none;margin-bottom:12px">
@@ -1446,10 +1494,10 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 
   <div class="panel" id="panel-chart">
     <div class="card">
-      <div class="card-title">กราฟเทียบการใช้น้ำแต่ละกลุ่ม
+      <div class="card-title">กราฟเทียบการใช้ไฟฟ้าแต่ละกลุ่ม
         <button class="btn btn-ghost btn-sm" style="text-transform:none;letter-spacing:0;padding:3px 8px;min-height:auto" id="cmp-refresh-btn" onclick="refreshCmpChart()" title="ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์">🔄</button>
       </div>
-      <div class="chart-desc">ภาพรวมการใช้น้ำของแต่ละกลุ่ม เทียบตามช่วงเวลา</div>
+      <div class="chart-desc">ภาพรวมการใช้พลังงานของแต่ละกลุ่ม เทียบตามช่วงเวลา</div>
       <div class="f-row">
         <label class="f-label">🏭 เลือกโรง / กลุ่ม</label>
         <div class="rd-picker" id="cmp-group-picker">
@@ -1469,7 +1517,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <button data-slot="1" onclick="setCmpQuickSeg(1)">เดือนก่อน</button>
         <button data-slot="2" onclick="setCmpQuickSeg(2)">3 เดือน</button>
       </div>
-            <details class="chart-filters"><summary>ตัวกรอง (ช่วงวัน · มุมมอง · รูปแบบ)</summary>
+      <details class="chart-filters"><summary>ตัวกรอง (ช่วงวัน · มุมมอง · รูปแบบ)</summary>
       <div class="chart-ctrl">
         <span class="chart-ctrl-label">จาก:</span>
         <input class="ctrl-date" type="date" id="cmp-from" onchange="renderCmpChartDebounced()">
@@ -1487,18 +1535,18 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <button class="ctrl-btn green" id="cmp-t-bar" onclick="setCmpType('bar')">แท่ง</button>
         <button class="ctrl-btn" id="cmp-t-line" onclick="setCmpType('line')">เส้น</button>
       </div>
-            </details>
-<div class="chart-container" id="cmp-chart-el"></div>
+      </details>
+      <div class="chart-container" id="cmp-chart-el"></div>
       <div id="cmp-chart-summary" style="margin-top:8px"></div>
     </div>
   
 
         <div class="card">
-      <div class="card-title">เทียบการใช้น้ำกลุ่มหลัก
+      <div class="card-title">เทียบการใช้ไฟฟ้ากลุ่มหลัก
         <button class="btn btn-ghost btn-sm" style="text-transform:none;letter-spacing:0;padding:3px 8px;min-height:auto" id="g9-refresh-btn" onclick="refreshG9Chart()" title="ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์">🔄</button>
       </div>
-            <details class="chart-filters"><summary>ตัวกรอง (มุมมอง · ช่วง · เรียง)</summary>
-<div class="chart-ctrl">
+      <details class="chart-filters"><summary>ตัวกรอง (มุมมอง · ช่วง · เรียง)</summary>
+      <div class="chart-ctrl">
         <span class="chart-ctrl-label">มุมมอง:</span>
         <button class="ctrl-btn green" id="g9-p-day" onclick="setG9Period('day')">รายวัน</button>
         <button class="ctrl-btn" id="g9-p-month" onclick="setG9Period('month')">รายเดือน</button>
@@ -1520,8 +1568,8 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <div class="ctrl-sep"></div>
         <button class="ctrl-btn" id="g9-pct" onclick="toggleG9Pct()">แสดง %</button>
       </div>
-            </details>
-<div class="chart-container" id="g9-chart-el"></div>
+      </details>
+      <div class="chart-container" id="g9-chart-el"></div>
       <div id="g9-chart-summary" style="margin-top:8px"></div>
     </div>
 
@@ -1549,7 +1597,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <button data-slot="1" onclick="setSubQuickSeg(1)">เดือนก่อน</button>
         <button data-slot="2" onclick="setSubQuickSeg(2)">3 เดือน</button>
       </div>
-            <details class="chart-filters"><summary>ตัวกรอง (ช่วงวัน · มุมมอง · รูปแบบ)</summary>
+      <details class="chart-filters"><summary>ตัวกรอง (ช่วงวัน · มุมมอง · รูปแบบ)</summary>
       <div class="chart-ctrl">
         <span class="chart-ctrl-label">จาก:</span>
         <input class="ctrl-date" type="date" id="sub-from" onchange="renderSubChart()">
@@ -1567,49 +1615,91 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <button class="ctrl-btn green" id="sub-t-bar" onclick="setSubType('bar')">แท่ง</button>
         <button class="ctrl-btn" id="sub-t-line" onclick="setSubType('line')">เส้น</button>
       </div>
-            </details>
-<div class="chart-container" id="sub-chart-el"></div>
+      </details>
+      <div class="chart-container" id="sub-chart-el"></div>
       <div id="sub-chart-summary" style="margin-top:8px"></div>
     </div>
   </div>
 
   <div class="panel" id="panel-summary">
+
+  <!-- ── ตารางรายงานรายวันทั้งเดือน ── -->
   <div class="card">
-    <div class="card-title">📊 สรุปการใช้น้ำรายเดือน</div>
-    <div class="info-box">รายละเอียดรายมิเตอร์แยกตาม Zone + สรุปรายเดือนแต่ละ Zone รายวัน — หัก minus อัตโนมัติจาก <strong>_REPORT_GROUPS</strong> sheet</div>
+    <div class="card-title">📋 รายงานการใช้ไฟฟ้ารายเดือน</div>
     <div class="f-2col">
       <div class="f-row">
-        <label class="f-label">📅 เดือน</label>
-        <input class="f-input" type="month" id="sum-month">
+        <label class="f-label">เลือกเดือน</label>
+        <select class="f-input" id="rep-month" onchange="loadReport()"></select>
       </div>
       <div class="f-row" style="display:flex;align-items:flex-end">
-        <button class="btn btn-primary btn-full" onclick="renderSummary()" style="min-height:44px">🔄 คำนวณ</button>
+        <button class="btn btn-yellow btn-full" onclick="exportReportExcel()">📥 Export Excel</button>
+      </div>
+    </div>
+    <div class="f-row" style="display:flex;align-items:flex-end">
+      <button class="btn btn-primary btn-full" onclick="exportFullTemplateExcel()">📊 Export Excel (รูปแบบเต็ม — Data + รายมิเตอร์ทุก Zone)</button>
+    </div>
+    <div id="report-area"><div class="section-empty">📋 เลือกเดือนเพื่อดูรายงาน</div></div>
+  </div>
+
+  <!-- ── รายละเอียดรายมิเตอร์ แยกตาม Zone ── -->
+  <div class="card">
+    <div class="card-title">🔎 รายละเอียดรายมิเตอร์แยกตาม Zone</div>
+    <div class="f-2col">
+      <div class="f-row">
+        <label class="f-label">เลือกเดือน</label>
+        <select class="f-input" id="zone-rep-month" onchange="loadZoneReport()"></select>
+      </div>
+      <div class="f-row">
+        <label class="f-label">เลือก Zone</label>
+        <select class="f-input" id="zone-rep-select" onchange="renderZoneReport()"></select>
+      </div>
+    </div>
+    <div class="f-row" style="display:flex;align-items:flex-end;margin-bottom:11px">
+      <button class="btn btn-yellow btn-full" onclick="exportZoneReportExcel()">📥 Export Excel</button>
+    </div>
+    <div id="zone-report-area"><div class="section-empty">📋 เลือกเดือนแล้วเลือก Zone เพื่อดูรายละเอียด</div></div>
+  </div>
+
+</div>
+  
+  <!-- ══ COST TAB (Electric only) ══
+       Kept out of Summary on purpose: Summary reports consumption in units,
+       this reports money. It also owns the tariff inputs, which belong to the
+       two MEA supply points and have no analogue in the Water app. -->
+  <div class="panel" id="panel-cost">
+    <div class="card">
+      <div class="card-title">💰 ประมาณค่าไฟฟ้า</div>
+      <div class="info-box">
+        ประมาณการจากค่าที่จดไว้ — <strong>ไม่ใช่บิลจริง</strong> ใช้ดูแนวโน้มก่อนบิลออก<br>
+        <small style="color:var(--rd-ink-3)">Demand ใช้ค่าสูงสุดของเดือน · หน่วยใช้ผลต่างต้น-ปลายเดือน</small>
+      </div>
+      <div class="f-2col">
+        <div class="f-row">
+          <label class="f-label">📅 เดือน</label>
+          <select class="f-input" id="cost-month" onchange="renderTariffForms(); loadCostData();"></select>
+        </div>
+        <div class="f-row" style="display:flex;align-items:flex-end">
+          <button class="btn btn-primary btn-full" onclick="loadCostData()" style="min-height:44px">🔄 คำนวณ</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="cost-body"><div class="section-empty">เลือกเดือนแล้วกดคำนวณ</div></div>
+
+    <div class="card">
+      <div class="card-title">⚙️ อัตราค่าไฟ</div>
+      <div class="info-box" style="margin-bottom:12px">
+        กรอกตามใบแจ้งหนี้ล่าสุด — Ft เปลี่ยนทุกงวด ควรอัปเดตก่อนคำนวณ<br>
+        <small style="color:var(--rd-ink-3)">เก็บในเครื่องนี้เท่านั้น ไม่ได้ส่งขึ้น Sheet</small>
+      </div>
+      <div id="tariff-forms"></div>
+      <div class="btn-row">
+        <button class="btn btn-save btn-sm" onclick="saveTariffs()">💾 บันทึกอัตรา</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadCostData()">🔄 คำนวณใหม่</button>
       </div>
     </div>
   </div>
 
-  <!-- ตารางที่ 1: รายละเอียดรายมิเตอร์แยกตาม Zone -->
-  <div class="card">
-    <div class="card-title">📋 ตารางที่ 1 — รายละเอียดรายมิเตอร์แยกตาม Zone (รายวัน)</div>
-    <div class="f-row">
-      <label class="f-label">เลือกกลุ่ม</label>
-      <select class="f-input" id="sum-group" onchange="renderSummaryTable1()"></select>
-    </div>
-    <div id="sum-t1-body"><div class="section-empty">กด 🔄 คำนวณ เพื่อดูข้อมูล</div></div>
-    <div class="btn-row" style="margin-top:10px">
-      <button class="btn btn-yellow btn-sm" onclick="exportSummaryT1()">📥 Export Excel (ตาราง 1)</button>
-    </div>
-  </div>
-
-  <!-- ตารางที่ 2: สรุปรายเดือน แสดงแต่ละ Zone รายวัน -->
-  <div class="card">
-    <div class="card-title">📋 ตารางที่ 2 — สรุปรายเดือน แสดงแต่ละ Zone รายวัน</div>
-    <div id="sum-t2-body"><div class="section-empty">กด 🔄 คำนวณ เพื่อดูข้อมูล</div></div>
-    <div class="btn-row" style="margin-top:10px">
-      <button class="btn btn-yellow btn-sm" onclick="exportSummaryT2()">📥 Export Excel (ตาราง 2)</button>
-    </div>
-  </div>
-</div>
   <div class="panel" id="panel-qr">
     <div class="card">
       <div class="card-title"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h.01M17 21h4v-4"/></svg></i> QR Code ทุก Meter</div>
@@ -1705,7 +1795,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     <div class="modal-head"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></i> แก้ไขรายการ<button class="modal-close" onclick="closeEdit()">✕</button></div>
     <div class="warn-box">⚠️ การแก้ไขค่ามิเตอร์จะกระทบค่า "ใช้ไป" ของรายการถัดไป</div>
     <div class="f-row"><label class="f-label">Meter</label><select class="f-input" id="edit-sub"></select></div>
-    <div class="f-row"><label class="f-label">ค่ามิเตอร์ (m³ สะสม)</label><input class="f-input kwh-input" type="number" id="edit-kwh" step="1" inputmode="decimal"></div>
+    <div class="f-row"><label class="f-label">ค่ามิเตอร์ (kWh สะสม)</label><input class="f-input kwh-input" type="number" id="edit-kwh" step="1" inputmode="decimal"></div>
     <div class="f-2col">
       <div class="f-row"><label class="f-label">วันที่</label><input class="f-input" type="date" id="edit-date"></div>
       <div class="f-row"><label class="f-label">เวลา</label><input class="f-input" type="time" id="edit-time"></div>
@@ -1769,16 +1859,16 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
    CONFIG — the ONLY block that differs between the four apps
    (Electric/Water × SR/GW). Generating another app = change this block.
    ═══════════════════════════════════════════════════════════ */
-const APP_ID      = 'water-sr';   // must equal doGet's `app`; verified on load
-const APP_NS      = 'watersr';    // localStorage namespace — UNIQUE per app
+const APP_ID      = 'elec-sr';   // must equal doGet's `app`; verified on load
+const APP_NS      = 'elecsr';    // localStorage namespace — UNIQUE per app
 const APP_VERSION = '1.0.0';
-const SITE_NAME   = 'Water Meter';
+const SITE_NAME   = 'Electric Meter';
 const SITE_CODE   = 'SR';
-const UNIT        = 'm³';
-const API_URL     = 'https://script.google.com/macros/s/AKfycby_szz8ArFF3Z-sVCvoTKI0a5nFtpbGtV6HZty8wEchXaFPDprzLMfGKnxMjgzkBA6xlQ/exec';
-const QR_BASE_URL = 'https://imctconsumption.github.io/Water-Meter-SR/';
-const UNIT_WORD = "ใช้น้ำ";
-const UNIT_ICON = "💧";
+const UNIT        = 'kWh';
+const API_URL     = 'https://script.google.com/macros/s/AKfycbyH9UH3Cva7VMm9Tx-p3hdonQqkPHv41SNzEt3HB8iSXs1CBgkzhi-L6iEVu6Z-9C53RA/exec';
+const QR_BASE_URL = 'https://imctconsumption.github.io/Electric-Meter-SR/';
+const UNIT_WORD = "ใช้ไฟฟ้า";
+const UNIT_ICON = "⚡";
 const ABNORMAL_MULTIPLIER = 5;
 const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // matches SESSION_TTL_SECONDS in Code.gs
 
@@ -1863,7 +1953,11 @@ function fmtUsedCell(used, meterId){
   return fmtNum(used, meterId);
 }
 
-/* See the matching comment in the Electric app. */
+/* People walking the plant read a name off a panel, never a meter ID — the
+   table's first column showing "SUB-05" instead of "Sub No.5" meant every
+   lookup required a mental translation nobody actually does. Looks up the
+   CURRENT name from `subs` (not the meterName saved on the record itself),
+   so a rename in Settings is reflected on old rows too, not just new ones. */
 function meterNameById(meterId){
   const sub = subs.find(s => s.id === meterId);
   return sub ? sub.name : (meterId || '—');
@@ -1897,19 +1991,34 @@ function setNow(){
   if(ed) ed.value = n.getFullYear() + '-' + pad(n.getMonth()+1) + '-' + pad(n.getDate());
   if(et) et.value = pad(n.getHours()) + ':' + pad(n.getMinutes());
 }
-/* See the matching comment in the Electric app. Per-meter chart data store. */
-let subChartRecords = {};
+/* Per-meter chart data store, keyed by meterId. Populated by
+   loadSubChartRecords() from the getMeterRecords action, which reads one
+   meter's rows from a small stable server cache instead of scanning the whole
+   sheet (getRawRecords). getSubRecs prefers this store when it holds the
+   requested meter, falling back to the global `records` array otherwise (e.g.
+   an admin who already loaded everything, or before the per-meter fetch
+   returns). Records here are run through computeUsed on arrival so `used`
+   carries the same zero-guard as everywhere else. */
+let subChartRecords = {};   // meterId -> computed records array
 
 function getSubRecs(meterId){
   const cached = subChartRecords[meterId];
   if(cached){
-    // Already sorted (see the matching comment in the Electric app).
+    // Already sorted by _getMeterRecordChain server-side (and computeUsed
+    // preserves order), so no re-sort here — this is the normal chart path.
     return cached.filter(r => r.meterId === meterId);
   }
+  // Fallback to the global records array (e.g. before the per-meter fetch
+  // returns, or an admin who loaded everything). That array is NOT guaranteed
+  // sorted, so it still needs sorting.
   return records.filter(r => r.meterId === meterId)
     .sort((a,b) => (`${a.date} ${a.time||'00:00'}`).localeCompare(`${b.date} ${b.time||'00:00'}`));
 }
 
+/* Fetches one meter's records via the lightweight per-meter action and stores
+   the computed result. Returns the array. Used both on meter-select and by the
+   refresh button — the whole point is that this path never touches the
+   full-sheet getRawRecords. */
 async function loadSubChartRecords(meterId){
   if(!meterId) return [];
   const res = await apiPostAuthed({ action:'getMeterRecords', meterId });
@@ -2040,7 +2149,7 @@ async function handleRecorderLogin(){
   const originalHTML = loginBtn.innerHTML;
   loginBtn.disabled = true; loginBtn.innerHTML = '⏳ กำลังตรวจสอบ...';
   try{
-    const res = await apiPost({ action:'login', username:'recorder', password:passVal });
+    const res = await apiPost({ action:'login', username:'recorder', password:passVal, meterIds: subs.map(s => s.id) });
     if(res && res.success){
       currentUser = res.name || 'ทีมจดมิเตอร์';
       sessionToken = res.token || null;
@@ -2049,14 +2158,31 @@ async function handleRecorderLogin(){
       lsSetRaw('loginMode','basic');
       document.getElementById('recorder-pass').value = '';
       closeLoginGate();
-      await loadMeterStatus();
+      // The login response already carries meter status (backend folded it in),
+      // so apply it directly instead of a second getMeterStatus round-trip.
+      // Falls back to loadMeterStatus only if the payload wasn't included.
+      if(res.status){
+        meterStatus = res.status;
+        if(res.today) meterStatusToday = res.today;
+        if(res.date)  loggingDayLabel = res.date;
+      } else {
+        await loadMeterStatus();
+      }
+      // Queue MUST start regardless of which status path ran above — it was
+      // accidentally only inside the res.status branch, so when the backend
+      // didn't fold status in (old deploy, viewer, or an error) the send queue
+      // never auto-flushed and readings piled up locally then vanished on close.
+      if(sessionToken) loadBulkRecent();
+      loadQueue(); startQueueTimer(); flushQueue();
       if(pendingQrSub){
         goTab('entry');
         const found = subs.find(s => s.id === pendingQrSub);
         if(found){ await selectSub(found.id); toast('📍 เปิด ' + found.id + ' จาก QR','ok'); }
         pendingQrSub = null;
       } else {
-        // Always land a recorder on entry — see the Electric comment.
+        // Always land a recorder on the entry tab. Without this, logging out of
+        // a viewer/admin session (last tab = chart) and back in as recorder
+        // left the chart tab showing instead of the data-entry screen.
         goTab('entry');
       }
       renderAll();
@@ -2434,7 +2560,12 @@ let _adminRecordsInFlight = null;
    two minutes. It is now pulled the first time a tab that needs it is opened. */
 let _adminRecordsLoaded = false;
 
-/* Admin or report-viewer — see the matching comment in the Electric app. */
+/* Admin or report-viewer — matches the backend's _requireReportAccess on
+   getRawRecords. The frontend guard used to check `appMode !== 'admin'` only,
+   which meant a viewer's session was blocked from ever calling this even
+   after the backend was opened up to it: the fetch never fired, so the
+   per-meter chart card stayed on "no data" while the group-level charts
+   (which read from server-side summaries, not this) worked fine. */
 async function ensureAdminRecords(){
   const allowed = appMode === 'admin' || appMode === 'viewer';
   if(_adminRecordsLoaded || !allowed || !sessionToken) return;
@@ -2443,6 +2574,8 @@ async function ensureAdminRecords(){
     await loadAdminRecords();
     _adminRecordsLoaded = true;
     setSyncStatus('ok','โหลดข้อมูลแล้ว');
+    // Data-tab rendering and its record-count badge are admin-only UI; a
+    // viewer never has that panel in the DOM active, so skip the wasted work.
     if(appMode === 'admin'){ renderData(); updateRecordWindowNotice(); updateBadge(); }
     if(document.querySelector('.panel.active')?.id === 'panel-chart'){
       populateDDs(); initG9Pickers(); renderSubChart();
@@ -2531,8 +2664,16 @@ function invalidateSummaryCache(reason){
   console.log(`🗑 invalidateSummaryCache — ล้าง ${keys} keys, reason: ${reason||'ไม่ระบุ'}`);
 }
 
-/* See the matching comment in the Electric app for why this is manual, not
-   polled. */
+/* Manual refresh for the three charts. There is no auto-refresh or polling —
+   a chart left open does not learn about a reading someone else just saved
+   on another device, because summaryCache (client) and the server's own
+   10-minute cache both stay put until something explicitly clears them.
+   Polling on a timer was considered and rejected: it would fire network
+   calls nobody asked for, on every open tab, whether or not anyone is
+   looking — the wrong trade given how much of this session went into making
+   the app NOT do unnecessary round trips. A button people press only when
+   they actually want to see whether anything changed costs nothing the rest
+   of the time. */
 async function _withRefreshSpin(btnId, fn){
   const btn = document.getElementById(btnId);
   if(btn){ btn.disabled = true; btn.style.animation = 'spin 0.8s linear infinite'; }
@@ -2551,7 +2692,9 @@ function refreshG9Chart(){
     await renderG9Chart();
   });
 }
-/* See the matching comment in the Electric app. */
+/* Meter-select handler for the per-meter chart. Fetches that meter's rows via
+   the lightweight action, then renders. Shows a loading state on the chart
+   element while the fetch is in flight so it doesn't look frozen. */
 async function onSubChartMeterChange(){
   var meterId = document.getElementById('chart-sub').value;
   var el = document.getElementById('sub-chart-el');
@@ -2566,17 +2709,24 @@ async function onSubChartMeterChange(){
   preloadAdjacentMeter(meterId);
 }
 
-/* See the matching comment in the Electric app. */
+/* Warms the cache for the NEXT meter in the dropdown, so stepping through
+   meters one by one feels instant after the first. Deliberately conservative
+   to honour "don't fetch more than necessary": only the single next meter,
+   only if not already cached, and only when the browser is idle (so it never
+   competes with the current chart's own load or anything the user actually
+   triggered). If requestIdleCallback isn't available it just skips —
+   preloading is a nicety, not required for correctness. */
 function preloadAdjacentMeter(currentMeterId){
   if(typeof requestIdleCallback !== 'function') return;
   var sel = document.getElementById('chart-sub');
   if(!sel) return;
   var opts = Array.prototype.slice.call(sel.options).map(function(o){ return o.value; }).filter(Boolean);
   var idx = opts.indexOf(currentMeterId);
-  if(idx < 0 || idx + 1 >= opts.length) return;
+  if(idx < 0 || idx + 1 >= opts.length) return;   // no next meter
   var nextId = opts[idx + 1];
-  if(subChartRecords[nextId]) return;
+  if(subChartRecords[nextId]) return;              // already warm
   requestIdleCallback(function(){
+    // Re-check: the user may have changed meters since this was queued.
     if(!subChartRecords[nextId]){
       loadSubChartRecords(nextId).catch(function(){ /* preload is best-effort */ });
     }
@@ -2584,6 +2734,9 @@ function preloadAdjacentMeter(currentMeterId){
 }
 
 function refreshSubChart(){
+  // Per-meter refresh now goes through the lightweight getMeterRecords action
+  // (one meter, small stable cache) instead of getRawRecords (full sheet).
+  // Re-fetches the currently selected meter only.
   return _withRefreshSpin('sub-refresh-btn', async () => {
     var meterId = document.getElementById('chart-sub').value;
     if(meterId){
@@ -2622,31 +2775,49 @@ function ensureQRCode(){    return (typeof QRCode!=='undefined')    ? Promise.re
 function ensureXLSX(){      return (typeof XLSX!=='undefined')      ? Promise.resolve() : loadScript(CDN.xlsx); }
 function ensureApex(){      return (typeof ApexCharts!=='undefined') ? Promise.resolve() : loadScript(CDN.apexcharts); }
 
-/* See the matching comment in the Electric app. */
+/* HTML for the chart skeleton (see .chart-skeleton CSS). Eight bars is enough
+   to read as "a bar chart is loading" without looking like real data. */
 function chartSkeletonHTML(){
-  return '<div class="chart-skeleton">' + '<div class="sk-bar"></div>'.repeat(8) + '</div>';
+  return '<div class="chart-skeleton">' +
+    '<div class="sk-bar"></div>'.repeat(8) +
+    '</div>';
 }
 
-/* Debounced chart redraws — see the matching comment in the Electric app. */
+/* Debounced chart redraws for the two server-backed charts (cmp, g9). Tapping
+   a range/period button or nudging a date field used to fire renderCmpChart /
+   renderG9Chart synchronously on every single change — so clicking through
+   "this month → last month → 3 months" quickly launched three getMonthlySummary
+   round-trips back to back, and the UI felt like it lagged behind the taps.
+   These wrappers show the skeleton immediately (instant visual feedback) but
+   hold the actual fetch for a beat, so a rapid burst of taps collapses into one
+   network call for the final selection. The per-meter chart reads from an
+   already-loaded in-memory store, so it stays synchronous — no debounce needed
+   there. */
 var _cmpDebounceTimer = null, _g9DebounceTimer = null;
 var CHART_DEBOUNCE_MS = 220;
 function renderCmpChartDebounced(){
   var el = document.getElementById('cmp-chart-el');
   if(el && document.getElementById('cmp-group').value) el.innerHTML = chartSkeletonHTML();
-  cmpReqId++;   // invalidate any in-flight render — see the Electric version's comment
+  // Bump the request id NOW so any render still awaiting its summary fetch sees
+  // itself as stale and bails, instead of racing the debounced one that's about
+  // to fire. Without this a fast series of switches could let an earlier
+  // in-flight render finish last and leave the wrong (or blank) chart.
+  cmpReqId++;
   if(_cmpDebounceTimer) clearTimeout(_cmpDebounceTimer);
   _cmpDebounceTimer = setTimeout(function(){ _cmpDebounceTimer = null; renderCmpChart(); }, CHART_DEBOUNCE_MS);
 }
 function renderG9ChartDebounced(){
   var el = document.getElementById('g9-chart-el');
   if(el) el.innerHTML = chartSkeletonHTML();
-  g9ReqId++;
+  g9ReqId++;   // invalidate any in-flight render — see the cmp version's comment
   if(_g9DebounceTimer) clearTimeout(_g9DebounceTimer);
   _g9DebounceTimer = setTimeout(function(){ _g9DebounceTimer = null; renderG9Chart(); }, CHART_DEBOUNCE_MS);
 }
 
 
-/* See the matching comment in the Electric app. */
+/* Shown next to the status dot at all times (not just in a toast, which
+   disappears after a couple of seconds) so a glance at the header answers
+   "is this current, or from an hour ago" without opening the console. */
 function updateLastSyncTime(){
   const el = document.getElementById('rd-last-sync');
   if(!el) return;
@@ -2811,15 +2982,18 @@ function computeUsed(rawRecords){
       if(vt === 'demand' || vt === 'snapshot'){ rec.used = null; return; }
 
       /* A cumulative register in service never legitimately reads 0, so a 0
-         here means "not read", not "nothing was used" — see
+         here means "nobody wrote anything down", not "nothing was used" — see
          _isUsableReading(). This used to only be enforced server-side
-         (meterUsedOnDay, which the group charts and monthly report read
-         from), while this client-side path — the per-meter chart and the
-         Data table — computed straight off whatever was typed, zero
-         included. A single 0 in the middle of a chain produced two wrong
-         numbers here that the group total never had: the day before it
-         clamped to 0 (losing that day's real usage) and the 0 day itself
-         invented a spike equal to the meter's entire lifetime reading. */
+         (meterUsedOnDay, which the group charts and the monthly report read
+         from), while this client-side path — the one the per-meter chart and
+         the Data table read from — computed straight off whatever was typed,
+         zero included. A single 0 in the middle of a chain therefore produced
+         two wrong numbers here that the group total never had: the day before
+         it clamped to 0 (losing that day's real usage) and the 0 day itself
+         invented a spike equal to the meter's entire lifetime reading. That
+         made a per-meter total and the group total genuinely disagree even
+         though both were "reading the same data" — because the 0 was only
+         being treated as invalid on one of the two paths. */
       if(!_isUsableReading(meterId, parseFloat(rec.kwh))){ rec.used = null; return; }
 
       let nextVal = null;
@@ -2827,7 +3001,7 @@ function computeUsed(rawRecords){
         const v = parseFloat(chain[k].kwh);
         if(_isUsableReading(meterId, v)){ nextVal = v; break; }
       }
-      if(nextVal === null){ rec.used = 0; return; }
+      if(nextVal === null){ rec.used = 0; return; }   // last usable reading in the chain
 
       const diff = nextVal - parseFloat(rec.kwh);
       // A counter's difference IS meaningful (events elapsed), so it is
@@ -2848,7 +3022,7 @@ async function init(){
   { const t = document.getElementById('hdr-title'); if(t) t.textContent = SITE_NAME + ' — ' + SITE_CODE; }
   const hasSession = restoreSession();
   renderAll();
-  document.getElementById('qr-url-preview').textContent = QR_BASE_URL + '?meter=WM-XX';
+  document.getElementById('qr-url-preview').textContent = QR_BASE_URL + '?meter=SUB-XX';
   const params = new URLSearchParams(location.search);
   const p = params.get('meter') || params.get('sub');  // accept both (old printed QR = ?sub=)
   if(p){
@@ -2870,12 +3044,16 @@ async function init(){
         pendingQrSub = null;
       }
     } else {
-      // Show picker immediately, load in background — see Electric comment.
+      // No session but a QR meter is pending: show the picker IMMEDIATELY,
+      // then load in the background. Doing loadFromServer() first (≈5s) left a
+      // stale/default login form flashing on screen until it resolved and
+      // backToChoose() finally ran — the "window appears then disappears" bug.
       backToChoose();
       loadFromServer();
     }
   } else {
     loadFromServer();
+    // No QR param and no restored session: bare app open → three-way picker.
     if(!hasSession) backToChoose();
   }
 }
@@ -2899,19 +3077,29 @@ function renderAll(){
   console.log(`⏱ renderAll TOTAL: ${(performance.now()-_t0).toFixed(2)} ms`);
 }
 
-/* See the matching comment in the Electric app. */
+/* After any local mutation of `records` (edit, delete, an add that merged in),
+   the per-meter chart must be redrawn from the new array — the Data table was
+   already being re-rendered by renderData(), but the chart was not, so a
+   deleted row vanished from the table while its bar stayed on the chart. Only
+   redraws when a chart instance already exists (the chart tab has been opened
+   this session); it reads purely from the in-memory `records`, so there is no
+   network cost and nothing happens when no chart is on screen. */
 function refreshSubChartIfVisible(){
   if(typeof subChartInst !== 'undefined' && subChartInst){
-    /* See the matching comment in the Electric app: clear the per-meter store
-       so a local mutation isn't masked by its pre-mutation copy. */
+    /* A local mutation (add/edit/delete) already updated the global `records`
+       array, but the per-meter chart now prefers subChartRecords, which would
+       otherwise still hold the pre-mutation copy and mask the change. Clearing
+       it forces getSubRecs to fall back to the freshly-updated global records
+       for this redraw — the phantom-bar-after-delete case. The next explicit
+       meter-select or refresh re-populates the store from the server. */
     subChartRecords = {};
-    _aggCache = {};
-    _subChartStructKey = null;
+    _aggCache = {};   // records changed — drop cached aggregates so they recompute
+    _subChartStructKey = null;   // force a clean rebuild after a mutation
     try { renderSubChart(); } catch(e){ /* chart redraw is best-effort */ }
   }
 }
 
-const TAB_ORDER = ["entry","data","chart","summary","qr","settings"];
+const TAB_ORDER = ["entry","data","chart","summary","cost","qr","settings"];
 /* Tabs a role may open, independent of what the drawer happens to show. The
    drawer hides buttons a role shouldn't use, but hiding a button is not
    access control — someone could still call goTab('entry') from the console
@@ -2934,14 +3122,30 @@ function goTab(name){
   if(tabEl) tabEl.classList.add('active');
   if(name === 'data')     { ensureAdminRecords(); renderData(); renderStats(); updateRecordWindowNotice(); }
   if(name === 'chart'){
-    /* See the matching comment in the Electric app — the chart tab no longer
-       pulls the full record set; nothing here needs it. Fetches only the light
-       availableMonths list for picker defaults. */
+    /* The chart tab no longer pulls the full record set (ensureAdminRecords /
+       getRawRecords, thousands of rows). Nothing here needs it anymore:
+       - the two group charts read server-side summaries (getSummaryCached),
+       - the per-meter chart fetches one meter at a time (getMeterRecords),
+       - the only remaining use was picker defaults in initG9Pickers, which
+         already prefer the lightweight availableMonths list.
+       So we fetch just that light month list instead. This removes a heavy,
+       fully redundant full-sheet read from every chart-tab open. (The Data
+       tab still calls ensureAdminRecords on its own, unchanged.) */
     (async () => {
       if(appMode === 'admin' && !availableMonths) await loadAvailableMonths();
       populateDDs(); setSubQuick('thisM'); buildCompareGroupOptions(); initG9Pickers(); initCmpPickers();
+      // Light the per-meter segment to match its default range (this month),
+      // consistent with the group chart's segment default.
       var subSeg = document.getElementById('sub-segment');
-      if(subSeg && !subSeg.querySelector('button.on')){ var d = subSeg.querySelector('button[data-range="thisM"]'); if(d) d.classList.add('on'); }
+      if(subSeg && !subSeg.querySelector('button.on')){
+        var d = subSeg.querySelector('button[data-slot="0"]'); if(d) d.classList.add('on');
+      }
+      /* The card the person sees first — "กราฟเทียบการใช้ไฟฟ้าแต่ละกลุ่ม" — is
+         rendered to completion before the second chart even starts. Both used to
+         fire together; they hit getSummaryCached with different date ranges (so
+         different cache keys), meaning two heavy summary requests queued back to
+         back with no ordering guarantee. Awaiting the first means the chart at
+         the top of the screen is never left waiting behind one lower down. */
       await renderCmpChart(); renderG9Chart();
     })();
   }
@@ -3318,8 +3522,23 @@ function previewUsed(){
   if(lastKwh === null){ chip.className = 'chip chip-green'; chip.textContent = '📌 บันทึกครั้งแรกของ Meter นี้'; }
   else {
     const diff = (val - lastKwh) * multiplier;
-    chip.className = diff >= 0 ? 'chip chip-green' : 'chip chip-orange';
-    chip.textContent = diff >= 0 ? `⚡ ใช้ไฟฟ้าไปรอบนี้: +${fmtNum(diff, activeSub.id)} ${UNIT}` : `⚠️ ค่าน้อยกว่าครั้งก่อน (${fmtNum(lastKwh, activeSub.id)})`;
+    if(diff < 0){
+      chip.className = 'chip chip-orange';
+      chip.textContent = `⚠️ ค่าน้อยกว่าครั้งก่อน (${fmtNum(lastKwh, activeSub.id)})`;
+    } else {
+      // Same abnormally-high check the save step runs, surfaced live while
+      // typing: if this round's usage is more than ABNORMAL_MULTIPLIER× the
+      // recent average, warn right away instead of only at save. Lets the
+      // recorder catch a mis-key (extra digit) before committing.
+      const recentAvg = getRecentAvgUsed(activeSub.id);
+      if(recentAvg > 0 && diff > recentAvg * ABNORMAL_MULTIPLIER){
+        chip.className = 'chip chip-orange';
+        chip.textContent = `🔺 สูงผิดปกติ: +${fmtNum(diff, activeSub.id)} ${UNIT} (เฉลี่ย ${fmtNum(recentAvg, activeSub.id)})`;
+      } else {
+        chip.className = 'chip chip-green';
+        chip.textContent = `⚡ ใช้ไฟฟ้าไปรอบนี้: +${fmtNum(diff, activeSub.id)} ${UNIT}`;
+      }
+    }
   }
 }
 function renderRecent(){
@@ -3382,11 +3601,20 @@ async function saveRecord(){
   }
   await doSaveRecord(activeSub, kwh, date, time, user, note);
 }
-/* See the matching comment in the Electric app. */
+/* Recomputes `used` across a recent-readings list after a new reading is
+   prepended. A freshly saved record arrives with no `used`, and the reading
+   that was previously newest now HAS a later reading to diff against — its
+   `used` (the "consumption this round" number the recorder wants to see) only
+   exists once that next reading is in hand. Rather than duplicate the diff +
+   zero-guard logic, this reuses computeUsed (which sorts oldest→newest and
+   sets `used` with the same guard as everywhere else), then restores the
+   newest-first order the recent list is displayed in. Takes one extra element
+   (slice 0,6 by the caller) so the oldest visible row still has a neighbour to
+   diff against and doesn't wrongly show 0. */
 function _recomputeRecentUsed(recentList, meterId){
-  const copy = recentList.map(r => Object.assign({}, r));
-  computeUsed(copy);
-  copy.sort((a,b) => (`${b.date} ${b.time||'00:00'}`).localeCompare(`${a.date} ${a.time||'00:00'}`));
+  const copy = recentList.map(r => Object.assign({}, r));   // don't mutate caller's objects in place
+  computeUsed(copy);                                        // sorts ascending + sets used
+  copy.sort((a,b) => (`${b.date} ${b.time||'00:00'}`).localeCompare(`${a.date} ${a.time||'00:00'}`));  // back to newest-first
   return copy;
 }
 
@@ -3489,7 +3717,9 @@ async function saveEdit(){
   if(!date) return toast('เลือกวันที่ด้วย','err');
   const sub = subs.find(s => s.id === newSubId);
   const originalRecord = { ...target };
-  // Version marker for optimistic lock — see the matching comment in Electric.
+  // Version marker captured at edit-open time: the editedTs if this row was
+  // edited before, else its original ts. Sent as baseTs so the backend can
+  // reject if someone else edited the row in the meantime (lost-update guard).
   const baseTs = originalRecord.editedTs || originalRecord.ts || '';
 
   // Mutate the object itself — it keeps its identity through computeUsed()'s
@@ -3513,6 +3743,9 @@ async function saveEdit(){
     const payload = { id:saved.id, meterId:saved.meterId, meterName:saved.meterName, zone:saved.zone, date:saved.date, time:saved.time, kwh:saved.kwh, user:saved.user, note:saved.note, ts:saved.ts, editedTs:saved.editedTs, editedBy:saved.editedBy, baseTs:baseTs };
     const editRes = await apiPostAuthed({ action:'editRecord', record:payload });
     if(editRes && editRes.conflict){
+      // Someone edited this row first. Roll back the local change and tell the
+      // user to reload — don't silently keep our version (it would look saved
+      // but the server rejected it).
       records = records.filter(r => r.id !== recordId);
       records.push(originalRecord);
       records = computeUsed(records); persist(); renderAll();
@@ -3628,6 +3861,8 @@ function populateDDs(){
   document.getElementById('fl-sub').innerHTML = sOpts;
   const cs = document.getElementById('chart-sub');
   if(cs) cs.innerHTML = cOpts;
+  // Build the custom meter picker. Label shows "name (id)"; both are
+  // searchable; picking commits + loads that meter.
   if(document.getElementById('chart-sub-picker')){
     _pickerData['chart-sub-picker'] = {
       items: subs.map(s => ({ key:s.id, label:`${s.name} (${s.id})` })),
@@ -3640,6 +3875,7 @@ function populateDDs(){
   }
 }
 
+/* Segmented range control for the per-meter chart — mirrors setCmpQuickSeg. */
 function setSubQuickSeg(slot){
   var r = getQuickRangeForPeriod(subChartState.period, slot);
   document.getElementById('sub-from').value = _fitRangeToPeriod(r[0], subChartState.period);
@@ -3648,6 +3884,7 @@ function setSubQuickSeg(slot){
   if(seg) seg.querySelectorAll('button').forEach((b,i) => b.classList.toggle('on', i===slot));
   renderSubChart();
 }
+
 /* The Data-tab stat tiles were removed: after the rolling 90-day record
    window was introduced, three of the four counters (total records,
    meters recorded, total kWh) silently described the loaded window
@@ -3873,8 +4110,9 @@ document.addEventListener('DOMContentLoaded', () => {
    second row. That is what makes retrying safe to do automatically.
    ════════════════════════════════════════════════════════════ */
 const QUEUE_KEY          = 'sendQueue';
-const QUEUE_RETRY_MS     = 30000;   // background sweep interval
+const QUEUE_RETRY_MS     = 10000;   // background sweep interval (was 30s — too slow for a 100+ meter round)
 const QUEUE_MAX_ATTEMPTS = 5;       // after this it waits for a manual push
+const QUEUE_BATCH_SIZE   = 25;      // records per saveRecordsBatch call
 
 let sendQueue = [];
 let _queueTimer = null;
@@ -3907,24 +4145,54 @@ async function flushQueue(manual){
   if(!sessionToken){ renderQueueBanner(); return; }
   _queueRunning = true;
   try{
+    // Send in batches instead of one record per round-trip. A 100+ meter round
+    // used to fire 100+ serial /exec calls (minutes total), so the tail never
+    // reached the server before the app closed. One batch call carries many
+    // records; the server returns a per-record result so we drop exactly the
+    // saved/duplicate ones and keep only real failures queued.
     while(sendQueue.length){
-      const item = sendQueue[0];
-      if(!manual && item.attempts >= QUEUE_MAX_ATTEMPTS) break;   // parked; wait for a manual push
+      // Take a window of not-yet-parked items from the front.
+      const batch = [];
+      for(let i=0; i<sendQueue.length && batch.length<QUEUE_BATCH_SIZE; i++){
+        if(!manual && sendQueue[i].attempts >= QUEUE_MAX_ATTEMPTS) break;   // hit a parked item — stop the window
+        batch.push(sendQueue[i]);
+      }
+      if(!batch.length) break;   // everything at the front is parked
       try{
-        const r = item.rec;
-        const payload = { id:r.id, meterId:r.meterId, meterName:r.meterName, zone:r.zone,
-                          date:r.date, time:r.time, kwh:r.kwh, user:r.user, note:r.note,
-                          ts:r.ts, editedTs:'', editedBy:'' };
-        const res = await apiPost({ action:'saveRecord', record:payload, token: sessionToken });
+        const records = batch.map(it => {
+          const r = it.rec;
+          return { id:r.id, meterId:r.meterId, meterName:r.meterName, zone:r.zone,
+                   date:r.date, time:r.time, kwh:r.kwh, user:r.user, note:r.note,
+                   ts:r.ts, editedTs:'', editedBy:'' };
+        });
+        const res = await apiPost({ action:'saveRecordsBatch', records: records, token: sessionToken });
         if(!res || res.success === false) throw new Error((res && res.error) || 'บันทึกไม่สำเร็จ');
-        sendQueue.shift();
+        // Drop the records the server confirmed (saved or duplicate); keep the
+        // rest queued with an incremented attempt count.
+        const byId = {};
+        (res.results || []).forEach(r => { if(r && r.id) byId[String(r.id)] = r; });
+        const affectedMonths = {};
+        for(const it of batch){
+          const rr = byId[String(it.rec.id)];
+          if(rr && rr.success){
+            const idx = sendQueue.indexOf(it);
+            if(idx >= 0) sendQueue.splice(idx, 1);
+            affectedMonths[it.rec.meterId+'@'+it.rec.date] = true;
+          } else {
+            it.attempts++;
+            it.lastError = (rr && rr.error) || 'บันทึกไม่สำเร็จ';
+          }
+        }
         persistQueue();
-        invalidateSummaryCache('saveRecord:'+r.meterId+'@'+r.date);
+        Object.keys(affectedMonths).forEach(k => invalidateSummaryCache('batch:'+k));
+        // If nothing in this window got removed, stop to avoid a tight loop.
+        if(batch.every(it => sendQueue.indexOf(it) >= 0)) break;
       }catch(e){
-        item.attempts++;
-        item.lastError = e.message || 'error';
+        // Whole-batch failure (network/timeout): bump attempts on the window
+        // and stop; the timer retries.
+        batch.forEach(it => { it.attempts++; it.lastError = e.message || 'error'; });
         persistQueue();
-        break;                 // stop the sweep; the timer will come back
+        break;
       }
     }
   } finally {
@@ -3975,372 +4243,973 @@ window.addEventListener('beforeunload', function(e){
   }
 });
 
-/* ════════════ SUMMARY: month-based, 2 tables ════════════
-   Uses getMonthlySummary({granularity:'day'}) which returns per-meter
-   first/last kWh per day. We compute per-meter daily usage from that.
+/* ════════════════════════════════════════════════════════════
+   MONTHLY REPORT — ExcelJS export helpers (Electric-specific)
+   Ported from the pre-universal SR-Electric build. Uses ExcelJS
+   (loaded on-demand from CDN) for styled cells that SheetJS
+   community build cannot produce (font/fill/border are Pro only).
+   ════════════════════════════════════════════════════════════ */
+const METER_SHEET_CHUNK = 4; // meters per output sheet
 
-   Zone consumption model (matches _REPORT_GROUPS):
-     Zone Net(day) = Σ used(m, day) for m in group.meters
-                   − Σ used(m, day) for m in group.minus
-   "Other" bucket = meters not in ANY group's `meters` or `minus`.
-*/
-let summaryData = null;  // { month, meters: {meterId: {date: used}}, meta: {days:[]} }
+function ensureExcelJS(){
+  return (typeof ExcelJS !== 'undefined') ? Promise.resolve() : loadScript(CDN.exceljs);
+}
 
-function initSummaryMonth(){
-  const el = document.getElementById('sum-month');
-  if(!el) return;
-  // Constrain the native month picker to the span that actually holds data,
-  // so it can't be scrolled to a month that will render an empty report.
-  if(availableMonths && availableMonths.length){
-    el.max = availableMonths[0];                       // newest
-    el.min = availableMonths[availableMonths.length-1]; // oldest
-    if(!el.value) el.value = availableMonths[0];
-  } else if(!el.value){
-    const now = new Date();
-    el.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+function buildMeterDayMap(raw){
+  const src = raw || reportRaw;
+  const m = {};
+  src.forEach(r => { if(!m[r.meterId]) m[r.meterId]={}; m[r.meterId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
+  return m;
+}
+
+async function buildDataSheetExcelJS(workbook, rc){
+  const { month, rows, totals } = rc;
+  const [yy, mm] = month.split('-').map(Number);
+  const lastDay = rows.length;
+  const ws = workbook.addWorksheet('Data', { views:[{ state:'frozen', ySplit:4 }] });
+
+  const mainCols = reportGroupsMain(), utilCols = reportGroupsUtil(); // 9, 11 — ตรงกับไฟล์ต้นฉบับ
+
+  // ── column map: จงใจให้ตัวอักษรคอลัมน์ตรงกับไฟล์ต้นฉบับทุกตัว (A..Z) ──
+  const DATE_COL     = 1;                                 // A
+  const mainStart    = 2, mainEnd = mainStart + mainCols.length - 1;   // B..J
+  const utilStart    = mainEnd + 1;                       // K
+  const utilEnd      = utilStart + utilCols.length - 1;   // U
+  const utilMergeEnd = utilStart + 8;                     // S — merge 'UTILITY' ครอบแค่ 9 คอลัมน์แรก
+  const glanceStart  = utilMergeEnd + 1;                  // T
+  const V = utilEnd + 1;   // UTILITY PLANT              // V
+  const W = V + 1;         // TOTAL                       // W
+  const X = W + 1;         // spacer ว่างเปล่า (มีในต้นฉบับ)  // X
+  const Y = X + 1;         // เลขลำดับวัน                  // Y
+  const Z = Y + 1;         // ธงวันหยุด                    // Z
+
+  const DATA_FIRST_ROW = 5;
+  const dataLastRow = DATA_FIRST_ROW + lastDay - 1;
+  const totalRow = dataLastRow + 1;
+  const unitRow  = totalRow + 1;
+  const costRow  = unitRow + 1;
+  const kwhURow  = costRow + 1;
+  const bURow    = kwhURow + 1;
+  const noteRow  = bURow + 1;
+
+  const widths = {1:17.5,2:18.2,3:17.5,4:17.5,5:17.5,6:17.5,7:17.5,8:17.2,9:18.2,10:17.5,
+                   11:17.5,12:16.8,13:17.5,14:17.5,15:20.2,16:17.5,17:19,18:17.5,19:17.5,20:15.8,21:15,
+                   22:17,23:23.2,24:12.8,25:8.5,26:41.5};
+  for(const c in widths) ws.getColumn(Number(c)).width = widths[c];
+
+  const F_TITLE    = { name:'AngsanaUPC', size:36, bold:true };
+  const F_HEAD2    = { name:'AngsanaUPC', size:24 };
+  const F_HEAD_SM  = { name:'AngsanaUPC', size:22 };
+  const F_HEAD3    = { name:'AngsanaUPC', size:20 };
+  const F_UNITROW  = { name:'AngsanaUPC', size:22 };
+  const F_UNITBOLD = { name:'AngsanaUPC', size:24, bold:true };
+  const F_TOTALLBL = { name:'AngsanaUPC', size:36 };
+  const F_DATECOL  = { name:'AngsanaUPC', size:26 };
+  const F_VALUE    = { name:'AngsanaUPC', size:36 };
+  const F_WCOL     = { name:'Arial', size:18 };
+  const F_ROWLBL   = { name:'AngsanaUPC', size:22 };
+  const F_SUMVAL   = { name:'AngsanaUPC', size:28 };
+  const F_YCOL     = { name:'Arial', size:10 };
+  const F_ZCOL     = { name:'Arial', size:22 };
+  const RED        = { argb:'FFFF0000' };
+
+  const CENTER = { horizontal:'center', vertical:'middle' };
+  const DBL  = { style:'double' };
+  const THIN = { style:'thin' };
+  const GRID     = { top:DBL,  bottom:DBL,  left:DBL,  right:DBL  };
+  const WBORDER  = { top:THIN, bottom:THIN, left:DBL,  right:THIN };
+  const AUXBORDER= { top:THIN, bottom:THIN, left:THIN, right:THIN };
+
+  function setCell(r, c, value, font, border, align, numFmt){
+    const cell = ws.getCell(r, c);
+    cell.value = value;
+    if(font)   cell.font = font;
+    if(border) cell.border = border;
+    if(align)  cell.alignment = align;
+    if(numFmt) cell.numFmt = numFmt;
+    return cell;
   }
-}
-function buildSummaryGroupOptions(){
-  const sel = document.getElementById('sum-group');
-  if(!sel) return;
-  const prev = sel.value;
-  sel.innerHTML = reportGroups.map(g => `<option value="${g.key}">${esc(g.icon||'')} ${esc(g.name)}</option>`).join('')
-    + '<option value="__OTHER__">📦 Other (มิเตอร์ที่ไม่อยู่ในกลุ่มใดๆ)</option>';
-  if(prev) sel.value = prev;
+
+  // ══ แถว 1 — หัวเรื่อง (merge ถึงคอลัมน์ U เท่านั้น ตรงตามต้นฉบับ ไม่ครอบ V..Z) ══
+  ws.mergeCells(1, DATE_COL, 1, utilEnd);
+  setCell(1, DATE_COL, `รายละเอียดปริมาณการใช้ไฟฟ้าแต่ละ SUBSTATION   ประจำเดือน ${TH_MONTH_FULL[mm]} ${yy}`, F_TITLE, { bottom:DBL }, CENTER);
+  ws.getRow(1).height = 48.75;
+
+  // ══ แถว 2-3 — หัวตารางกลุ่ม ══
+  ws.mergeCells(2,DATE_COL,3,DATE_COL); setCell(2,DATE_COL,'DATE',F_HEAD2,GRID,CENTER);
+  mainCols.forEach((c,i) => { const col = mainStart+i; ws.mergeCells(2,col,3,col); setCell(2,col,c.name,F_HEAD2,GRID,CENTER); });
+  ws.mergeCells(2, utilStart, 2, utilMergeEnd); setCell(2, utilStart, 'UTILITY', F_HEAD_SM, GRID, CENTER);
+  utilCols.forEach((c,i) => { setCell(3, utilStart+i, c.name, F_HEAD3, GRID, CENTER); });
+  // T2:U2 และ V2 = "แอบดูยอดรวม" แบบสด (มองเห็นตลอดเพราะ freeze panes อยู่แถว 5) — สูตรตรงกับต้นฉบับ
+  ws.mergeCells(2, glanceStart, 2, utilEnd);
+  setCell(2, glanceStart, { formula:`SUM(${colLetter(utilStart)}${totalRow}:${colLetter(utilEnd)}${totalRow})` }, F_HEAD_SM, GRID, CENTER, '#,##0');
+  setCell(2, V, { formula:`SUM(${colLetter(mainStart)}${totalRow}:${colLetter(utilEnd)}${totalRow})` }, F_HEAD_SM, GRID, CENTER, '#,##0');
+  setCell(3, V, 'UTILITY  PLANT', F_HEAD3, GRID, CENTER);
+  setCell(2, Z, 'ใส่ช่องวันหยุด H', F_ZCOL, AUXBORDER, CENTER);
+
+  // ══ แถว 4 — หน่วย (KW-H.), ป้าย TOTAL, ช่องกรอกจำนวนหน่วยผลิต (A4) ══
+  setCell(4, DATE_COL, 1, F_UNITBOLD, GRID, CENTER, '#,##0'); // A4: จำนวนหน่วยที่ผลิตได้เดือนนี้ — กรอกเอง
+  for(let c = mainStart; c <= V; c++) setCell(4, c, '( KW-H. )', F_UNITROW, GRID, CENTER);
+  setCell(4, W, 'TOTAL', F_TOTALLBL, WBORDER, CENTER);
+  setCell(4, Z, 'วันหยุด', F_ZCOL, AUXBORDER, CENTER);
+
+  // ══ แถวข้อมูลรายวัน ══
+  rows.forEach((row,i) => {
+    const r = DATA_FIRST_ROW + i;
+    const d = new Date(row.dateStr+'T00:00:00');
+    setCell(r, DATE_COL, `${d.getDate()} ${EN_MONTH_FULL[d.getMonth()+1]} ${String(d.getFullYear()).slice(-2)}`, F_DATECOL, GRID, CENTER);
+    mainCols.forEach((c,ci) => { const v=row.cells[c.key]; setCell(r, mainStart+ci, v===null?null:Math.round(v), F_VALUE, GRID, null, '#,##0'); });
+    utilCols.forEach((c,ci) => { const v=row.cells[c.key]; setCell(r, utilStart+ci, v===null?null:Math.round(v), F_VALUE, GRID, null, '#,##0'); });
+    setCell(r, V, Math.round(row.cells['UTILITY']||0), F_VALUE, GRID, null, '#,##0');
+    setCell(r, W, Math.round(row.cells['TOTAL']||0), F_WCOL, WBORDER, null, '#,##0');
+    setCell(r, Y, i+1, F_YCOL, AUXBORDER, CENTER);
+    const isHol = getDayType(row.dateStr) === 'holiday';
+    setCell(r, Z, isHol ? 'H' : '', F_ZCOL, AUXBORDER, CENTER);
+  });
+
+  // ══ แถว TOTAL — SUM สูตรจริง ══
+  setCell(totalRow, DATE_COL, 'TOTAL', F_ROWLBL, GRID, CENTER);
+  for(let c = mainStart; c <= V; c++){
+    const L = colLetter(c);
+    setCell(totalRow, c, { formula:`SUM(${L}${DATA_FIRST_ROW}:${L}${dataLastRow})` }, F_SUMVAL, GRID, null, '#,##0');
+  }
+  setCell(totalRow, W, { formula:`SUM(${colLetter(mainStart)}${totalRow}:${colLetter(utilEnd)}${totalRow})` }, F_WCOL, WBORDER, null, '#,##0');
+
+  // ══ แถว UNIT COST — ช่องว่างให้กรอก ฿/kWh เอง (ไม่มีอัตราค่าไฟเก็บในระบบ) ══
+  setCell(unitRow, DATE_COL, 'UNIT COST', F_ROWLBL, GRID, CENTER);
+  for(let c = mainStart; c <= V; c++) setCell(unitRow, c, null, { ...F_SUMVAL, color:RED }, GRID, null, '#,##0.000');
+  setCell(unitRow, W, { formula:`SUM(${colLetter(mainStart)}${unitRow}:${colLetter(utilEnd)}${unitRow})` }, F_WCOL, WBORDER, null, '#,##0.000');
+
+  // ══ แถว COST = TOTAL × UNIT COST ══
+  setCell(costRow, DATE_COL, ' COST', F_ROWLBL, GRID, CENTER);
+  for(let c = mainStart; c <= V; c++){
+    const L = colLetter(c);
+    setCell(costRow, c, { formula:`${L}${totalRow}*${L}${unitRow}` }, F_SUMVAL, GRID, null, '#,##0');
+  }
+  setCell(costRow, W, { formula:`SUM(${colLetter(mainStart)}${costRow}:${colLetter(utilEnd)}${costRow})` }, F_WCOL, WBORDER, null, '#,##0');
+
+  // ══ แถว KWH/U' = TOTAL ÷ จำนวนหน่วยผลิต (A4) ══
+  setCell(kwhURow, DATE_COL, "KWH/U'", F_ROWLBL, GRID, CENTER);
+  for(let c = mainStart; c <= V; c++){
+    const L = colLetter(c);
+    setCell(kwhURow, c, { formula:`${L}${totalRow}/$A$4` }, F_SUMVAL, GRID, null, '#,##0.00');
+  }
+  setCell(kwhURow, W, { formula:`SUM(${colLetter(mainStart)}${kwhURow}:${colLetter(utilEnd)}${kwhURow})` }, F_WCOL, WBORDER, null, '#,##0.00');
+
+  // ══ แถว B/U' = COST ÷ จำนวนหน่วยผลิต (A4) ══
+  setCell(bURow, DATE_COL, "B/U'", F_ROWLBL, GRID, CENTER);
+  for(let c = mainStart; c <= V; c++){
+    const L = colLetter(c);
+    setCell(bURow, c, { formula:`${L}${costRow}/$A$4` }, F_SUMVAL, GRID, null, '#,##0.00');
+  }
+  setCell(bURow, W, { formula:`SUM(${colLetter(mainStart)}${bURow}:${colLetter(utilEnd)}${bURow})` }, F_WCOL, WBORDER, null, '#,##0.00');
+
+  // ══ หมายเหตุท้ายตาราง ══
+  setCell(noteRow, DATE_COL, 'UNIT COST : B/KWH', F_ROWLBL, null, null);
+  setCell(noteRow, 3, 'COST: B', F_ROWLBL, null, null);
+
+  for(let r = 2; r <= noteRow; r++) ws.getRow(r).height = (r >= unitRow && r <= bURow) ? 30 : 29.25;
+
+  return ws;
 }
 
-// meters not in any group's `meters` or `minus`
-function getOtherMeterIds(){
-  const inGroup = new Set();
-  reportGroups.forEach(g => {
-    (g.meters||[]).forEach(id => inGroup.add(id));
-    (g.minus ||[]).forEach(id => inGroup.add(id));
+async function buildMeterSheetsExcelJS(workbook, month, lastDay, meterMap, allDates){
+  const days = [];
+  for(let d = 1; d <= lastDay; d++) days.push(`${month}-${String(d).padStart(2,'0')}`);
+
+  const grouped = {};
+  // build categories from reportGroups (universal schema — no hardcoded LOAD_CATEGORIES)
+  const _categories = reportGroups.map(g => ({ name: g.name, icon: g.icon || '📦' }));
+  _categories.push({ name: 'อื่นๆ', icon: '📦' });
+  _categories.forEach(c => grouped[c.name] = []);
+  subs.forEach(s => { const cat = zoneName(s.zone); if(!grouped[cat]) grouped[cat] = []; grouped[cat].push(s); });
+
+  const usedNames = new Set(['Data']);
+  function safeSheetName(base){
+    let name = base.replace(/[\[\]\*\/\\\?:]/g,'').slice(0,31);
+    let n = name, i = 2;
+    while(usedNames.has(n)){ n = (name.slice(0,28)+' '+i).slice(0,31); i++; }
+    usedNames.add(n);
+    return n;
+  }
+
+  _categories.forEach(cat => {
+    const list = grouped[cat.name];
+    if(!list.length) return;
+    for(let off = 0; off < list.length; off += METER_SHEET_CHUNK){
+      const chunk = list.slice(off, off+METER_SHEET_CHUNK);
+      const partLabel = list.length > METER_SHEET_CHUNK ? ` (${off/METER_SHEET_CHUNK+1})` : '';
+      const sheetName = safeSheetName(cat.name + partLabel);
+      const ws = workbook.addWorksheet(sheetName, { views:[{ state:'frozen', ySplit:3 }] });
+      buildOneMeterSheet(ws, chunk, days, meterMap, allDates, month);
+    }
   });
-  return subs.map(s => s.id).filter(id => !inGroup.has(id));
 }
 
-// list of "YYYY-MM-DD" strings for every day of a YYYY-MM month
-function daysOfMonth(monthYYYYMM){
-  const [y,m] = monthYYYYMM.split('-').map(Number);
-  const lastDay = new Date(y, m, 0).getDate();
-  const out = [];
-  for(let d=1; d<=lastDay; d++) out.push(`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
-  return out;
-}
+function buildOneMeterSheet(ws, meters, days, meterMap, allDates, month){
+  const perBlock  = 4; // DATE / METER / KW-H / COST
+  const totalCols = meters.length * perBlock;
+  for(let c = 1; c <= totalCols; c++) ws.getColumn(c).width = 12;
 
-// Given the raw summary rows, compute per-meter per-day used values.
-// Used(m, day) = firstKwh(m, nextDay) − firstKwh(m, day). If no next reading
-// exists, fall back to lastKwh − firstKwh of the current day (single-reading day).
-// Multiplied by the meter's multiplier.
-function computeDailyUsed(rawSummary){
-  const meterMap = {};
-  rawSummary.forEach(r => {
-    if(!meterMap[r.meterId]) meterMap[r.meterId] = {};
-    meterMap[r.meterId][r.period] = { firstKwh: r.firstKwh, lastKwh: r.lastKwh };
+  const [yy, mm] = month.split('-').map(Number);
+  ws.mergeCells(1,1,1,totalCols);
+  const t = ws.getCell(1,1);
+  t.value = `รายละเอียดปริมาณการใช้ไฟฟ้าแต่ละ SUBSTATION   ประจำเดือน ${TH_MONTH_FULL[mm]} ${yy}`;
+  t.font = { name:'Tahoma', size:14, bold:true };
+  t.alignment = { horizontal:'center', vertical:'middle' };
+  ws.getRow(1).height = 24;
+
+  meters.forEach((s,i) => {
+    const base = i*perBlock + 1;
+    ws.mergeCells(2, base, 2, base+3);
+    const c = ws.getCell(2, base);
+    c.value = `${s.id} — ${s.name}`;
+    c.font = { bold:true, color:{argb:'FFFFFFFF'} };
+    c.alignment = { horizontal:'center' };
+    c.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF1F2C3F'} };
   });
-  const allDatesByMeter = {};
-  Object.keys(meterMap).forEach(id => {
-    allDatesByMeter[id] = Object.keys(meterMap[id]).sort();
-  });
-  const usedMap = {};   // { meterId: { date: usedValue } }
-  Object.keys(meterMap).forEach(id => {
-    const m = subs.find(s => s.id === id);
-    const mult = m && m.multiplier !== undefined ? parseFloat(m.multiplier) : 1;
-    const dates = allDatesByMeter[id];
-    usedMap[id] = {};
-    dates.forEach((d, i) => {
-      const cur = meterMap[id][d];
-      if(i < dates.length - 1){
-        const next = meterMap[id][dates[i+1]];
-        usedMap[id][d] = Math.max(0, next.firstKwh - cur.firstKwh) * mult;
-      } else {
-        usedMap[id][d] = Math.max(0, cur.lastKwh - cur.firstKwh) * mult;
-      }
+  meters.forEach((s,i) => {
+    const base = i*perBlock + 1;
+    ['DATE','METER','KW-H','COST'].forEach((lbl,j) => {
+      const c = ws.getCell(3, base+j);
+      c.value = lbl;
+      c.font = { bold:true, size:10 };
+      c.alignment = { horizontal:'center' };
+      c.border = { top:{style:'thin'}, bottom:{style:'thin'} };
     });
   });
-  return usedMap;
+  ws.getRow(2).height = 18; ws.getRow(3).height = 16;
+
+  let r = 4;
+  const totalsPerMeter = meters.map(() => ({ kwh:0, cost:0 }));
+  days.forEach(dateStr => {
+    const dnum = parseInt(dateStr.split('-')[2]);
+    meters.forEach((s,i) => {
+      const base = i*perBlock + 1;
+      const det = meterDetailOnDay(meterMap, s.id, dateStr, allDates);
+      ws.getCell(r, base).value = dnum;
+      ws.getCell(r, base).alignment = { horizontal:'center' };
+      ws.getCell(r, base+1).value = det ? det.meter : null;
+      ws.getCell(r, base+1).numFmt = '#,##0.####';
+      ws.getCell(r, base+2).value = det ? Math.round(det.kwh) : null;
+      ws.getCell(r, base+2).numFmt = '#,##0';
+      ws.getCell(r, base+3).value = det ? Math.round(det.cost) : null;
+      ws.getCell(r, base+3).numFmt = '#,##0';
+      if(det){ totalsPerMeter[i].kwh += det.kwh; totalsPerMeter[i].cost += det.cost; }
+    });
+    r++;
+  });
+
+  ws.getCell(r,1).value = 'TOTAL'; ws.getCell(r,1).font = { bold:true };
+  meters.forEach((s,i) => {
+    const base = i*perBlock + 1;
+    ws.getCell(r, base+2).value = Math.round(totalsPerMeter[i].kwh); ws.getCell(r, base+2).font = { bold:true }; ws.getCell(r, base+2).numFmt = '#,##0';
+    ws.getCell(r, base+3).value = Math.round(totalsPerMeter[i].cost); ws.getCell(r, base+3).font = { bold:true }; ws.getCell(r, base+3).numFmt = '#,##0';
+  });
+  for(let c = 1; c <= totalCols; c++) ws.getCell(r,c).border = { top:{style:'double'} };
 }
 
-async function renderSummary(){
-  const t1 = document.getElementById('sum-t1-body');
-  const t2 = document.getElementById('sum-t2-body');
-  if(appMode !== 'admin'){
-    t1.innerHTML = '<div class="section-empty">เฉพาะแอดมิน — ต้องเข้าสู่ระบบแอดมิน</div>';
-    t2.innerHTML = '';
-    return;
+/* ════════════════════════════════════════════════════════════
+   MONTHLY REPORT (SR-Electric)
+   Two summary cards: (1) whole-month cross-zone grid, (2) per-meter
+   drilldown per zone. Both driven by _REPORT_GROUPS from the Sheet
+   (see reportGroupsMain()/reportGroupsUtil() — filtered by the `type`
+   column: main groups appear as individual columns, util groups roll
+   up under one UTILITY PLANT column).
+   ════════════════════════════════════════════════════════════ */
+let reportRaw           = [];
+let reportComputed      = null;
+let zoneReportRaw       = [];
+let zoneReportComputed  = null;
+let reportReqId         = 0;
+let zoneReportReqId     = 0;
+
+function reportGroupsMain(){ return reportGroups.filter(g => g.type === 'main'); }
+function reportGroupsUtil(){ return reportGroups.filter(g => g.type === 'util'); }
+
+
+function sumGroupOnDay(meterMap, col, dateStr, allDates){
+  const ids   = Array.isArray(col) ? col : (col.meters || []);
+  const minus = Array.isArray(col) ? []  : (col.minus  || []);
+  let total = 0, hasAny = false;
+  ids.forEach(id => {
+    if(!_countsTowardEnergy(id)) return;
+    const u = meterUsedOnDay(meterMap, id, dateStr, allDates);
+    if(u !== null){ total += u; hasAny = true; }
+  });
+  minus.forEach(id => {
+    if(!_countsTowardEnergy(id)) return;
+    const u = meterUsedOnDay(meterMap, id, dateStr, allDates);
+    if(u !== null){ total -= u; hasAny = true; }
+  });
+  return hasAny ? total : null;
+}
+
+/* ── buildMonthOptions ── */
+/* Months offered in the report pickers.
+   Generated from the CALENDAR, not from the loaded `records` array. The two
+   are deliberately decoupled: report figures are computed server-side by
+   getMonthlySummary, which can answer for any month regardless of what the
+   client happens to have in memory. Deriving the list from `records` used to
+   mean that narrowing the admin record window (see ADMIN_RECORD_WINDOW_DAYS)
+   also silently removed older months from the dropdown — the numbers were
+   always available, you just couldn't ask for them. */
+function buildMonthOptions(){
+  const MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  // Only months that actually hold data (from the server), so picking a month
+  // can never land on an empty report. Falls back to whatever is in `records`
+  // if the month list hasn't loaded yet.
+  const months = (availableMonths && availableMonths.length)
+    ? availableMonths.slice()
+    : [...new Set(records.map(r => String(r.date).slice(0,7)))].filter(Boolean).sort().reverse();
+  const optsHtml = months.map(m => { const [y,mm]=m.split('-'); return `<option value="${m}">${MN[parseInt(mm)]} ${y}</option>`; }).join('');
+  const sel = document.getElementById('rep-month');
+  if(sel){
+    const prevMonth = sel.value;
+    sel.innerHTML = optsHtml;
+    if(prevMonth && months.includes(prevMonth)) sel.value = prevMonth;
   }
-  initSummaryMonth();
-  buildSummaryGroupOptions();
-  const monthVal = document.getElementById('sum-month').value;
-  if(!monthVal){ toast('เลือกเดือนก่อน','err'); return; }
-  const dateFrom = monthVal + '-01';
-  // fetch extends past month-end so we can detect the "next day" firstKwh for the last day of the month
-  const [y,m] = monthVal.split('-').map(Number);
-  const nextMonthStart = new Date(y, m, 1);         // first day AFTER the target month
-  nextMonthStart.setDate(nextMonthStart.getDate() + 7);
-  const dateTo = ymdLocal(nextMonthStart);
+  // เดือนของ "รายละเอียดรายมิเตอร์แยกตาม Zone" เป็น dropdown แยกอิสระของตัวเอง — เลือกดูคนละเดือน
+  // กับตารางรายงานหลักด้านบนได้ ใช้รายชื่อเดือนชุดเดียวกัน (สร้างจากปฏิทิน ไม่ใช่จาก records)
+  // แต่ค่าที่เลือกไม่ผูกกัน แต่ละอันจดจำค่าที่เลือกไว้ของตัวเอง
+  const zoneSel = document.getElementById('zone-rep-month');
+  if(zoneSel){
+    const prevZoneMonth = zoneSel.value;
+    zoneSel.innerHTML = optsHtml;
+    if(prevZoneMonth && months.includes(prevZoneMonth)) zoneSel.value = prevZoneMonth;
+  }
+}
 
-  t1.innerHTML = '<div class="section-empty">⏳ กำลังโหลด...</div>';
-  t2.innerHTML = '<div class="section-empty">⏳ กำลังโหลด...</div>';
-
+/* ── loadReport ── */
+async function loadReport(){
+  const thisReq = ++reportReqId;
+  const month = document.getElementById('rep-month')?.value;
+  if(!month){ document.getElementById('report-area').innerHTML = '<div class="section-empty">ไม่มีข้อมูล</div>'; return; }
+  const [y,m] = month.split('-');
+  const dateFrom = `${month}-01`;
+  const lastDay  = new Date(parseInt(y), parseInt(m), 0).getDate();
+  // ดึงเพิ่ม 7 วันหลังสิ้นเดือน เพื่อให้วันสุดท้ายคำนวณ used ได้
+  const extDate  = new Date(parseInt(y), parseInt(m)-1, lastDay+7);
+  const dateTo   = `${extDate.getFullYear()}-${String(extDate.getMonth()+1).padStart(2,'0')}-${String(extDate.getDate()).padStart(2,'0')}`;
+  document.getElementById('report-area').innerHTML = chartSkeletonHTML();
   try{
     const res = await getSummaryCached(dateFrom, dateTo, 'day');
-    if(!res || !res.success) throw new Error((res && res.error) || 'โหลดข้อมูลไม่ได้');
-    summaryData = {
-      month: monthVal,
-      days: daysOfMonth(monthVal),
-      used: computeDailyUsed(res.summary || [])
-    };
-    renderSummaryTable1();
-    renderSummaryTable2();
+    if(thisReq !== reportReqId) return; // stale request — discard
+    if(!res || !res.success) throw new Error(res?.error || 'Server error');
+    reportRaw = res.summary || [];
+    renderReport(month, lastDay);
+    renderZoneReport();
   }catch(e){
-    t1.innerHTML = '<div class="warn-box">❌ ' + esc(e.message) + '</div>';
-    t2.innerHTML = '';
+    if(thisReq !== reportReqId) return;
+    document.getElementById('report-area').innerHTML = `<div class="warn-box">❌ ${e.message}</div>`;
   }
 }
 
-// helper: pretty day label "1/8"
-function fmtDayShort(dateStr){
-  const p = dateStr.split('-');
-  return parseInt(p[2]) + '/' + parseInt(p[1]);
-}
-// helper: cell value ("—" if no reading recorded for that meter on that day)
-function cellVal(meterId, day){
-  const u = summaryData && summaryData.used[meterId] && summaryData.used[meterId][day];
-  return (u === undefined || u === null) ? null : u;
-}
-function renderSummaryTable1(){
-  const box = document.getElementById('sum-t1-body');
-  if(!summaryData){ box.innerHTML = '<div class="section-empty">กด 🔄 คำนวณ ก่อน</div>'; return; }
-  const groupKey = document.getElementById('sum-group').value;
-  const days = summaryData.days;
-  let plusIds = [], minusIds = [];
-  let groupLabel = '';
-  if(groupKey === '__OTHER__'){
-    plusIds = getOtherMeterIds();
-    groupLabel = '📦 Other';
-  } else {
-    const g = groupByKey(groupKey);
-    if(!g){ box.innerHTML = '<div class="section-empty">ไม่พบกลุ่ม</div>'; return; }
-    plusIds  = g.meters || [];
-    minusIds = g.minus  || [];
-    groupLabel = (g.icon||'') + ' ' + g.name;
-  }
-  const nameOf = id => { const m = subs.find(x => x.id === id); return m ? m.name : '(ไม่พบใน _METERS)'; };
-  const isOther = groupKey === '__OTHER__';
+/* ── renderReport ── */
+function renderReport(month, lastDay){
+  const area = document.getElementById('report-area');
+  if(!reportRaw.length){ area.innerHTML = '<div class="section-empty">📭 ไม่มีข้อมูลเดือนนี้</div>'; return; }
+  // Cache the group lists once. _grpMain/_grpUtil each run a
+  // .filter() over every group, and they were being called inside the per-day
+  // loop (and again per header/cell) — hundreds of redundant filters on a
+  // 30-day × many-group report. Computing them once here is the main speedup.
+  const _grpMain = reportGroupsMain();
+  const _grpUtil = reportGroupsUtil();
+  const _plMap = perfLabel('buildMeterDayMap'); perfStart(_plMap);
+  const meterMap = buildMeterDayMap();
+  perfEnd(_plMap);
+  const allDates = [...new Set(reportRaw.map(r => r.period))].sort();
+  const days = [];
+  for(let d = 1; d <= lastDay; d++) days.push(`${month}-${String(d).padStart(2,'0')}`);
 
-  // build header
-  let html = `<div class="tbl-wrap"><table><thead><tr>
-    <th style="position:sticky;left:0;background:var(--surface-3);z-index:2;min-width:100px">Meter</th>
-    <th style="position:sticky;left:100px;background:var(--surface-3);z-index:2;min-width:180px">ชื่อ</th>`;
-  days.forEach(d => { html += `<th style="text-align:right">${fmtDayShort(d)}</th>`; });
-  html += `<th style="text-align:right;background:var(--accent-dim);color:var(--accent)">รวม</th></tr></thead><tbody>`;
+  const _plRows = perfLabel('renderReport:rowsCompute'); perfStart(_plRows);
+  const rows = days.map(dateStr => {
+    const cells = {};
+    _grpMain.forEach(c => cells[c.key] = sumGroupOnDay(meterMap, c, dateStr, allDates));
+    _grpUtil.forEach(c => cells[c.key] = sumGroupOnDay(meterMap, c, dateStr, allDates));
+    let utilTotal = 0, utilHas = false;
+    _grpUtil.forEach(c => { if(cells[c.key] !== null){ utilTotal += cells[c.key]; utilHas = true; } });
+    cells['UTILITY'] = utilHas ? utilTotal : null;
+    let mainTotal = 0, mainHas = false;
+    _grpMain.forEach(c => { if(cells[c.key] !== null){ mainTotal += cells[c.key]; mainHas = true; } });
+    cells['TOTAL'] = (mainHas || utilHas) ? (mainTotal + utilTotal) : null;
+    return { dateStr, cells };
+  });
 
-  const rowTotals = {};
-  const daySums = { plus:{}, minus:{} };
-  days.forEach(d => { daySums.plus[d] = 0; daySums.minus[d] = 0; });
+  const totals = {};
+  [..._grpMain.map(c=>c.key), ..._grpUtil.map(c=>c.key), 'UTILITY','TOTAL'].forEach(k => {
+    totals[k] = rows.reduce((a,r) => a + (r.cells[k]||0), 0);
+  });
+  perfEnd(_plRows);
+  reportComputed = { month, rows, totals };
 
-  const renderRow = (id, isMinus) => {
-    let rowTotal = 0;
-    let cells = '';
-    days.forEach(d => {
-      const v = cellVal(id, d);
-      if(v !== null){
-        rowTotal += v;
-        if(isMinus) daySums.minus[d] += v;
-        else        daySums.plus[d]  += v;
-      }
-      const cellCss = isMinus ? 'color:var(--orange)' : '';
-      cells += `<td style="text-align:right;font-family:var(--font-mono);font-size:11px;${cellCss}">${v===null?'—':(isMinus?'−':'')+Math.round(v).toLocaleString()}</td>`;
-    });
-    rowTotals[id] = { total: rowTotal, minus: isMinus };
-    const nameStyle = isMinus ? 'color:var(--text-3)' : '';
-    const idStyle   = isMinus ? 'color:var(--orange)' : 'color:var(--accent)';
-    const idPrefix  = isMinus ? '− ' : '';
+  const fmtCell = v => v === null ? '<span style="color:var(--text-3)">—</span>' : Math.round(v).toLocaleString();
+  const MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const [yy,mm] = month.split('-');
+  const headMain = _grpMain.map(c => `<th style="text-align:right;padding:6px 8px;min-width:64px">${c.name}</th>`).join('');
+  const headUtil = _grpUtil.map(c => `<th style="text-align:right;padding:6px 8px;min-width:64px;color:var(--purple)">${c.name}</th>`).join('');
+
+  const bodyRows = rows.map(r => {
+    const dnum = parseInt(r.dateStr.split('-')[2]);
+    const mainCells = _grpMain.map(c => `<td style="text-align:right;padding:5px 8px">${fmtCell(r.cells[c.key])}</td>`).join('');
+    const utilCells = _grpUtil.map(c => `<td style="text-align:right;padding:5px 8px;color:var(--text-2)">${fmtCell(r.cells[c.key])}</td>`).join('');
     return `<tr>
-      <td style="position:sticky;left:0;background:var(--surface-1);${idStyle};font-family:var(--font-mono);font-weight:700;z-index:1">${idPrefix}${esc(id)}</td>
-      <td style="position:sticky;left:100px;background:var(--surface-1);${nameStyle};z-index:1">${esc(nameOf(id))}</td>
-      ${cells}
-      <td style="text-align:right;background:var(--accent-dim);color:var(--accent);font-weight:700;font-family:var(--font-mono)">${(isMinus?'−':'')+Math.round(rowTotal).toLocaleString()}</td>
+      <td style="padding:5px 8px;font-weight:600;color:var(--accent);position:sticky;left:0;background:var(--surface-1)">${dnum}/${parseInt(mm)}</td>
+      ${mainCells}
+      <td style="text-align:right;padding:5px 8px;font-weight:700;color:var(--green);background:var(--green-dim)">${fmtCell(r.cells['UTILITY'])}</td>
+      ${utilCells}
+      <td style="text-align:right;padding:5px 8px;font-weight:700;color:var(--accent)">${fmtCell(r.cells['TOTAL'])}</td>
     </tr>`;
-  };
+  }).join('');
 
-  plusIds.forEach(id  => { html += renderRow(id, false); });
-  minusIds.forEach(id => { html += renderRow(id, true);  });
+  const totMain = _grpMain.map(c => `<td style="text-align:right;padding:7px 8px;font-weight:700">${Math.round(totals[c.key]).toLocaleString()}</td>`).join('');
+  const totUtil = _grpUtil.map(c => `<td style="text-align:right;padding:7px 8px;font-weight:700;color:var(--purple)">${Math.round(totals[c.key]).toLocaleString()}</td>`).join('');
 
-  // Net row per day (only for real groups, not Other)
-  if(!isOther){
-    let netRow = `<tr style="background:var(--accent-dim)">
-      <td style="position:sticky;left:0;background:var(--accent-dim);color:var(--accent);font-weight:700;z-index:1" colspan="2">✅ Net ${esc(groupLabel)}</td>`;
-    let grandNet = 0;
-    days.forEach(d => {
-      const net = daySums.plus[d] - daySums.minus[d];
-      grandNet += net;
-      netRow += `<td style="text-align:right;color:var(--accent);font-weight:700;font-family:var(--font-mono)">${Math.round(net).toLocaleString()}</td>`;
-    });
-    netRow += `<td style="text-align:right;background:var(--green-dim);color:var(--green);font-weight:700;font-family:var(--font-mono)">${Math.round(grandNet).toLocaleString()}</td></tr>`;
-    html += netRow;
-  }
-
-  html += `</tbody></table></div>`;
-  html += `<div style="margin-top:8px;font-size:11px;color:var(--text-3)">💡 เลื่อนซ้าย-ขวาเพื่อดูทุกวัน — คอลัมน์ Meter/ชื่อ จะติดค้างไว้</div>`;
-  box.innerHTML = html;
+  area.innerHTML = `
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px;text-align:center">รายละเอียดปริมาณการใช้ไฟฟ้าแต่ละ SUBSTATION · ${MN[parseInt(mm)]} ${yy}</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap">
+        <thead><tr style="background:var(--surface-3)">
+          <th style="padding:6px 8px;position:sticky;left:0;background:var(--surface-3);text-align:left">วันที่</th>
+          ${headMain}
+          <th style="text-align:right;padding:6px 8px;color:var(--green)">UTILITY<br>PLANT</th>
+          ${headUtil}
+          <th style="text-align:right;padding:6px 8px;color:var(--accent)">TOTAL</th>
+        </tr></thead>
+        <tbody>${bodyRows}</tbody>
+        <tfoot><tr style="background:var(--surface-3);border-top:2px solid var(--border)">
+          <td style="padding:7px 8px;font-weight:700;position:sticky;left:0;background:var(--surface-3)">รวม</td>
+          ${totMain}
+          <td style="text-align:right;padding:7px 8px;font-weight:700;color:var(--green);background:var(--green-dim)">${Math.round(totals['UTILITY']).toLocaleString()}</td>
+          ${totUtil}
+          <td style="text-align:right;padding:7px 8px;font-weight:700;color:var(--accent)">${Math.round(totals['TOTAL']).toLocaleString()}</td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <div style="margin-top:6px;font-size:10px;color:var(--text-3)">หน่วย: kWh · — = ไม่มีข้อมูล · UTILITY PLANT = รวม AC→Boiler · TOTAL = group หลัก + utility</div>`;
+  buildCompareGroupOptions();
 }
 
-function renderSummaryTable2(){
-  const box = document.getElementById('sum-t2-body');
-  if(!summaryData){ box.innerHTML = '<div class="section-empty">กด 🔄 คำนวณ ก่อน</div>'; return; }
-  const days = summaryData.days;
-
-  // build header
-  let html = `<div class="tbl-wrap"><table><thead><tr>
-    <th style="position:sticky;left:0;background:var(--surface-3);z-index:2;min-width:150px">Zone</th>`;
-  days.forEach(d => { html += `<th style="text-align:right">${fmtDayShort(d)}</th>`; });
-  html += `<th style="text-align:right;background:var(--accent-dim);color:var(--accent)">รวมเดือน</th></tr></thead><tbody>`;
-
-  // compute Net for each zone × each day
-  const zoneNet = {};    // { key: { date: netVal } }
-  const zoneRowTotal = {};
-  const dayGrandTotal = {};
-  days.forEach(d => { dayGrandTotal[d] = 0; });
-
-  reportGroups.forEach(g => {
-    zoneNet[g.key] = {};
-    zoneRowTotal[g.key] = 0;
-    days.forEach(d => {
-      let plus = 0, minus = 0;
-      (g.meters||[]).forEach(id => { const v = cellVal(id, d); if(v !== null) plus += v; });
-      (g.minus ||[]).forEach(id => { const v = cellVal(id, d); if(v !== null) minus += v; });
-      const net = plus - minus;
-      zoneNet[g.key][d] = net;
-      zoneRowTotal[g.key] += net;
-      dayGrandTotal[d] += net;
-    });
-  });
-
-  reportGroups.forEach(g => {
-    let cells = '';
-    days.forEach(d => {
-      cells += `<td style="text-align:right;font-family:var(--font-mono);font-size:11px">${Math.round(zoneNet[g.key][d]).toLocaleString()}</td>`;
-    });
-    html += `<tr>
-      <td style="position:sticky;left:0;background:var(--surface-1);color:${g.color||'var(--accent)'};font-weight:700;z-index:1">${g.icon||'📦'} ${esc(g.name)}</td>
-      ${cells}
-      <td style="text-align:right;background:var(--accent-dim);color:var(--accent);font-weight:700;font-family:var(--font-mono)">${Math.round(zoneRowTotal[g.key]).toLocaleString()}</td>
-    </tr>`;
-  });
-
-  // grand-total row
-  let grandRow = `<tr style="background:var(--green-dim)">
-    <td style="position:sticky;left:0;background:var(--green-dim);color:var(--green);font-weight:700;z-index:1">💧 รวมทั้งโรงงาน</td>`;
-  let grandGrand = 0;
-  days.forEach(d => {
-    grandGrand += dayGrandTotal[d];
-    grandRow += `<td style="text-align:right;color:var(--green);font-weight:700;font-family:var(--font-mono)">${Math.round(dayGrandTotal[d]).toLocaleString()}</td>`;
-  });
-  grandRow += `<td style="text-align:right;background:var(--green);color:#001a0e;font-weight:700;font-family:var(--font-mono)">${Math.round(grandGrand).toLocaleString()}</td></tr>`;
-  html += grandRow;
-
-  html += `</tbody></table></div>`;
-  html += `<div style="margin-top:8px;font-size:11px;color:var(--text-3)">💡 Net = ผลรวม meters − ผลรวม minus (ตาม _REPORT_GROUPS)</div>`;
-  box.innerHTML = html;
+/* ── loadZoneReport ── */
+async function loadZoneReport(){
+  const thisReq = ++zoneReportReqId;
+  const month = document.getElementById('zone-rep-month')?.value;
+  const area = document.getElementById('zone-report-area');
+  if(!month){ area.innerHTML = '<div class="section-empty">เลือกเดือน</div>'; zoneReportRaw = []; return; }
+  const [y,m] = month.split('-');
+  const dateFrom = `${month}-01`;
+  const lastDay  = new Date(parseInt(y), parseInt(m), 0).getDate();
+  const extDate  = new Date(parseInt(y), parseInt(m)-1, lastDay+7);
+  const dateTo   = `${extDate.getFullYear()}-${String(extDate.getMonth()+1).padStart(2,'0')}-${String(extDate.getDate()).padStart(2,'0')}`;
+  area.innerHTML = '<div class="section-empty">⏳ กำลังโหลด...</div>';
+  try{
+    const res = await getSummaryCached(dateFrom, dateTo, 'day');
+    if(thisReq !== zoneReportReqId) return; // stale request — discard
+    if(!res || !res.success) throw new Error(res?.error || 'Server error');
+    zoneReportRaw = res.summary || [];
+    renderZoneReport();
+  }catch(e){
+    if(thisReq !== zoneReportReqId) return;
+    area.innerHTML = `<div class="warn-box">❌ ${e.message}</div>`;
+  }
 }
 
-async function exportSummaryT1(){
-  if(!summaryData){ return toast('กด คำนวณ ก่อน','err'); }
-  const groupKey = document.getElementById('sum-group').value;
-  try{ await ensureXLSX(); }catch(e){ return toast('โหลด Excel library ไม่ได้','err'); }
+/* ── populateZoneReportSelect ── */
+function populateZoneReportSelect(){
+  const sel = document.getElementById('zone-rep-select');
+  if(!sel) return;
+  const prev = sel.value;
+  // Show every report group that actually has meters, counted from the group's
+  // own meter list (group.meters) rather than from meter.zone. A group's
+  // membership is defined by group.meters — meter.zone is a separate label that
+  // doesn't always equal the group key/name, so counting by zone dropped any
+  // group whose meters carried a different zone string, leaving the dropdown
+  // short. A meter still present in subs is what counts.
+  const known = {};
+  subs.forEach(s => { known[s.id] = true; });
+  const cats = reportGroups
+    .map(g => ({ name:g.name, icon:g.icon||'📦', count:(g.meters||[]).filter(id => known[id]).length }))
+    .filter(g => g.count > 0);
+  sel.innerHTML = cats.map(c => `<option value="${c.name}">${c.icon} ${c.name} (${c.count})</option>`).join('');
+  if(prev && cats.some(c => c.name === prev)) sel.value = prev;
+}
 
-  const days = summaryData.days;
-  let plusIds = [], minusIds = [], groupLabel = '';
-  if(groupKey === '__OTHER__'){
-    plusIds = getOtherMeterIds();
-    groupLabel = 'Other';
-  } else {
-    const g = groupByKey(groupKey);
-    if(!g) return toast('ไม่พบกลุ่ม','err');
-    plusIds  = g.meters || [];
-    minusIds = g.minus  || [];
-    groupLabel = g.name;
-  }
-  const nameOf = id => { const m = subs.find(x => x.id === id); return m ? m.name : ''; };
+/* ── renderZoneReport ── */
+function renderZoneReport(){
+  const area = document.getElementById('zone-report-area');
+  const selectedZone = document.getElementById('zone-rep-select')?.value;
+  if(!selectedZone){ area.innerHTML = '<div class="section-empty">เลือก Zone</div>'; zoneReportComputed = null; return; }
+  if(!zoneReportRaw.length){ area.innerHTML = '<div class="section-empty">📭 เลือกเดือนก่อน (ยังไม่มีข้อมูลโหลดไว้)</div>'; zoneReportComputed = null; return; }
+  const month = document.getElementById('zone-rep-month')?.value;
+  if(!month){ area.innerHTML = '<div class="section-empty">เลือกเดือนก่อน</div>'; zoneReportComputed = null; return; }
 
-  const header = ['Meter', 'ชื่อ', ...days.map(fmtDayShort), 'รวม'];
-  const rows = [header];
-  const daySums = { plus:{}, minus:{} };
-  days.forEach(d => { daySums.plus[d] = 0; daySums.minus[d] = 0; });
+  // selectedZone is a group NAME (from the dropdown). Resolve it to that group's
+  // meter list and pull those meters from subs — consistent with how the
+  // dropdown is now built (by group.meters, not meter.zone).
+  const selGroup = reportGroups.find(g => g.name === selectedZone);
+  const selIds = selGroup ? (selGroup.meters || []) : [];
+  const zoneSubs = subs.filter(s => selIds.indexOf(s.id) >= 0);
+  if(!zoneSubs.length){ area.innerHTML = '<div class="section-empty">ไม่มีมิเตอร์ใน Zone นี้</div>'; zoneReportComputed = null; return; }
 
-  const addRow = (id, isMinus) => {
-    let total = 0;
-    const row = [(isMinus?'− ':'') + id, nameOf(id)];
-    days.forEach(d => {
-      const v = cellVal(id, d);
-      if(v !== null){
-        total += v;
-        if(isMinus) daySums.minus[d] += v; else daySums.plus[d] += v;
-        row.push(isMinus ? -Math.round(v) : Math.round(v));
-      } else {
-        row.push('');
+  const [y,m] = month.split('-');
+  const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+  const meterMap = buildMeterDayMap(zoneReportRaw);
+  const allDates = [...new Set(zoneReportRaw.map(r => r.period))].sort();
+  const days = [];
+  for(let d = 1; d <= lastDay; d++) days.push(`${month}-${String(d).padStart(2,'0')}`);
+
+  const fmtCell = v => v === null ? '<span style="color:var(--text-3)">—</span>' : Math.round(v).toLocaleString();
+
+  // แคชค่าต่อ (subId, dateStr) ไว้ครั้งเดียว ใช้ทั้งตอนสร้างแถวรายวันและผลรวมท้ายตาราง
+  const valGrid = {};
+  const spanGrid = {};   // how many days each figure covers (see meterSpanOnDay)
+  zoneSubs.forEach(s => {
+    valGrid[s.id] = {};
+    spanGrid[s.id] = {};
+    days.forEach(dateStr => {
+      valGrid[s.id][dateStr]  = meterUsedOnDay(meterMap, s.id, dateStr, allDates);
+      spanGrid[s.id][dateStr] = meterSpanOnDay(meterMap, s.id, dateStr, allDates);
+    });
+  });
+
+  const headCols = zoneSubs.map(s =>
+    `<th style="text-align:right;padding:6px 8px;min-width:70px">${s.id}<br><span style="font-weight:400;font-size:9px;color:var(--text-3)">${s.name}</span></th>`
+  ).join('');
+
+  const bodyRows = days.map(dateStr => {
+    const dnum = parseInt(dateStr.split('-')[2]);
+    let rowTotal = 0, rowHas = false;
+    const cells = zoneSubs.map(s => {
+      const v = valGrid[s.id][dateStr];
+      if(v !== null){ rowTotal += v; rowHas = true; }
+      const span = spanGrid[s.id][dateStr] || 1;
+      if(v !== null && span > 1){
+        // Flag rather than hide: this figure covers `span` days because the
+        // readings in between are missing, so it is not a single day's usage.
+        return `<td style="text-align:right;padding:5px 8px;background:var(--orange-dim);color:var(--orange)" title="รวม ${span} วัน (ขาดค่าที่จดระหว่างทาง)">${fmtCell(v)}<sup>*${span}</sup></td>`;
       }
-    });
-    row.push(isMinus ? -Math.round(total) : Math.round(total));
-    rows.push(row);
-  };
-  plusIds.forEach(id  => addRow(id, false));
-  minusIds.forEach(id => addRow(id, true));
-  if(groupKey !== '__OTHER__'){
-    const netRow = ['Net ' + groupLabel, ''];
-    let grand = 0;
-    days.forEach(d => { const net = daySums.plus[d] - daySums.minus[d]; grand += net; netRow.push(Math.round(net)); });
-    netRow.push(Math.round(grand));
-    rows.push(netRow);
-  }
+      return `<td style="text-align:right;padding:5px 8px">${fmtCell(v)}</td>`;
+    }).join('');
+    return `<tr>
+      <td style="padding:5px 8px;font-weight:600;color:var(--accent);position:sticky;left:0;background:var(--surface-1)">${dnum}</td>
+      ${cells}
+      <td style="text-align:right;padding:5px 8px;font-weight:700;color:var(--accent)">${rowHas ? Math.round(rowTotal).toLocaleString() : '<span style="color:var(--text-3)">—</span>'}</td>
+    </tr>`;
+  }).join('');
 
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:12},{wch:28}, ...days.map(() => ({wch:8})), {wch:12}];
-  const wb = XLSX.utils.book_new();
-  const safeName = String(groupLabel).replace(/[^a-zA-Z0-9ก-๛]/g,'_').slice(0,25) || 'group';
-  XLSX.utils.book_append_sheet(wb, ws, safeName);
-  XLSX.writeFile(wb, `SR-Water_T1_${groupLabel}_${summaryData.month}.xlsx`);
-  toast('✅ Export ตาราง 1 สำเร็จ','ok');
+  const totalsPerMeter = zoneSubs.map(s => days.reduce((a,dateStr) => a + (valGrid[s.id][dateStr] || 0), 0));
+  const grandTotal = totalsPerMeter.reduce((a,b) => a+b, 0);
+  const totCells = totalsPerMeter.map(t => `<td style="text-align:right;padding:7px 8px;font-weight:700">${Math.round(t).toLocaleString()}</td>`).join('');
+
+  zoneReportComputed = { zoneName: selectedZone, month, days, zoneSubs, valGrid, totalsPerMeter, grandTotal };
+
+  area.innerHTML = `
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px;text-align:center">${selectedZone} — รายมิเตอร์ · ${month}</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap">
+        <thead><tr style="background:var(--surface-3)">
+          <th style="padding:6px 8px;position:sticky;left:0;background:var(--surface-3);text-align:left">วันที่</th>
+          ${headCols}
+          <th style="text-align:right;padding:6px 8px;color:var(--accent)">รวม</th>
+        </tr></thead>
+        <tbody>${bodyRows}</tbody>
+        <tfoot><tr style="background:var(--surface-3);border-top:2px solid var(--border)">
+          <td style="padding:7px 8px;font-weight:700;position:sticky;left:0;background:var(--surface-3)">รวม</td>
+          ${totCells}
+          <td style="text-align:right;padding:7px 8px;font-weight:700;color:var(--accent)">${Math.round(grandTotal).toLocaleString()}</td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <div style="margin-top:6px;font-size:10px;color:var(--text-3)">หน่วย: kWh · — = ไม่มีข้อมูล · <span style="color:var(--orange)">ตัวเลขพื้นส้ม *N = รวม N วัน (ขาดค่าที่จดระหว่างทาง)</span> · ${zoneSubs.length} มิเตอร์ใน Zone นี้</div>`;
 }
 
-async function exportSummaryT2(){
-  if(!summaryData){ return toast('กด คำนวณ ก่อน','err'); }
+/* ── exportZoneReportExcel ── */
+async function exportZoneReportExcel(){
+  if(!zoneReportComputed) return toast('ยังไม่มีข้อมูล — เลือก Zone ก่อน','err');
   try{ await ensureXLSX(); }catch(e){ return toast('โหลด Excel library ไม่ได้','err'); }
-  const days = summaryData.days;
-
-  const header = ['Zone', ...days.map(fmtDayShort), 'รวมเดือน'];
-  const rows = [header];
-  const dayGrand = {}; days.forEach(d => { dayGrand[d] = 0; });
-  let grandGrand = 0;
-  reportGroups.forEach(g => {
+  const { zoneName, month, days, zoneSubs, valGrid, totalsPerMeter, grandTotal } = zoneReportComputed;
+  const aoa = [];
+  const header = ['วันที่', ...zoneSubs.map(s => `${s.id} (${s.name})`), 'รวม'];
+  aoa.push(header);
+  days.forEach(dateStr => {
+    const dnum = parseInt(dateStr.split('-')[2]);
     let rowTotal = 0;
-    const row = [g.name];
-    days.forEach(d => {
-      let plus = 0, minus = 0;
-      (g.meters||[]).forEach(id => { const v = cellVal(id, d); if(v !== null) plus += v; });
-      (g.minus ||[]).forEach(id => { const v = cellVal(id, d); if(v !== null) minus += v; });
-      const net = plus - minus;
-      rowTotal += net;
-      dayGrand[d] += net;
-      row.push(Math.round(net));
-    });
-    row.push(Math.round(rowTotal));
-    grandGrand += rowTotal;
-    rows.push(row);
+    const line = [dnum];
+    zoneSubs.forEach(s => { const v = valGrid[s.id][dateStr]; line.push(v===null?'':Math.round(v)); if(v!==null) rowTotal += v; });
+    line.push(Math.round(rowTotal));
+    aoa.push(line);
   });
-  const grandRow = ['รวมทั้งโรงงาน'];
-  days.forEach(d => { grandRow.push(Math.round(dayGrand[d])); });
-  grandRow.push(Math.round(grandGrand));
-  rows.push(grandRow);
-
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:22}, ...days.map(() => ({wch:10})), {wch:14}];
+  const totLine = ['รวม', ...totalsPerMeter.map(t => Math.round(t)), Math.round(grandTotal)];
+  aoa.push(totLine);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'ZoneDaily');
-  XLSX.writeFile(wb, `SR-Water_T2_${summaryData.month}.xlsx`);
-  toast('✅ Export ตาราง 2 สำเร็จ','ok');
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = header.map(()=>({wch:14}));
+  XLSX.utils.book_append_sheet(wb, ws, zoneName.slice(0,28));
+  XLSX.writeFile(wb, `ZoneReport_${zoneName.replace(/[^\w]+/g,'_')}_${month}.xlsx`);
+  toast('✅ Export รายงานแล้ว','ok');
+}
+
+/* ── exportReportExcel ── */
+async function exportReportExcel(){
+  if(!reportComputed) return toast('ยังไม่มีข้อมูล','err');
+  try{ await ensureXLSX(); }catch(e){ return toast('โหลด Excel library ไม่ได้','err'); }
+  const { month, rows, totals } = reportComputed;
+  const mm = parseInt(month.split('-')[1]);
+  const aoa = [];
+  const header = ['วันที่', ...reportGroupsMain().map(c=>c.name), 'UTILITY PLANT', ...reportGroupsUtil().map(c=>c.name), 'TOTAL'];
+  aoa.push(header);
+  rows.forEach(r => {
+    const dnum = parseInt(r.dateStr.split('-')[2]);
+    const line = [`${dnum}/${mm}`];
+    reportGroupsMain().forEach(c => line.push(r.cells[c.key]===null?'':Math.round(r.cells[c.key])));
+    line.push(r.cells['UTILITY']===null?'':Math.round(r.cells['UTILITY']));
+    reportGroupsUtil().forEach(c => line.push(r.cells[c.key]===null?'':Math.round(r.cells[c.key])));
+    line.push(r.cells['TOTAL']===null?'':Math.round(r.cells['TOTAL']));
+    aoa.push(line);
+  });
+  const totLine = ['รวม'];
+  reportGroupsMain().forEach(c => totLine.push(Math.round(totals[c.key])));
+  totLine.push(Math.round(totals['UTILITY']));
+  reportGroupsUtil().forEach(c => totLine.push(Math.round(totals[c.key])));
+  totLine.push(Math.round(totals['TOTAL']));
+  aoa.push(totLine);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = header.map(()=>({wch:13}));
+  XLSX.utils.book_append_sheet(wb, ws, month);
+  XLSX.writeFile(wb, `Report_${month}.xlsx`);
+  toast('✅ Export รายงานแล้ว','ok');
+}
+
+/* ── exportFullTemplateExcel ── */
+async function exportFullTemplateExcel(){
+  const month = document.getElementById('rep-month')?.value;
+  if(!month) return toast('เลือกเดือนก่อน (ในการ์ด "รายงานการใช้ไฟฟ้ารายเดือน")','err');
+  try{ await ensureExcelJS(); }catch(e){ return toast('โหลด ExcelJS ไม่ได้: '+e.message,'err'); }
+
+  toast('⏳ กำลังสร้างไฟล์ Excel เต็มรูปแบบ...','warn');
+
+  // ใช้ reportComputed ที่โหลดไว้แล้วถ้าตรงกับเดือนที่เลือก — ไม่เรียก loadReport() ซ้ำ
+  // (loadReport() เดิมมี summaryCache กันการยิง network ซ้ำอยู่แล้ว แต่ยังเสีย CPU
+  // re-render ตาราง "รายงานการใช้ไฟฟ้ารายเดือน" ทิ้งเปล่าๆ ทุกครั้งที่กด Export
+  // ถ้าเดือนตรงกันอยู่แล้วไม่มีเหตุผลต้องทำซ้ำ)
+  // ข้อแลกเปลี่ยนที่ควรทราบ: ถ้ามีการบันทึกค่าใหม่จาก "เครื่องอื่น" หลังจากหน้านี้
+  // โหลดเสร็จ (ไม่ผ่าน invalidateSummaryCache บนเครื่องนี้) การข้าม loadReport() จะ
+  // export ข้อมูลที่ยังไม่ใหม่ที่สุด — เป็นทเรดออฟความเร็ว/ความสดที่มีอยู่แล้วทั่วแอป
+  // (หน้า "รายงาน" เองก็ไม่ auto-refresh ข้ามเครื่องเช่นกัน) ไม่ใช่ปัญหาใหม่จาก patch นี้
+  if(!reportComputed || reportComputed.month !== month){
+    await loadReport();
+  }
+  if(!reportComputed || reportComputed.month !== month){
+    return toast('โหลดข้อมูลเดือนนี้ไม่สำเร็จ ลองกด Refresh แล้วลองใหม่','err');
+  }
+
+  const [yy, mm] = month.split('-').map(Number);
+  const lastDay  = new Date(yy, mm, 0).getDate();
+  const meterMap = buildMeterDayMap(reportRaw);
+  const allDates = [...new Set(reportRaw.map(r => r.period))].sort();
+
+  try{
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Substation SR Plant Logger';
+    workbook.created = new Date();
+
+    await buildDataSheetExcelJS(workbook, reportComputed);
+    await buildMeterSheetsExcelJS(workbook, month, lastDay, meterMap, allDates);
+
+    const buf  = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `7_Sub_ประจำเดือน_${TH_MONTH_FULL[mm]}_${yy}.xlsx`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+    toast(`✅ Export สำเร็จ (${workbook.worksheets.length} ชีท)`,'ok');
+  }catch(e){
+    console.error(e);
+    toast('❌ สร้างไฟล์ไม่สำเร็จ: ' + e.message,'err');
+  }
+}
+
+
+
+/* ════════════════════════════════════════════════════════════
+   COST ESTIMATION (Electric only)
+
+   Two MEA supply points, billed separately:
+     69kV  → PM(156493)   serves the plant substations
+     24kV  → PM(97493570) feeds Old Canteen directly
+   Each has its own energy registers and its own demand registers, so each
+   gets its own tariff set and its own subtotal.
+
+   Energy = difference across the month (a totalising register).
+   Demand = the monthly MAXIMUM, not a difference: the meter holds the highest
+   value of the billing cycle and resets at month end, and the peak is what MEA
+   charges for. Taking last-minus-first here would give ~0 on a normal month.
+
+   This is an estimate for watching the trend before the invoice arrives. It
+   deliberately omits anything the app holds no data for — power-factor penalty
+   being the obvious one — so a gap against the real bill is expected.
+   ════════════════════════════════════════════════════════════ */
+const VAT_RATE = 0.07;   // statutory, not user-editable
+
+const COST_SUPPLIES = [
+  { key:'MEA69', label:'69kV — โรงงาน',
+    onpk:'PM156-ONPK', offpk:'PM156-OFFPK', demOn:'PM156-DEM-ONPK' },
+  { key:'MEA24', label:'24kV — Old Canteen',
+    onpk:'PM974-ONPK', offpk:'PM974-OFFPK', demOn:'PM974-DEM-ONPK' }
+];
+
+const TARIFF_FIELDS = [
+  { k:'rateOn',  label:'ค่าพลังงาน On Peak',      unit:'บาท/kWh' },
+  { k:'rateOff', label:'ค่าพลังงาน Off Peak',     unit:'บาท/kWh' },
+  { k:'rateDem', label:'ค่าความต้องการพลังไฟฟ้า', unit:'บาท/kW'  },
+  { k:'ft',      label:'Ft',                      unit:'บาท/kWh' },
+  { k:'service', label:'ค่าบริการรายเดือน',        unit:'บาท'     }
+];
+
+/* Rates live in the _TARIFFS sheet, keyed by month + supply point.
+   They used to sit in localStorage, which meant each admin's browser held its
+   own copy and — the real problem — only one set of rates existed, so costing
+   an earlier month applied the current Ft to it. */
+let tariffRows = null;      // [{month, supply, rateOn, ...}] newest month first
+
+async function loadTariffs(){
+  try{
+    const res = await apiPostAuthed({ action:'getTariffs' });
+    if(res && res.success && Array.isArray(res.tariffs)) tariffRows = res.tariffs;
+  }catch(e){ console.warn('⚠️ โหลดอัตราค่าไฟไม่ได้:', e.message); }
+  return tariffRows;
+}
+
+/* Rates in force for a month. Exact match wins; otherwise the most recent
+   earlier month is carried forward (typically only Ft differs) and the month
+   actually used is reported back so the UI can be explicit about it. */
+function getTariffFor(supplyKey, month){
+  if(!tariffRows || !tariffRows.length) return { rates:{}, from:null, exact:false };
+  const exact = tariffRows.find(t => t.supply === supplyKey && t.month === month);
+  if(exact) return { rates: exact, from: month, exact: true };
+  const earlier = tariffRows
+    .filter(t => t.supply === supplyKey && t.month < month)
+    .sort((a,b) => b.month.localeCompare(a.month))[0];
+  if(earlier) return { rates: earlier, from: earlier.month, exact: false };
+  return { rates:{}, from:null, exact:false };
+}
+
+// Rates currently shown in the form for a supply (used by renderTariffForms).
+function getTariff(supplyKey){
+  const month = document.getElementById('cost-month')?.value || '';
+  return getTariffFor(supplyKey, month).rates || {};
+}
+
+function renderTariffForms(){
+  const box = document.getElementById('tariff-forms');
+  if(!box) return;
+  box.innerHTML = COST_SUPPLIES.map(sp => {
+    const t = getTariff(sp.key);
+    const fields = TARIFF_FIELDS.map(f => `
+      <div class="f-row">
+        <label class="f-label">${esc(f.label)} <span style="color:var(--rd-ink-3);font-weight:400">(${f.unit})</span></label>
+        <input class="f-input" type="number" step="any" inputmode="decimal"
+               id="tf-${sp.key}-${f.k}" value="${t[f.k] !== undefined ? t[f.k] : ''}" placeholder="0">
+      </div>`).join('');
+    return `<div style="margin-bottom:18px">
+        <div style="font-family:var(--rd-font-mono);font-size:11px;color:var(--rd-ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${esc(sp.label)}</div>
+        <div class="f-3col">${fields}</div>
+      </div>`;
+  }).join('');
+}
+
+async function saveTariffs(){
+  const month = document.getElementById('cost-month')?.value;
+  if(!month) return toast('เลือกเดือนก่อน','err');
+  setSyncStatus('busy','กำลังบันทึกอัตรา...');
+  try{
+    // One row per supply point, written for the month currently selected.
+    for(const sp of COST_SUPPLIES){
+      const t = { month: month, supply: sp.key };
+      TARIFF_FIELDS.forEach(f => {
+        const el = document.getElementById('tf-' + sp.key + '-' + f.k);
+        t[f.k === 'rateDem' ? 'rateDemand' : f.k] = (el && el.value !== '') ? parseFloat(el.value) : '';
+      });
+      await apiPostAuthed({ action:'saveTariff', tariff: t });
+    }
+    invalidateTariffsCacheLocal();
+    await loadTariffs();
+    setSyncStatus('ok','บันทึกอัตราแล้ว');
+    toast('💾 บันทึกอัตราของเดือน ' + month + ' แล้ว','ok');
+    renderTariffForms();
+    loadCostData();
+  }catch(e){
+    setSyncStatus('error','บันทึกอัตราไม่สำเร็จ');
+  }
+}
+
+function invalidateTariffsCacheLocal(){ tariffRows = null; }
+
+function buildCostMonthOptions(){
+  const sel = document.getElementById('cost-month');
+  if(!sel) return;
+  const MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  // Months that hold readings, plus the current month and the next two: Ft and
+  // the rate schedule are often published before the month is billed, so the
+  // rates need somewhere to be entered ahead of any readings existing.
+  const set = {};
+  (availableMonths || []).forEach(m => { set[m] = true; });
+  const now = new Date();
+  for(let i = 0; i <= 2; i++){
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    set[d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0')] = true;
+  }
+  const months = Object.keys(set).sort().reverse();
+  const prev = sel.value;
+  sel.innerHTML = months.map(m => {
+    const p = m.split('-');
+    return '<option value="' + m + '">' + MN[parseInt(p[1])] + ' ' + p[0] + '</option>';
+  }).join('');
+  // Default to the newest month that actually HAS data, not the newest option
+  // (the list includes the current month + next two for entering rates ahead of
+  // readings, so the very first option is usually an empty future month —
+  // landing there showed "ไม่มีข้อมูลเดือนนี้" and looked like cost wasn't
+  // working). Keep the user's prior pick if still valid.
+  if(prev && months.indexOf(prev) >= 0){
+    sel.value = prev;
+  } else if(availableMonths && availableMonths.length){
+    sel.value = availableMonths[0];   // availableMonths is newest-first, data-backed
+  } else if(months.length){
+    sel.value = months[months.length - 1];   // fallback: oldest listed
+  }
+}
+
+let costRaw = [];
+
+async function loadCostData(){
+  const box = document.getElementById('cost-body');
+  if(!box) return;
+  if(appMode !== 'admin'){ box.innerHTML = '<div class="section-empty">เฉพาะแอดมิน</div>'; return; }
+  // Ensure tariff rates are loaded before computing. The Calculate button calls
+  // this directly (not via the onTabCost chain that loads tariffs first), so
+  // without this a fresh click — or a tab where the initial tariff load hadn't
+  // finished — computed with no rates and showed every rate as "—" / 0.
+  if(!tariffRows || !tariffRows.length) await loadTariffs();
+  buildCostMonthOptions();
+  const sel = document.getElementById('cost-month');
+  const month = sel ? sel.value : '';
+  if(!month){ box.innerHTML = '<div class="section-empty">ไม่มีเดือนให้เลือก</div>'; return; }
+
+  const y = parseInt(month.split('-')[0]), m = parseInt(month.split('-')[1]);
+  const lastDay = new Date(y, m, 0).getDate();
+  // reach past month end so the last day's delta can resolve
+  const ext = new Date(y, m-1, lastDay + 7);
+  const dateTo = ext.getFullYear() + '-' + String(ext.getMonth()+1).padStart(2,'0') + '-' + String(ext.getDate()).padStart(2,'0');
+
+  box.innerHTML = '<div class="section-empty">⏳ กำลังคำนวณ...</div>';
+  try{
+    const res = await getSummaryCached(month + '-01', dateTo, 'day');
+    if(!res || !res.success) throw new Error((res && res.error) || 'โหลดข้อมูลไม่ได้');
+    costRaw = res.summary || [];
+    renderCost(month);
+  }catch(e){
+    box.innerHTML = '<div class="warn-box">❌ ' + esc(e.message) + '</div>';
+  }
+}
+
+/* Energy used across the month for a totalising meter: last reading minus
+   first. Returns null when the meter has no readings in the window, so the UI
+   can show "—" rather than a confident zero. */
+function costEnergy(meterId, month){
+  const rows = costRaw.filter(r => r.meterId === meterId && String(r.period).slice(0,7) === month);
+  if(!rows.length) return null;
+  rows.sort((a,b) => String(a.period).localeCompare(String(b.period)));
+  const meter = subs.find(s => s.id === meterId);
+  const mult = (meter && meter.multiplier !== undefined) ? parseFloat(meter.multiplier) : 1;
+  return Math.max(0, rows[rows.length-1].lastKwh - rows[0].firstKwh) * mult;
+}
+
+/* Monthly peak for a demand meter plus the day it happened. Reads maxKwh from
+   the server summary; falls back to lastKwh for rows written before maxKwh
+   existed. */
+function costDemand(meterId, month){
+  const rows = costRaw.filter(r => r.meterId === meterId && String(r.period).slice(0,7) === month);
+  if(!rows.length) return { peak:null, date:null };
+  const meter = subs.find(s => s.id === meterId);
+  const mult = (meter && meter.multiplier !== undefined) ? parseFloat(meter.multiplier) : 1;
+  let peak = null, date = null;
+  rows.forEach(r => {
+    const v = (r.maxKwh !== undefined && r.maxKwh !== null) ? r.maxKwh : r.lastKwh;
+    if(v === null || v === undefined) return;
+    if(peak === null || v > peak){ peak = v; date = r.maxDate || r.period; }
+  });
+  return { peak: peak === null ? null : peak * mult, date: date };
+}
+
+function _money(v){ return v.toLocaleString('th-TH', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
+function _units(v){ return Math.round(v).toLocaleString(); }
+
+function renderCost(month){
+  const box = document.getElementById('cost-body');
+  if(!box) return;
+  let grandPre = 0, anyRate = false, html = '';
+
+  COST_SUPPLIES.forEach(sp => {
+    const lookup = getTariffFor(sp.key, month);
+    const t = lookup.rates || {};
+    const on  = costEnergy(sp.onpk, month);
+    const off = costEnergy(sp.offpk, month);
+    const dem = costDemand(sp.demOn, month);
+
+    const rOn  = parseFloat(t.rateOn)  || 0;
+    const rOff = parseFloat(t.rateOff) || 0;
+    const rDem = parseFloat(t.rateDemand !== undefined ? t.rateDemand : t.rateDem) || 0;
+    const ft   = parseFloat(t.ft)      || 0;
+    const svc  = parseFloat(t.service) || 0;
+    if(rOn || rOff || rDem || ft || svc) anyRate = true;
+
+    const onKwh  = on  === null ? 0 : on;
+    const offKwh = off === null ? 0 : off;
+    const peakKw = dem.peak === null ? 0 : dem.peak;
+
+    const cOn  = onKwh  * rOn;
+    const cOff = offKwh * rOff;
+    const cDem = peakKw * rDem;
+    const cFt  = (onKwh + offKwh) * ft;
+    const sub  = cOn + cOff + cDem + cFt + svc;
+    grandPre += sub;
+
+    const missing = [];
+    if(on  === null) missing.push('On Peak');
+    if(off === null) missing.push('Off Peak');
+    if(dem.peak === null) missing.push('Demand');
+
+    html += '<div class="card">' +
+      '<div class="card-title">⚡ ' + esc(sp.label) + '</div>' +
+      (missing.length ? '<div class="warn-box">⚠️ ไม่มีข้อมูลเดือนนี้: ' + missing.join(' · ') + ' — ส่วนที่ขาดนับเป็น 0</div>' : '') +
+      (lookup.from && !lookup.exact
+        ? '<div class="warn-box">↩️ ยังไม่ได้กรอกอัตราของเดือนนี้ — ใช้อัตราของเดือน ' + lookup.from + ' แทน</div>'
+        : '') +
+      '<div class="tbl-wrap"><table>' +
+      '<thead><tr><th>รายการ</th><th style="text-align:right">ปริมาณ</th><th style="text-align:right">อัตรา</th><th style="text-align:right">เป็นเงิน (บาท)</th></tr></thead><tbody>' +
+      '<tr><td>ค่าพลังงาน On Peak</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + (on===null?'—':_units(onKwh)+' kWh') + '</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + (rOn||'—') + '</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + _money(cOn) + '</td></tr>' +
+      '<tr><td>ค่าพลังงาน Off Peak</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + (off===null?'—':_units(offKwh)+' kWh') + '</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + (rOff||'—') + '</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + _money(cOff) + '</td></tr>' +
+      '<tr><td>ค่าความต้องการพลังไฟฟ้า' + (dem.date ? '<br><small style="color:var(--rd-ink-3)">พีคเมื่อ ' + fmtDate(dem.date) + '</small>' : '') + '</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + (dem.peak===null?'—':_units(peakKw)+' kW') + '</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + (rDem||'—') + '</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + _money(cDem) + '</td></tr>' +
+      '<tr><td>Ft</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + _units(onKwh+offKwh) + ' kWh</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + (ft||'—') + '</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + _money(cFt) + '</td></tr>' +
+      '<tr><td>ค่าบริการรายเดือน</td><td style="text-align:right">—</td><td style="text-align:right">—</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + _money(svc) + '</td></tr>' +
+      '</tbody><tfoot><tr style="background:var(--rd-line-2)">' +
+      '<td colspan="3" style="font-weight:700">รวม ' + esc(sp.label) + ' (ก่อน VAT)</td>' +
+      '<td style="text-align:right;font-weight:700;font-family:var(--rd-font-mono)">' + _money(sub) + '</td>' +
+      '</tr></tfoot></table></div></div>';
+  });
+
+  const vat = grandPre * VAT_RATE;
+  html += '<div class="card"><div class="card-title">🧾 รวมทั้งหมด</div>' +
+    '<div class="tbl-wrap"><table><tbody>' +
+    '<tr><td>รวมก่อน VAT</td><td style="text-align:right;font-family:var(--rd-font-mono);font-size:15px">' + _money(grandPre) + '</td></tr>' +
+    '<tr><td>VAT 7%</td><td style="text-align:right;font-family:var(--rd-font-mono)">' + _money(vat) + '</td></tr>' +
+    '<tr style="background:var(--rd-success-soft)"><td style="font-weight:700;color:var(--rd-success)">รวมสุทธิ (ประมาณการ)</td><td style="text-align:right;font-weight:700;font-family:var(--rd-font-mono);font-size:17px;color:var(--rd-success)">' + _money(grandPre + vat) + '</td></tr>' +
+    '</tbody></table></div>' +
+    (anyRate ? '' : '<div class="warn-box" style="margin-top:10px">⚠️ ยังไม่ได้กรอกอัตราค่าไฟ — ตัวเลขเป็น 0 ทั้งหมด กรอกในการ์ด "อัตราค่าไฟ" ด้านล่างก่อน</div>') +
+    '</div>';
+
+  box.innerHTML = html;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -4378,7 +5247,140 @@ function getQuickRange(key){
   return ['',''];
 }
 
-/* See the matching comment in the Electric app. */
+/* Quick-range that respects the current period. The three segment buttons mean
+   different spans depending on whether you're looking at days, months, or
+   years — otherwise "this month" while viewing by-month shows a single bar and
+   looks broken. slot is 0/1/2 (the three buttons left→right); the labels are
+   kept in sync by segmentLabelsFor(). */
+function getQuickRangeForPeriod(period, slot){
+  var today = ymdLocal();
+  var t = new Date(today+'T00:00:00');
+  var fmt = function(dt){ return ymdLocal(dt); };
+  var y = t.getFullYear(), m = t.getMonth();
+  if(period === 'day'){
+    if(slot===0) return [today.slice(0,8)+'01', today];                                  // this month
+    if(slot===1){ var f=new Date(y,m-1,1),l=new Date(y,m,0); return [fmt(f),fmt(l)]; }    // last month
+    var f3=new Date(t); f3.setMonth(f3.getMonth()-2); f3.setDate(1); return [fmt(f3),today]; // 3 months
+  }
+  if(period === 'month'){
+    // Full calendar year for this/last year (Jan–Dec) so the chart always
+    // shows all 12 months of the chosen year, empty ones included.
+    if(slot===0) return [y+'-01-01', y+'-12-31'];                                         // this year
+    if(slot===1) return [(y-1)+'-01-01', (y-1)+'-12-31'];                                 // last year
+    return [(y-2)+'-01-01', y+'-12-31'];                                                  // 3 years
+  }
+  // year
+  if(slot===0) return [(y-2)+'-01-01', today];                                            // 3 years
+  if(slot===1) return [(y-4)+'-01-01', today];                                            // 5 years
+  return ['', today];                                                                     // all
+}
+function segmentLabelsFor(period){
+  if(period === 'day')   return ['เดือนนี้','เดือนก่อน','3 เดือน'];
+  if(period === 'month') return ['ปีนี้','ปีก่อน','3 ปี'];
+  return ['3 ปี','5 ปี','ทั้งหมด'];
+}
+/* Re-labels a segment control and applies the slot that's currently active
+   (default slot 0) for the new period. Called whenever period changes. */
+function applySegmentForPeriod(segId, period, applyFn){
+  var seg = document.getElementById(segId);
+  if(!seg) return;
+  var labels = segmentLabelsFor(period);
+  var btns = seg.querySelectorAll('button');
+  var activeSlot = 0;
+  btns.forEach(function(b,i){ if(b.classList.contains('on')) activeSlot=i; });
+  btns.forEach(function(b,i){ if(labels[i]!==undefined) b.textContent = labels[i]; b.setAttribute('data-slot', i); });
+  // re-apply the active slot's range under the new period
+  applyFn(activeSlot);
+}
+
+/* Switches the from/to range inputs between date / month / year controls to
+   match the period, and converts whatever value they hold so it stays valid
+   for the new input type — a <input type=date> value "2026-09-15" becomes
+   "2026-09" for month, "2026" for year, and back to a real day on the way
+   down. Without the conversion the browser silently blanks a value that
+   doesn't fit the new type, which looked like the range had been lost. The
+   YEAR case has no native input, so it swaps in a plain text field range —
+   two 4-digit years — kept minimal on purpose. Prefix is 'cmp' or 'sub'. */
+function _fitRangeToPeriod(v, period){
+  v = String(v||'');
+  if(period === 'month') return v.slice(0,7);
+  if(period === 'year')  return v.slice(0,4);
+  return v;
+}
+/* Y-axis numbers as plain comma-grouped integers (10,000 — not "10K"). The
+   readings are already in kWh, so a "K" suffix reads as ambiguous unit-on-unit
+   ("10K" looks like it could mean 10 kWh or 10,000). Full numbers with commas
+   are unambiguous; the axis has room for them. */
+/* Rounds a max value UP to a "nice" round number so the axis ticks land on
+   clean figures (250,000 rather than 229,658). Picks a step of 1, 2, or 5 ×
+   the appropriate power of ten — the steps people naturally read a scale in —
+   and rounds the value up to a multiple of it. */
+function _niceCeil(v){
+  v = Number(v) || 0;
+  if(v <= 0) return 0;
+  var mag = Math.pow(10, Math.floor(Math.log10(v)));
+  var norm = v / mag;                     // 1..10
+  // Finer steps than 1/2/5 so the axis doesn't overshoot the data (219k would
+  // jump to 500k on a 1/2/5 scale, squashing the bars); 2.5/3/4 keep the top
+  // close to the peak while still landing on a round tick.
+  var step;
+  if(norm <= 1)      step = 1;
+  else if(norm <= 1.5) step = 1.5;
+  else if(norm <= 2) step = 2;
+  else if(norm <= 2.5) step = 2.5;
+  else if(norm <= 3) step = 3;
+  else if(norm <= 4) step = 4;
+  else if(norm <= 5) step = 5;
+  else if(norm <= 6) step = 6;
+  else if(norm <= 8) step = 8;
+  else               step = 10;
+  return step * mag;
+}
+function _fmtAxisNum(v){
+  return Math.round(Number(v) || 0).toLocaleString();
+}
+function _normRangeStart(v){
+  v = String(v||'');
+  if(/^\d{4}$/.test(v)) return v+'-01-01';
+  if(/^\d{4}-\d{2}$/.test(v)) return v+'-01';
+  return v;
+}
+function _normRangeEnd(v){
+  v = String(v||'');
+  if(/^\d{4}$/.test(v)) return v+'-12-31';
+  if(/^\d{4}-\d{2}$/.test(v)){ var p=v.split('-'); var last=new Date(+p[0], +p[1], 0).getDate(); return v+'-'+String(last).padStart(2,'0'); }
+  return v;
+}
+function setRangeInputType(prefix, period){
+  var fromEl = document.getElementById(prefix+'-from');
+  var toEl   = document.getElementById(prefix+'-to');
+  if(!fromEl || !toEl) return;
+  var wantType = period === 'day' ? 'date' : period === 'month' ? 'month' : 'text';
+  [fromEl, toEl].forEach(function(el){
+    var v = el.value || '';
+    if(el.type !== wantType){
+      // convert current value to the granularity of the new type
+      if(wantType === 'month')      v = v.slice(0,7);                       // yyyy-mm-dd → yyyy-mm ; yyyy → yyyy (browser fills)
+      else if(wantType === 'text')  v = v.slice(0,4);                       // → yyyy
+      else if(wantType === 'date'){                                         // widen back to a real day
+        if(/^\d{4}-\d{2}$/.test(v)) v = v + '-01';
+        else if(/^\d{4}$/.test(v))  v = v + '-01-01';
+      }
+      el.type = wantType;
+      if(wantType === 'text'){ el.placeholder = 'ปี (พ.ศ.ค.ศ. เช่น 2026)'; el.setAttribute('inputmode','numeric'); el.maxLength = 4; }
+      else { el.removeAttribute('placeholder'); el.removeAttribute('inputmode'); el.removeAttribute('maxLength'); }
+    }
+    el.value = v;
+  });
+}
+
+
+/* Cache for aggregateRecords keyed by meter+period+range+data-signature.
+   Switching bar<->line or toggling avg/holiday re-renders the chart but does
+   NOT change the aggregated buckets, so recomputing them on every toggle was
+   wasted work. The signature (count + last id + last kwh) changes whenever the
+   underlying records do (refresh, edit, delete), so a stale aggregate is never
+   served after the data moves. Cleared wholesale when records are reloaded. */
 let _aggCache = {};
 function _aggSignature(recs){
   if(!recs.length) return '0';
@@ -4453,7 +5455,17 @@ function aggregateRecords(recs, period, dateFrom, dateTo){
   });
 }
 
-/* See the matching comment in the Electric app. */
+/* Shared by renderSubChart and renderCmpChart — everything from "here is a
+   list of {label, value, hol} points" onward is identical between the two
+   charts. Before this, the per-meter chart was missing the unit label on the
+   Y axis and the tick-spacing limit that the group chart had — a genuine
+   divergence bug, not a style choice, caused by the two functions having
+   been built and hand-edited separately over several sessions. Routing both
+   through one function makes that class of bug structurally impossible: a
+   fix here is a fix for both charts, always, because there is only one
+   "here". The two callers still each own how they FETCH their dataPoints
+   (one is a synchronous filter over `records`, the other an async server
+   summary) — that part is genuinely different and stays separate. */
 function buildChartOpts(dataPoints, state, TC){
   const total = dataPoints.reduce((a,d) => a + d.value, 0);
   /* Average must divide by days that actually have a reading, not by every
@@ -4654,6 +5666,7 @@ async function renderSubChart(){
   }).catch(function(e){ el.innerHTML = '<div class="warn-box">❌ โหลดกราฟไม่ได้: '+(e&&e.message||'')+'</div>'; });
   sumEl.innerHTML = built.summaryHtml;
 }
+
 var g9State = { period:'day', sort:'default', showPct:false };
 function setG9Period(p){
   g9State.period = p;
@@ -4723,8 +5736,27 @@ function initG9Pickers(){
     ySel.value = (prevYear && years.indexOf(prevYear) >= 0) ? prevYear : String(thisYear);
   }
 
-  if(!dates.length) return;
-  document.getElementById('g9-date').value = dates.length >= 2 ? dates[dates.length-2] : dates[dates.length-1];
+  if(!dates.length){
+    /* The chart tab no longer loads the full `records` array, so derive the
+       default day from the latest available month instead of leaving the
+       picker blank (which showed nothing). Uses the last day of the newest
+       month with data, or today if that month is the current one. */
+    if(srcMonths.length){
+      var latestM = srcMonths.slice().sort()[srcMonths.length-1];
+      var now = new Date();
+      var curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+      var dEl = document.getElementById('g9-date');
+      if(dEl){
+        if(latestM === curM) dEl.value = ymdLocal(now);
+        else { var pp=latestM.split('-'); var last=new Date(+pp[0], +pp[1], 0).getDate(); dEl.value = latestM+'-'+String(last).padStart(2,'0'); }
+      }
+      var mEl = document.getElementById('g9-month'); if(mEl) mEl.value = latestM;
+    }
+    return;
+  }
+  // Default to the latest day that has data (the most recent reading), so the
+  // main-group chart opens on current data instead of a day back.
+  document.getElementById('g9-date').value = dates[dates.length-1];
   var months = []; dates.forEach(function(d){ var m=d.slice(0,7); if(months.indexOf(m)<0) months.push(m); }); months.sort();
   document.getElementById('g9-month').value = months[months.length-1] || '';
 }
@@ -4844,6 +5876,9 @@ function buildCompareGroupOptions(){
   sel.innerHTML = reportGroups.map(c => `<option value="${c.key}">${esc(c.name)}</option>`).join('')
     + '<option value="__TOTAL__">TOTAL (ทุกกลุ่ม)</option>';
   if(prev) sel.value = prev;
+  // Build the custom picker's option rows. Each row carries its key in a data
+  // attribute; clicking commits (sets the hidden <select> + redraws). The list
+  // is fully rendered up front so tapping the field shows everything instantly.
   const items = reportGroups.map(c => ({ key:c.key, label:c.name }));
   items.push({ key:'__TOTAL__', label:'TOTAL (ทุกกลุ่ม)' });
   _pickerData['cmp-group-picker'] = { items, onPick: function(key){
@@ -4853,7 +5888,9 @@ function buildCompareGroupOptions(){
   syncPickerLabel('cmp-group-picker');
 }
 
-/* ─── Custom picker component — see the matching comments in the Electric app. ─── */
+/* ─── Custom picker component (shared by group + meter pickers) ───
+   _pickerData[id] holds {items:[{key,label}], onPick}. The three functions
+   below are generic over any picker id. */
 var _pickerData = {};
 function renderPickerList(id, filter){
   const d = _pickerData[id]; if(!d) return;
@@ -4881,6 +5918,7 @@ function togglePicker(id){
   const el = document.getElementById(id);
   if(!el) return;
   const wasOpen = el.classList.contains('open');
+  // close any other open pickers first
   document.querySelectorAll('.rd-picker.open').forEach(p => p.classList.remove('open'));
   if(!wasOpen){
     el.classList.add('open');
@@ -4899,12 +5937,15 @@ function pickerChoose(id, key){
   if(el) el.classList.remove('open');
   if(d.onPick) d.onPick(key);
 }
+/* Close pickers when tapping outside. */
 document.addEventListener('click', function(e){
   if(!e.target.closest('.rd-picker')){
     document.querySelectorAll('.rd-picker.open').forEach(p => p.classList.remove('open'));
   }
 });
 
+/* Segmented range control — sets the date range AND lights the active segment.
+   Wraps the existing setCmpQuick so the date logic stays in one place. */
 function setCmpQuickSeg(slot){
   var r = getQuickRangeForPeriod(cmpState.period, slot);
   // Fit to the input granularity — a <input type=month> silently drops a full
@@ -4916,6 +5957,7 @@ function setCmpQuickSeg(slot){
   if(seg) seg.querySelectorAll('button').forEach((b,i) => b.classList.toggle('on', i===slot));
   renderCmpChartDebounced();
 }
+
 function getColIds(key){
   if(key === '__TOTAL__') return reportGroups.flatMap(c => c.meters || []);
   const col = reportGroups.find(c => c.key === key);
@@ -4967,129 +6009,27 @@ function meterUsedOnDay(meterMap, meterId, dateStr, allDates){
   return Math.max(0, cur.lastKwh - cur.firstKwh) * mult;
 }
 
-var cmpState = { period:'day', type:'bar', showAvg:true, showHol:true };
-/* Rounds a max value UP to a "nice" round number so the axis ticks land on
-   clean figures (250,000 rather than 229,658). Picks a step of 1, 2, or 5 ×
-   the appropriate power of ten — the steps people naturally read a scale in —
-   and rounds the value up to a multiple of it. */
-function _niceCeil(v){
-  v = Number(v) || 0;
-  if(v <= 0) return 0;
-  var mag = Math.pow(10, Math.floor(Math.log10(v)));
-  var norm = v / mag;                     // 1..10
-  // Finer steps than 1/2/5 so the axis doesn't overshoot the data (219k would
-  // jump to 500k on a 1/2/5 scale, squashing the bars); 2.5/3/4 keep the top
-  // close to the peak while still landing on a round tick.
-  var step;
-  if(norm <= 1)      step = 1;
-  else if(norm <= 1.5) step = 1.5;
-  else if(norm <= 2) step = 2;
-  else if(norm <= 2.5) step = 2.5;
-  else if(norm <= 3) step = 3;
-  else if(norm <= 4) step = 4;
-  else if(norm <= 5) step = 5;
-  else if(norm <= 6) step = 6;
-  else if(norm <= 8) step = 8;
-  else               step = 10;
-  return step * mag;
-}
-function _fmtAxisNum(v){
-  return Math.round(Number(v) || 0).toLocaleString();
-}
-function setRangeInputType(prefix, period){
-  var fromEl = document.getElementById(prefix+'-from');
-  var toEl   = document.getElementById(prefix+'-to');
-  if(!fromEl || !toEl) return;
-  var wantType = period === 'day' ? 'date' : period === 'month' ? 'month' : 'text';
-  [fromEl, toEl].forEach(function(el){
-    var v = el.value || '';
-    if(el.type !== wantType){
-      // convert current value to the granularity of the new type
-      if(wantType === 'month')      v = v.slice(0,7);                       // yyyy-mm-dd → yyyy-mm ; yyyy → yyyy (browser fills)
-      else if(wantType === 'text')  v = v.slice(0,4);                       // → yyyy
-      else if(wantType === 'date'){                                         // widen back to a real day
-        if(/^\d{4}-\d{2}$/.test(v)) v = v + '-01';
-        else if(/^\d{4}$/.test(v))  v = v + '-01-01';
-      }
-      el.type = wantType;
-      if(wantType === 'text'){ el.placeholder = 'ปี (พ.ศ.ค.ศ. เช่น 2026)'; el.setAttribute('inputmode','numeric'); el.maxLength = 4; }
-      else { el.removeAttribute('placeholder'); el.removeAttribute('inputmode'); el.removeAttribute('maxLength'); }
+/* How many calendar days the figure from meterUsedOnDay actually covers.
+   1 = normal. Greater than 1 means readings in between were missing or unusable,
+   so the whole gap has been attributed to this one day. The tables mark those
+   cells rather than quietly showing an inflated number as if it were a
+   single day's use. */
+function meterSpanOnDay(meterMap, meterId, dateStr, allDates){
+  const cur = meterMap[meterId]?.[dateStr];
+  if(!cur || !_isUsableReading(meterId, cur.firstKwh)) return 0;
+  const idx = allDates.indexOf(dateStr);
+  for(let k = idx+1; k < allDates.length; k++){
+    const next = meterMap[meterId]?.[allDates[k]];
+    if(next && _isUsableReading(meterId, next.firstKwh)){
+      const d1 = new Date(dateStr + 'T00:00:00');
+      const d2 = new Date(allDates[k] + 'T00:00:00');
+      return Math.max(1, Math.round((d2 - d1) / 86400000));
     }
-    el.value = v;
-  });
-}
-/* Switches the from/to range inputs between date / month / year controls to
-   match the period, and converts whatever value they hold so it stays valid
-   for the new input type — a <input type=date> value "2026-09-15" becomes
-   "2026-09" for month, "2026" for year, and back to a real day on the way
-   down. Without the conversion the browser silently blanks a value that
-   doesn't fit the new type, which looked like the range had been lost. The
-   YEAR case has no native input, so it swaps in a plain text field range —
-   two 4-digit years — kept minimal on purpose. Prefix is 'cmp' or 'sub'. */
-function _fitRangeToPeriod(v, period){
-  v = String(v||'');
-  if(period === 'month') return v.slice(0,7);
-  if(period === 'year')  return v.slice(0,4);
-  return v;
-}
-function _normRangeStart(v){
-  v = String(v||'');
-  if(/^\d{4}$/.test(v)) return v+'-01-01';
-  if(/^\d{4}-\d{2}$/.test(v)) return v+'-01';
-  return v;
-}
-function _normRangeEnd(v){
-  v = String(v||'');
-  if(/^\d{4}$/.test(v)) return v+'-12-31';
-  if(/^\d{4}-\d{2}$/.test(v)){ var p=v.split('-'); var last=new Date(+p[0], +p[1], 0).getDate(); return v+'-'+String(last).padStart(2,'0'); }
-  return v;
-}
-/* Quick-range that respects the current period. The three segment buttons mean
-   different spans depending on whether you're looking at days, months, or
-   years — otherwise "this month" while viewing by-month shows a single bar and
-   looks broken. slot is 0/1/2 (the three buttons left→right); the labels are
-   kept in sync by segmentLabelsFor(). */
-function getQuickRangeForPeriod(period, slot){
-  var today = ymdLocal();
-  var t = new Date(today+'T00:00:00');
-  var fmt = function(dt){ return ymdLocal(dt); };
-  var y = t.getFullYear(), m = t.getMonth();
-  if(period === 'day'){
-    if(slot===0) return [today.slice(0,8)+'01', today];                                  // this month
-    if(slot===1){ var f=new Date(y,m-1,1),l=new Date(y,m,0); return [fmt(f),fmt(l)]; }    // last month
-    var f3=new Date(t); f3.setMonth(f3.getMonth()-2); f3.setDate(1); return [fmt(f3),today]; // 3 months
   }
-  if(period === 'month'){
-    // Full calendar year for this/last year (Jan–Dec) so the chart always
-    // shows all 12 months of the chosen year, empty ones included.
-    if(slot===0) return [y+'-01-01', y+'-12-31'];                                         // this year
-    if(slot===1) return [(y-1)+'-01-01', (y-1)+'-12-31'];                                 // last year
-    return [(y-2)+'-01-01', y+'-12-31'];                                                  // 3 years
-  }
-  // year
-  if(slot===0) return [(y-2)+'-01-01', today];                                            // 3 years
-  if(slot===1) return [(y-4)+'-01-01', today];                                            // 5 years
-  return ['', today];                                                                     // all
-}
-function segmentLabelsFor(period){
-  if(period === 'day')   return ['เดือนนี้','เดือนก่อน','3 เดือน'];
-  if(period === 'month') return ['ปีนี้','ปีก่อน','3 ปี'];
-  return ['3 ปี','5 ปี','ทั้งหมด'];
-}
-/* Re-labels a segment control and applies the slot that's currently active
-   (default slot 0) for the new period. Called whenever period changes. */
-function applySegmentForPeriod(segId, period, applyFn){
-  var seg = document.getElementById(segId);
-  if(!seg) return;
-  var labels = segmentLabelsFor(period);
-  var btns = seg.querySelectorAll('button');
-  var activeSlot = 0;
-  btns.forEach(function(b,i){ if(b.classList.contains('on')) activeSlot=i; });
-  btns.forEach(function(b,i){ if(labels[i]!==undefined) b.textContent = labels[i]; b.setAttribute('data-slot', i); });
-  // re-apply the active slot's range under the new period
-  applyFn(activeSlot);
+  return 1;
 }
 
+var cmpState = { period:'day', type:'bar', showAvg:true, showHol:true };
 function setCmpQuick(key){
   var r = getQuickRange(key);
   document.getElementById('cmp-from').value = r[0];
@@ -5160,7 +6100,17 @@ function _cmpFillPeriods(allPeriods, fromVal, toVal, period){
   }
   var startM = (fromVal ? fromVal.slice(0,7) : (allPeriods[0]||'').slice(0,7));
   var endM   = (toVal   ? toVal.slice(0,7)   : (allPeriods[allPeriods.length-1]||'').slice(0,7));
-  if(!startM || !endM) return allPeriods.slice();
+  /* Fill every month in the SELECTED range, even months with no data — so
+     "this year" shows Jan–Dec of this year and "last year" shows Jan–Dec of
+     last year (all empty if there were no readings) instead of silently
+     collapsing to whatever data exists. The selected range (fromVal/toVal)
+     is the source of truth here, never allPeriods, which is why picking a year
+     with no data no longer falls back to showing the current year. */
+  if(!startM || !endM){
+    if(!allPeriods.length) return [];
+    startM = startM || allPeriods[0].slice(0,7);
+    endM   = endM   || allPeriods[allPeriods.length-1].slice(0,7);
+  }
   var sp = startM.split('-').map(Number);
   var ep = endM.split('-').map(Number);
   var out2 = [];
@@ -5187,9 +6137,15 @@ function initCmpPickers(){
   var last  = new Date(now.getFullYear(), now.getMonth()+1, 0);
   if(!fromEl.value) fromEl.value = ymdLocal(first);
   if(!toEl.value)   toEl.value   = ymdLocal(last);
+  // Light the segment that matches the default range (this month) so the
+  // control's highlight agrees with what the chart is actually showing.
   var seg = document.getElementById('cmp-segment');
-  if(seg && !seg.querySelector('button.on')){
-    var thisM = seg.querySelector('button[data-range="thisM"]'); if(thisM) thisM.classList.add('on');
+  if(seg){
+    var active = seg.querySelector('button.on');
+    if(!active){
+      var thisM = seg.querySelector('button[data-slot="0"]');
+      if(thisM) thisM.classList.add('on');
+    }
   }
 }
 
@@ -5200,8 +6156,8 @@ async function renderCmpChart(){
   var sumEl = document.getElementById('cmp-chart-summary');
   if(!groupKey){ el.innerHTML='<div class="section-empty">เลือกกลุ่ม</div>'; return; }
   var ids = getColIds(groupKey);
-  var fromVal = document.getElementById('cmp-from').value || null;
-  var toVal = document.getElementById('cmp-to').value || null;
+  var fromVal = _normRangeStart(document.getElementById('cmp-from').value || '') || null;
+  var toVal = _normRangeEnd(document.getElementById('cmp-to').value || '') || null;
   var TC = getThemeColors();
   var MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   el.innerHTML = chartSkeletonHTML();
@@ -5243,7 +6199,9 @@ async function renderCmpChart(){
         var label;
         if(cmpState.period==='day') label=parseInt(p.split('-')[2])+'/'+parseInt(p.split('-')[1]);
         else label=MN[parseInt(p.split('-')[1])]+' '+p.slice(0,4);
-        // See the matching comment in the Electric app.
+        // hasData: this period actually had a reading (a filled-in gap from
+        // _cmpFillPeriods, or a future day in a this-month range, is false) so
+        // the average in buildChartOpts divides by real days only.
         return { label:label, value:valByPeriod[p]||0, hol:(cmpState.period==='day' && getDayType(p)==='holiday'), hasData: !!hasByPeriod[p] };
       });
     }
@@ -5347,8 +6305,8 @@ function rdShowAdmin(){
   const title = document.getElementById('rd-login-title');
   const sub = document.getElementById('rd-login-subtitle');
   if (tag)   tag.textContent   = 'Admin access';
-  if (title) title.textContent = 'Administrator sign-in';
-  if (sub)   sub.textContent   = 'สำหรับผู้ดูแลระบบ / ทีม IT';
+  if (title) title.textContent = 'System Administrator sign-in';
+  if (sub)   sub.textContent   = 'จัดการมิเตอร์และตั้งค่าระบบ';
 }
 function rdShowRecorder(){
   showRecorderLogin();
@@ -5356,7 +6314,7 @@ function rdShowRecorder(){
   const title = document.getElementById('rd-login-title');
   const sub = document.getElementById('rd-login-subtitle');
   if (tag)   tag.textContent   = 'Recorder access';
-  if (title) title.textContent = 'Sign in to log readings';
+  if (title) title.textContent = 'Sign in to Input Records';
   if (sub)   sub.textContent   = 'กรอกรหัสผ่านทีมจดมิเตอร์เพื่อเริ่มบันทึกค่า';
 }
 function rdShowViewer(){
@@ -5365,8 +6323,8 @@ function rdShowViewer(){
   const title = document.getElementById('rd-login-title');
   const sub = document.getElementById('rd-login-subtitle');
   if (tag)   tag.textContent   = 'Report viewer';
-  if (title) title.textContent = 'Sign in to view reports';
-  if (sub)   sub.textContent   = 'สำหรับผู้บริหาร / ผู้ที่มาดูรายงานการใช้พลังงาน';
+  if (title) title.textContent = 'Sign in to view Reports & Analytics';
+  if (sub)   sub.textContent   = 'ดูรายงานและแนวโน้มการใช้พลังงาน';
 }
 // Keyboard: Enter in recorder passcode → submit
 document.addEventListener('DOMContentLoaded', () => {
@@ -5440,9 +6398,13 @@ setInterval(() => {
 async function onTabSummary(){
 
   if(!availableMonths) await loadAvailableMonths();
-  renderSummary();
+  buildMonthOptions(); populateZoneReportSelect(); loadReport(); loadZoneReport();
 }
-function onTabCost(){ /* no cost module in this build */ }
+async function onTabCost(){
+
+  if(!availableMonths) await loadAvailableMonths();
+  buildCostMonthOptions(); loadTariffs().then(() => { renderTariffForms(); loadCostData(); });
+}
 init();</script>
 </body>
 </html>
