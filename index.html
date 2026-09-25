@@ -922,10 +922,6 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 .chart-filters .chart-ctrl:first-of-type{margin-top:4px}
 /* See the matching comments in the Electric app. */
 .chart-desc{font-size:12px;color:var(--text-3);margin:-2px 0 12px;line-height:1.4}
-.rd-search-wrap{position:relative;display:flex;align-items:center}
-.rd-search-wrap>i{position:absolute;left:12px;color:var(--text-3);font-size:16px;pointer-events:none}
-.rd-search-input{width:100%;padding:11px 12px 11px 36px;background:var(--surface-2);border:1px solid var(--accent-border);border-radius:10px;color:var(--text-1);font-size:14px;font-family:inherit}
-.rd-search-input:focus{outline:none;border-color:var(--accent)}
 .rd-segment{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;margin-bottom:8px}
 .rd-segment button{flex:1;border:none;background:transparent;color:var(--text-2);font-size:13px;font-family:inherit;padding:8px 4px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
 .rd-segment button:hover{color:var(--text-1)}
@@ -1151,7 +1147,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
      the throw aborted logout before it cleared the stored token — the user
      appeared to stay logged in after signing out. Guarded below as well. -->
 <div id="session-expired-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99998;background:#3a2416;border-bottom:1px solid #92400e;color:#fbbf24;padding:9px 14px;font-size:13px;font-weight:600;text-align:center;">
-  ⚠️ เซสชันหมดอายุแล้ว — <button onclick="rdShowRecorder(); document.getElementById('login-gate').style.display='flex';" style="background:#fbbf24;color:#1a1206;border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;font-size:12px;margin-left:4px;">เข้าสู่ระบบใหม่</button>
+  ⚠️ เซสชันหมดอายุแล้ว — <button onclick="reopenLoginForExpiredRole()" style="background:#fbbf24;color:#1a1206;border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;font-size:12px;margin-left:4px;">เข้าสู่ระบบใหม่</button>
 </div>
 
 <!-- ── NEW HEADER + SIDEBAR DRAWER ── -->
@@ -1772,7 +1768,6 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
    ═══════════════════════════════════════════════════════════ */
 const APP_ID      = 'water-sr';   // must equal doGet's `app`; verified on load
 const APP_NS      = 'watersr';    // localStorage namespace — UNIQUE per app
-const APP_VERSION = '1.0.0';
 const SITE_NAME   = 'Water Meter';
 const SITE_CODE   = 'SR';
 const UNIT        = 'm³';
@@ -1784,7 +1779,7 @@ const ABNORMAL_MULTIPLIER = 5;
 const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // matches SESSION_TTL_SECONDS in Code.gs
 
 /* ── localStorage namespacing ──
-   All four apps share the ramesimct.github.io origin, so localStorage is
+   All four apps are served from one GitHub Pages origin, so localStorage is
    shared. Keys are prefixed per-app (APP_NS) to prevent cross-app collision.
    `theme` is intentionally left un-prefixed so the light/dark choice is shared. */
 function nsKey(k){ return APP_NS + ':' + k; }
@@ -1953,7 +1948,19 @@ function restoreSession(){
   }
   return true;
 }
+/* The session-expired banner used to always open the recorder form, so an
+   admin or viewer whose session ran out had to back out and pick their role
+   again. Remember who was signed in and reopen that role's form. */
+let _expiredRole = null;
+function reopenLoginForExpiredRole(){
+  const role = _expiredRole || appMode;
+  if(role === 'admin') rdShowAdmin();
+  else if(role === 'viewer') rdShowViewer();
+  else rdShowRecorder();
+  document.getElementById('login-gate').style.display = 'flex';
+}
 function showSessionExpiredBanner(){
+  _expiredRole = appMode;
   const el = document.getElementById('session-expired-banner');
   if(el) el.style.display = 'block';
   setWriteLock(true);      // an expired session must not be able to write
@@ -1964,10 +1971,9 @@ function hideSessionExpiredBanner(){
   setWriteLock(false);
 }
 
-/* Disable every control that writes data while the session is invalid.
-   The banner alone was only a label — the save/edit/delete buttons stayed
-   live, so an expired session could still modify the sheet for as long as
-   the server-side token happened to outlast the client's own timer. */
+/* Disable the recorder's save buttons while the session is invalid. The
+   banner alone was only a label. Admin edit/delete in the Data tab are not
+   locked here; the server rejects them with the expired token. */
 function setWriteLock(locked){
   const ids = ['save-btn','unable-btn'];
   ids.forEach(id => {
@@ -1977,7 +1983,6 @@ function setWriteLock(locked){
       el.title = locked ? 'เซสชันหมดอายุ — กรุณาเข้าสู่ระบบใหม่' : '';
     }
   });
-  document.querySelectorAll('[data-write-action]').forEach(el => { el.disabled = locked; });
   window.__writeLocked = !!locked;
 }
 function checkSessionExpiry(){
@@ -2032,6 +2037,14 @@ function showRecorderLogin(fromExpiredBanner){
   }
   setTimeout(() => document.getElementById('recorder-pass')?.focus(), 100);
 }
+/* Device token for the login lockout (see _deviceNonceIfValid in Code.gs).
+   Stored per username in this app's localStorage namespace and NOT cleared on
+   logout: it identifies this device as one that has signed in before, which
+   keeps it out of the shared lockout an outside guesser can trigger. */
+function _devTokKey(u){ return 'devtok:' + String(u || '').toLowerCase(); }
+function getDeviceToken(u){ try { return lsGetRaw(_devTokKey(u)) || ''; } catch(e){ return ''; } }
+function saveDeviceToken(u, t){ if(!t) return; try { lsSetRaw(_devTokKey(u), t); } catch(e){ /* storage full — stays untrusted */ } }
+
 async function handleRecorderLogin(){
   const passVal  = document.getElementById('recorder-pass').value.trim();
   const errDiv   = document.getElementById('recorder-login-err');
@@ -2041,13 +2054,13 @@ async function handleRecorderLogin(){
   const originalHTML = loginBtn.innerHTML;
   loginBtn.disabled = true; loginBtn.innerHTML = '⏳ กำลังตรวจสอบ...';
   try{
-    const res = await apiPost({ action:'login', username:'recorder', password:passVal, meterIds: subs.map(s => s.id) });
+    const res = await apiPost({ action:'login', username:'recorder', password:passVal, deviceToken: getDeviceToken('recorder'), meterIds: subs.map(s => s.id) });
     if(res && res.success){
+      saveDeviceToken('recorder', res.deviceToken);
       currentUser = res.name || 'ทีมจดมิเตอร์';
       sessionToken = res.token || null;
       persistSession(res.token, res.role || 'recorder', currentUser);
       applyAppMode('basic');
-      lsSetRaw('loginMode','basic');
       document.getElementById('recorder-pass').value = '';
       closeLoginGate();
       // Meter status came back with the login response — apply directly instead
@@ -2118,13 +2131,13 @@ async function handleViewerLogin(){
   const originalHTML = loginBtn.innerHTML;
   loginBtn.disabled = true; loginBtn.innerHTML = '⏳ กำลังตรวจสอบ...';
   try{
-    const res = await apiPost({ action:'login', username:'viewer', password:passVal });
+    const res = await apiPost({ action:'login', username:'viewer', password:passVal, deviceToken: getDeviceToken('viewer') });
     if(res && res.success && res.role === 'viewer'){
+      saveDeviceToken('viewer', res.deviceToken);
       currentUser = res.name || 'ผู้ดูรายงาน';
       sessionToken = res.token || null;
       persistSession(res.token, 'viewer', currentUser);
       applyAppMode('viewer');
-      lsSetRaw('loginMode','viewer');
       document.getElementById('viewer-pass').value = '';
       closeLoginGate();
       goTab('chart');   // the report views are what this role signs in for
@@ -2154,8 +2167,9 @@ async function handleLogin(){
   const originalHTML = loginBtn.innerHTML;
   loginBtn.disabled  = true; loginBtn.innerHTML = '⏳ กำลังตรวจสอบ...';
   try{
-    const res = await apiPost({ action:'login', username:userVal, password:passVal });
+    const res = await apiPost({ action:'login', username:userVal, password:passVal, deviceToken: getDeviceToken(userVal) });
     if(res && res.success && res.role === 'admin'){
+      saveDeviceToken(userVal, res.deviceToken);
       currentUser = res.name || userVal;
       sessionToken = res.token || null;
       persistSession(res.token, 'admin', currentUser);
@@ -2283,12 +2297,32 @@ const SLOW_ACTIONS = {
    single-use /exec redirect target 404s by the time the browser follows it.
    Everything goes through one chain so each call gets its full budget for its
    own work rather than spending it queued behind someone else's. */
-let _apiChain = Promise.resolve();
-function apiPost(body, retries = 2){
-  const run = () => _apiPostNow(body, retries);
-  const queued = _apiChain.then(run, run);
-  _apiChain = queued.catch(() => {});   // a failure must not break the chain
-  return queued;
+/* Two lanes, one worker: calls still run strictly one at a time (above), but
+   work the person initiated (login, saving readings, charts) always goes ahead
+   of background prefetches that haven't started yet. Before, one FIFO chain
+   let a slow background getRecentRecordsAll (45 s × 3 attempts ≈ 2+ minutes)
+   sit in front of a queued save or login. Background calls also get no
+   retries: they are optional, and every caller already has a fallback. An
+   in-flight call is never aborted — the server would keep executing it anyway. */
+const _apiFg = [], _apiBg = [];
+let _apiBusy = false;
+function apiPost(body, retries = 2, opts){
+  const background = !!(opts && opts.background);
+  return new Promise((resolve, reject) => {
+    (background ? _apiBg : _apiFg).push({ body, retries: background ? 0 : retries, resolve, reject });
+    _apiPump();
+  });
+}
+async function _apiPump(){
+  if(_apiBusy) return;
+  _apiBusy = true;
+  try{
+    while(_apiFg.length || _apiBg.length){
+      const job = _apiFg.length ? _apiFg.shift() : _apiBg.shift();
+      try { job.resolve(await _apiPostNow(job.body, job.retries)); }
+      catch(e){ job.reject(e); }   // a failure must not stop the worker
+    }
+  } finally { _apiBusy = false; }
 }
 
 async function _apiPostNow(body, retries = 2){
@@ -2322,7 +2356,7 @@ async function _apiPostNow(body, retries = 2){
    Only work the person actually initiated is allowed to trigger a logout. */
 async function apiPostAuthed(body, opts){
   const background = !!(opts && opts.background);
-  const res = await apiPost(Object.assign({}, body, { token: sessionToken }));
+  const res = await apiPost(Object.assign({}, body, { token: sessionToken }), undefined, { background });
   if(!res || res.success === false){
     const msg = (res && res.error) || 'การดำเนินการล้มเหลว';
     const isSessionErr = res && /session|เข้าสู่ระบบ/i.test(res.error || '');
@@ -2403,7 +2437,7 @@ async function loadMeterStatus(){
   }catch(e){ console.warn('⚠️ โหลดสถานะมิเตอร์ไม่ได้:', e.message); }
   // Month list is only needed by the admin report pickers — fetch it lazily
   // and never block the entry screen on it.
-  if(appMode === 'admin' && !availableMonths) loadAvailableMonths();
+  if((appMode === 'admin' || appMode === 'viewer') && !availableMonths) loadAvailableMonths();
   // Deliberately NOT awaited: this is a prefetch that saves a request when a
   // meter is later opened, not something the entry screen needs in order to
   // paint. Awaiting it here put a whole-sheet read on the critical path next
@@ -2794,7 +2828,7 @@ async function testConn(){
     box.innerHTML = `<div class="info-box">✅ เชื่อมต่อสำเร็จ — ${recNote}${subs.length} subs</div>`;
   }catch(e){
     setSyncStatus('error','ล้มเหลว');
-    box.innerHTML = `<div class="warn-box">❌ ${e.message}</div>`;
+    box.innerHTML = `<div class="warn-box">❌ ${esc(e.message)}</div>`;
   }
 }
 
@@ -2844,7 +2878,7 @@ function computeUsed(rawRecords){
       const diff = nextVal - parseFloat(rec.kwh);
       // A counter's difference IS meaningful (events elapsed), so it is
       // computed — but it is a count, not energy, and callers that total
-      // kWh must exclude it. See sumGroupOnDay().
+      // consumption must exclude it.
       rec.used = Math.max(0, diff) * (vt === 'counter' ? 1 : multiplier);
     });
   });
@@ -2913,14 +2947,39 @@ function renderAll(){
 
 /* See the matching comment in the Electric app. */
 function refreshSubChartIfVisible(){
-  if(typeof subChartInst !== 'undefined' && subChartInst){
-    /* See the matching comment in the Electric app: clear the per-meter store
-       so a local mutation isn't masked by its pre-mutation copy. */
-    subChartRecords = {};
-    _aggCache = {};
-    _subChartStructKey = null;
-    try { renderSubChart(); } catch(e){ /* chart redraw is best-effort */ }
+  if(typeof subChartInst === 'undefined' || !subChartInst) return;
+  /* Keep the per-meter store and reconcile it with local changes, instead of
+     clearing it. Clearing made getSubRecs fall back to the global `records`
+     array, which is empty for a viewer and for an admin who hasn't opened the
+     Data tab (the chart tab no longer loads the whole sheet) — so any
+     loadFromServer, 🔄, cache flush or edit turned a working chart into
+     "ไม่มีข้อมูล". Re-fetching from the server here isn't safe either: this runs
+     optimistically BEFORE an edit/delete reaches the server, so it would fetch
+     the pre-change rows.
+     Local edits and deletes are only possible with `records` loaded (Data tab),
+     so: when it is loaded, merge it over the store — edited rows take the local
+     version, rows missing locally inside the loaded window are treated as
+     deleted, rows older than the window are kept. When it isn't loaded, nothing
+     on this device could have changed the meter's rows, so the store is kept. */
+  const meterId = (document.getElementById('chart-sub') || {}).value;
+  const stored = meterId ? subChartRecords[meterId] : null;
+  if(stored && _adminRecordsLoaded){
+    const from = recordsWindowFrom || '';           // '' = whole sheet loaded
+    const local = new Map(records.filter(r => r.meterId === meterId).map(r => [String(r.id), r]));
+    const merged = [];
+    stored.forEach(r => {
+      const id = String(r.id);
+      if(local.has(id)){ merged.push(Object.assign({}, local.get(id))); local.delete(id); }
+      else if(from && String(r.date) < from){ merged.push(Object.assign({}, r)); }   // outside the loaded window — can't have changed here
+      // else: inside the loaded window but gone locally → deleted on this device
+    });
+    local.forEach(r => merged.push(Object.assign({}, r)));   // added or moved to this meter locally
+    merged.sort((a,b) => (String(a.date)+' '+String(a.time)).localeCompare(String(b.date)+' '+String(b.time)));
+    subChartRecords[meterId] = computeUsed(merged);
   }
+  _aggCache = {};              // rows may have changed — recompute aggregates
+  _subChartStructKey = null;   // force a clean rebuild
+  try { renderSubChart(); } catch(e){ /* chart redraw is best-effort */ }
 }
 
 const TAB_ORDER = ["entry","data","chart","summary","qr","settings"];
@@ -2950,7 +3009,7 @@ function goTab(name){
        pulls the full record set; nothing here needs it. Fetches only the light
        availableMonths list for picker defaults. */
     (async () => {
-      if(appMode === 'admin' && !availableMonths) await loadAvailableMonths();
+      if((appMode === 'admin' || appMode === 'viewer') && !availableMonths) await loadAvailableMonths();
       populateDDs(); setSubQuick('thisM'); buildCompareGroupOptions(); initG9Pickers(); initCmpPickers();
       var subSeg = document.getElementById('sub-segment');
       if(subSeg && !subSeg.querySelector('button.on')){ var d = subSeg.querySelector('button[data-range="thisM"]'); if(d) d.classList.add('on'); }
@@ -2977,17 +3036,33 @@ async function addCalendarDay(){
   const note = document.getElementById('cal-note').value.trim();
   if(!date) return toast('เลือกวันที่ด้วย','err');
   const idx = workCalendar.findIndex(c => c.date === date);
+  const before = idx >= 0 ? Object.assign({}, workCalendar[idx]) : null;   // for rollback on failure
   if(idx >= 0) workCalendar[idx] = { date, type, note }; else workCalendar.push({ date, type, note });
   persist(); renderCalendarList();
   document.getElementById('cal-date').value = ''; document.getElementById('cal-note').value = '';
   toast('✅ เพิ่มวันพิเศษแล้ว','ok');
-  try{ await apiPostAuthed({ action:'setCalendarDay', date, type, note }); invalidateSummaryCache('setCalendarDay:'+date); }catch(e){ toast('⚠️ Sync ปฏิทินล้มเหลว: ' + e.message,'warn'); }
+  try{ await apiPostAuthed({ action:'setCalendarDay', date, type, note }); invalidateSummaryCache('setCalendarDay:'+date); }
+  catch(e){
+    // Undo locally so the device doesn't keep a day the Sheet never got.
+    workCalendar = workCalendar.filter(c => c.date !== date);
+    if(before) workCalendar.push(before);
+    persist(); renderCalendarList();
+    toast('⚠️ บันทึกลงชีทไม่สำเร็จ — ยกเลิกการเปลี่ยนแปลงในเครื่องแล้ว: ' + (e.message || ''),'err');
+  }
 }
 async function removeCalendarDay(date){
   if(!confirm(`ลบวันพิเศษ ${fmtDate(date)}?`)) return;
+  const removed = workCalendar.find(c => c.date === date);
   workCalendar = workCalendar.filter(c => c.date !== date);
   persist(); renderCalendarList(); toast('ลบแล้ว');
-  try{ await apiPostAuthed({ action:'deleteCalendarDay', date }); invalidateSummaryCache('deleteCalendarDay:'+date); }catch(e){}
+  try{ await apiPostAuthed({ action:'deleteCalendarDay', date }); invalidateSummaryCache('deleteCalendarDay:'+date); }
+  catch(e){
+    // Used to be swallowed silently, leaving the day gone here but still in the
+    // Sheet. Put it back so the device matches the Sheet, and say so.
+    if(removed && !workCalendar.some(c => c.date === date)) workCalendar.push(removed);
+    persist(); renderCalendarList();
+    toast('⚠️ ลบจากชีทไม่สำเร็จ — คืนวันนี้ในเครื่องแล้ว: ' + (e.message || ''),'err');
+  }
 }
 function renderCalendarList(){
   const box = document.getElementById('cal-list');
@@ -3163,7 +3238,7 @@ async function retryLoadHistory(){
   const box = document.getElementById('history-error-box');
   if(box) box.innerHTML = '⏳ กำลังโหลดประวัติอีกครั้ง...';
   try{
-    activeSubRecent = await loadRecentForSub(activeSub.id, 5);
+    activeSubRecent = _recomputeRecentUsed(await loadRecentForSub(activeSub.id, 5), activeSub.id);
     historyLoadFailed = false;
     toast('✅ โหลดประวัติสำเร็จ','ok');
   }catch(e){
@@ -3205,7 +3280,7 @@ async function selectSub(meterId){
   historyLoadFailed = false;
   // Served from the bulk set when available — no network call on meter open.
   if(bulkRecent && Object.prototype.hasOwnProperty.call(bulkRecent, activeSub.id)){
-    activeSubRecent = bulkRecent[activeSub.id] || [];
+    activeSubRecent = _recomputeRecentUsed(bulkRecent[activeSub.id] || [], activeSub.id);   // server `used` has no zero guard
     applyReadingLabel();
     applyHistoryLoadState(); updateMeterSummary(); renderRecent();
     const sbFast = document.getElementById('save-btn');
@@ -3213,7 +3288,7 @@ async function selectSub(meterId){
     return;
   }
   try{
-    activeSubRecent = await loadRecentForSub(activeSub.id, 5);
+    activeSubRecent = _recomputeRecentUsed(await loadRecentForSub(activeSub.id, 5), activeSub.id);
   }catch(e){
     historyLoadFailed = true;
     activeSubRecent = [];
@@ -3567,6 +3642,15 @@ async function deleteRecord(id){
     invalidateSummaryCache('deleteRecord:'+id);
     setSyncStatus('ok','ลบสำเร็จ');
   }catch(e){
+    // "Not found" means the row is already gone on the server — typically the
+    // first attempt deleted it but its response was lost, and the automatic
+    // retry then found nothing. That is the outcome we wanted, so don't
+    // resurrect a row that no longer exists in the Sheet.
+    if(/ไม่พบข้อมูลที่ต้องการลบ/.test((e && e.message) || '')){
+      invalidateSummaryCache('deleteRecord(already gone):'+id);
+      setSyncStatus('ok','ลบสำเร็จ');
+      return;
+    }
     // Put it back by identity, not by the position it used to occupy:
     // computeUsed() has regrouped the array since, so that index now belongs
     // to a different record and splicing there would corrupt the neighbour.
@@ -3598,7 +3682,8 @@ async function saveEditSub(){
   const multiplier = parseFloat(document.getElementById('esub-multiplier').value);
   if(!name || !zone) return toast('⚠️ กรุณากรอกชื่อ Meter และ Zone ให้ครบ','err');
   if(!isFinite(multiplier) || multiplier <= 0) return toast('⚠️ ตัวคูณต้องมากกว่า 0','err');
-  const updatedSub = { ...subs[editSubIndex], name, zone, decimal, multiplier };
+  const prevSub = subs[editSubIndex];                         // for rollback on failure
+  const updatedSub = { ...prevSub, name, zone, decimal, multiplier };
   subs[editSubIndex] = updatedSub; persist(); closeEditSub();
   records = computeUsed(records); persist();
   renderSubList(); renderZoneAreas(); populateDDs(); renderAll();
@@ -3607,7 +3692,16 @@ async function saveEditSub(){
   try{
     await apiPostAuthed({ action:'updateMeterConfig', meter:updatedSub });
     setSyncStatus('ok','บันทึกข้อมูล Meter ลงแผ่นชีทสำเร็จ');
-  }catch(e){ setSyncStatus('error','บันทึกลงชีทไม่สำเร็จ (แต่เซฟเก็บในแคชแล้ว)'); }
+  }catch(e){
+    // Keeping the unsaved config "in cache" meant this device silently disagreed
+    // with the Sheet (and every other device) until the next full load. Revert.
+    const i = subs.findIndex(s => s.id === prevSub.id);
+    if(i >= 0) subs[i] = prevSub;
+    records = computeUsed(records); persist();
+    renderSubList(); renderZoneAreas(); populateDDs(); renderAll();
+    setSyncStatus('error','บันทึกลงชีทไม่สำเร็จ — คืนค่าเดิมในเครื่องแล้ว');
+    toast('⚠️ บันทึก Meter ไม่สำเร็จ: ' + (e.message || ''),'err');
+  }
 }
 
 /* ════════════ FILTER & DATA ════════════ */
@@ -3801,7 +3895,7 @@ async function exportExcel(){
   })));
   ws['!cols'] = Array(12).fill({ wch:18 });
   XLSX.utils.book_append_sheet(wb, ws, hasFilter?'Filtered_Records':'All_Records');
-  XLSX.writeFile(wb, `Meter_${hasFilter?'Filtered_':''}${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `Meter_${hasFilter?'Filtered_':''}${ymdLocal()}.xlsx`);
   toast(`✅ Export ${dataToExport.length} rows${hasFilter?' (filtered)':''}`, 'ok');
 }
 function exportJSON(){
@@ -3836,7 +3930,11 @@ async function clearServerCache(){
   setSyncStatus('busy','กำลังล้าง cache เซิร์ฟเวอร์...');
   try{
     const res = await apiPostAuthed({ action:'flushCaches' });
-    toast('🗑 ล้าง cache แล้ว: ' + (res.cleared || []).join(', '),'ok');
+    if(res.failed && res.failed.length){
+      toast('⚠️ ล้าง cache ไม่ครบ — ไม่สำเร็จ: ' + res.failed.join(' · '),'warn');
+    } else {
+      toast('🗑 ล้าง cache แล้ว: ' + (res.cleared || []).join(', '),'ok');
+    }
     setSyncStatus('ok','ล้าง cache แล้ว — กำลังโหลดใหม่');
     _adminRecordsLoaded = false; bulkRecent = null; availableMonths = null;
     await loadFromServer();
@@ -3867,6 +3965,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const recorderPassEl = document.getElementById('recorder-pass');
   if(recorderPassEl) recorderPassEl.addEventListener('keydown', e => { if(e.key === 'Enter') handleRecorderLogin(); });
+  const viewerPassEl = document.getElementById('viewer-pass');
+  if(viewerPassEl) viewerPassEl.addEventListener('keydown', e => { if(e.key === 'Enter') handleViewerLogin(); });
 });
 
 // init() is called at the very end of the concatenated script (core-tail.js),
@@ -3897,8 +3997,9 @@ document.addEventListener('DOMContentLoaded', () => {
    second row. That is what makes retrying safe to do automatically.
    ════════════════════════════════════════════════════════════ */
 const QUEUE_KEY          = 'sendQueue';
-const QUEUE_RETRY_MS     = 30000;   // background sweep interval
+const QUEUE_RETRY_MS     = 10000;   // background sweep interval (was 30s — too slow for a 100+ meter round)
 const QUEUE_MAX_ATTEMPTS = 5;       // after this it waits for a manual push
+const QUEUE_BATCH_SIZE   = 25;      // records per saveRecordsBatch call
 
 let sendQueue = [];
 let _queueTimer = null;
@@ -3909,6 +4010,12 @@ function loadQueue(){
     const raw = lsGetRaw(QUEUE_KEY);
     sendQueue = raw ? (JSON.parse(raw) || []) : [];
   } catch(e){ sendQueue = []; }
+  // App open and login are a fresh start for items that failed for transient
+  // reasons (network, or a session that expired mid-round — the server rejects
+  // the whole batch, which counted against every reading in it). Without this
+  // they stayed parked after re-login and only a manual "ส่งเดี๋ยวนี้" sent
+  // them. Records the server itself rejected stay parked for a manual push.
+  sendQueue.forEach(q => { if(!q.rejected) q.attempts = 0; });
   return sendQueue;
 }
 function persistQueue(){
@@ -3922,33 +4029,103 @@ function enqueueRecord(rec){
   flushQueue();               // fire and forget
 }
 
-/* Try to send everything waiting. Serialised: the API queue upstream already
-   funnels calls one at a time, and sending in order keeps a meter's readings
-   in the order they were taken. */
+/* Set when the backend answers "Unknown action" to saveRecordsBatch — i.e. the
+   frontend was deployed before the Code.gs that adds the batch endpoint. From
+   then on this session sends one record at a time via the original saveRecord
+   endpoint, so readings keep reaching the Sheet regardless of deploy order
+   instead of piling up and parking in the queue. */
+let _batchUnsupported = false;
+async function _sendOneLegacy(it){
+  const r = it.rec;
+  const payload = { id:r.id, meterId:r.meterId, meterName:r.meterName, zone:r.zone,
+                    date:r.date, time:r.time, kwh:r.kwh, user:r.user, note:r.note,
+                    ts:r.ts, editedTs:'', editedBy:'' };
+  const res = await apiPost({ action:'saveRecord', record:payload, token: sessionToken });
+  if(!res || res.success === false) throw new Error((res && res.error) || 'บันทึกไม่สำเร็จ');
+}
+
+/* Send everything waiting, oldest first, in batches of QUEUE_BATCH_SIZE (one
+   saveRecordsBatch call each). Batches go out one after another, so a meter's
+   readings still reach the Sheet in the order they were taken. */
 async function flushQueue(manual){
   if(_queueRunning) return;
   if(!sendQueue.length) return;
   if(!sessionToken){ renderQueueBanner(); return; }
   _queueRunning = true;
   try{
+    // Send in batches instead of one record per round-trip. A 100+ meter round
+    // used to fire 100+ serial /exec calls (minutes total), so the tail never
+    // reached the server before the app closed. One batch call carries many
+    // records; the server returns a per-record result so we drop exactly the
+    // saved/duplicate ones and keep only real failures queued.
     while(sendQueue.length){
-      const item = sendQueue[0];
-      if(!manual && item.attempts >= QUEUE_MAX_ATTEMPTS) break;   // parked; wait for a manual push
+      if(_batchUnsupported){
+        const it = sendQueue.find(q => manual || q.attempts < QUEUE_MAX_ATTEMPTS);   // skip parked, same as batch mode
+        if(!it) break;
+        try{
+          await _sendOneLegacy(it);
+          sendQueue.splice(sendQueue.indexOf(it), 1); persistQueue();
+          invalidateSummaryCache('saveRecord:'+it.rec.meterId+'@'+it.rec.date);
+        }catch(e){
+          it.attempts++; it.lastError = e.message || 'error'; persistQueue();
+          break;
+        }
+        continue;
+      }
+      // Take a window of not-yet-parked items from the front.
+      const batch = [];
+      for(let i=0; i<sendQueue.length && batch.length<QUEUE_BATCH_SIZE; i++){
+        // Skip parked items instead of stopping at them. Stopping meant one reading
+        // the server keeps rejecting (e.g. its meter was removed from _METERS)
+        // blocked every reading queued after it — they never sent and were lost
+        // when the app closed. Parked items wait for a manual push.
+        if(!manual && sendQueue[i].attempts >= QUEUE_MAX_ATTEMPTS) continue;
+        batch.push(sendQueue[i]);
+      }
+      if(!batch.length) break;   // nothing sendable left (all parked)
       try{
-        const r = item.rec;
-        const payload = { id:r.id, meterId:r.meterId, meterName:r.meterName, zone:r.zone,
-                          date:r.date, time:r.time, kwh:r.kwh, user:r.user, note:r.note,
-                          ts:r.ts, editedTs:'', editedBy:'' };
-        const res = await apiPost({ action:'saveRecord', record:payload, token: sessionToken });
+        const records = batch.map(it => {
+          const r = it.rec;
+          return { id:r.id, meterId:r.meterId, meterName:r.meterName, zone:r.zone,
+                   date:r.date, time:r.time, kwh:r.kwh, user:r.user, note:r.note,
+                   ts:r.ts, editedTs:'', editedBy:'' };
+        });
+        const res = await apiPost({ action:'saveRecordsBatch', records: records, token: sessionToken });
+        if(res && res.success === false && /Unknown action/i.test(res.error || '')){
+          _batchUnsupported = true;   // backend predates the batch endpoint — fall back, don't count as a failure
+          continue;
+        }
         if(!res || res.success === false) throw new Error((res && res.error) || 'บันทึกไม่สำเร็จ');
-        sendQueue.shift();
+        // Drop the records the server confirmed (saved or duplicate); keep the
+        // rest queued with an incremented attempt count.
+        const byId = {};
+        (res.results || []).forEach(r => { if(r && r.id) byId[String(r.id)] = r; });
+        const affectedMonths = {};
+        for(const it of batch){
+          const rr = byId[String(it.rec.id)];
+          if(rr && rr.success){
+            const idx = sendQueue.indexOf(it);
+            if(idx >= 0) sendQueue.splice(idx, 1);
+            affectedMonths[it.rec.meterId+'@'+it.rec.date] = true;
+          } else {
+            // The server looked at this record and rejected it (validation,
+            // unknown meter). Retrying unchanged can't succeed, so park it now
+            // rather than letting it take a batch slot for 5 more sweeps.
+            it.attempts = QUEUE_MAX_ATTEMPTS;
+            it.rejected = true;   // server-side rejection — stays parked across reloads (see loadQueue)
+            it.lastError = (rr && rr.error) || 'บันทึกไม่สำเร็จ';
+          }
+        }
         persistQueue();
-        invalidateSummaryCache('saveRecord:'+r.meterId+'@'+r.date);
+        Object.keys(affectedMonths).forEach(k => invalidateSummaryCache('batch:'+k));
+        // If nothing in this window got removed, stop to avoid a tight loop.
+        if(batch.every(it => sendQueue.indexOf(it) >= 0)) break;
       }catch(e){
-        item.attempts++;
-        item.lastError = e.message || 'error';
+        // Whole-batch failure (network/timeout): bump attempts on the window
+        // and stop; the timer retries.
+        batch.forEach(it => { it.attempts++; it.lastError = e.message || 'error'; });
         persistQueue();
-        break;                 // stop the sweep; the timer will come back
+        break;
       }
     }
   } finally {
@@ -3969,11 +4146,15 @@ function renderQueueBanner(){
   const stuck = sendQueue.filter(q => q.attempts >= QUEUE_MAX_ATTEMPTS).length;
   el.style.display = 'block';
   el.className = stuck ? 'warn-box' : 'info-box';
-  const err = stuck ? ` · ล่าสุด: ${esc(sendQueue[0].lastError || '')}` : '';
+  // Name the meter and reason of the first stuck item (it is no longer
+  // necessarily at the front, since sending now continues past parked items).
+  const firstStuck = stuck ? sendQueue.find(q => q.attempts >= QUEUE_MAX_ATTEMPTS) : null;
+  const err = firstStuck ? ` · ${esc(firstStuck.rec.meterId || '')}: ${esc(firstStuck.lastError || '')}` +
+                           (stuck > 1 ? ` (และอีก ${stuck-1} รายการ)` : '') : '';
   el.innerHTML =
     (stuck ? '⚠️ ' : '⏳ ') +
     `<strong>รอส่ง ${sendQueue.length} รายการ</strong>` +
-    (stuck ? ' — ส่งไม่สำเร็จ' + err : ' — กำลังส่งเบื้องหลัง') +
+    (stuck ? ` — ส่งไม่สำเร็จ ${stuck} รายการ` + err : ' — กำลังส่งเบื้องหลัง') +
     ` <button class="btn btn-yellow btn-sm" style="margin-left:8px" onclick="flushQueue(true)">📤 ส่งเดี๋ยวนี้</button>` +
     ` <button class="btn btn-ghost btn-sm" onclick="showQueueDetail()">ดูรายการ</button>`;
 }
@@ -4507,8 +4688,9 @@ function buildChartOpts(dataPoints, state, TC){
 
   /* Cap the Y axis just above the tallest value (bar or the average line,
      whichever is higher) so bars fill the plot instead of sitting at ~40%
-     height. ApexCharts' automatic max leaves a lot of empty headroom; pinning
-     it to peak × 1.15 keeps a small margin above the top bar without the waste.
+     height. ApexCharts' automatic max leaves a lot of empty headroom; rounding
+     peak × 1.1 up with _niceCeil keeps a small margin and lands the top tick on
+     a round number.
      Falls back to undefined (auto) when there's no positive value, so an
      all-zero range still renders sanely. */
   let _peak = 0;
@@ -4675,7 +4857,7 @@ async function renderSubChart(){
       subChartInst.render();
       _subChartStructKey = structKey;
     }
-  }).catch(function(e){ el.innerHTML = '<div class="warn-box">❌ โหลดกราฟไม่ได้: '+(e&&e.message||'')+'</div>'; });
+  }).catch(function(e){ el.innerHTML = '<div class="warn-box">❌ โหลดกราฟไม่ได้: '+esc(e&&e.message||'')+'</div>'; });
   sumEl.innerHTML = built.summaryHtml;
 }
 var g9State = { period:'day', sort:'default', showPct:false };
@@ -4858,7 +5040,7 @@ async function renderG9Chart(){
     g9ChartInst.render();
     sumEl.innerHTML = '<span class="chip chip-green">'+UNIT_ICON+' รวม '+Math.round(total).toLocaleString()+' kWh</span> '+
       '<span class="chip" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border)">🏭 สูงสุด: '+top.name+'</span>';
-  }catch(e){ el.innerHTML='<div class="warn-box">❌ '+e.message+'</div>'; }
+  }catch(e){ el.innerHTML='<div class="warn-box">❌ '+esc(e.message)+'</div>'; }
 }
 
 function buildCompareGroupOptions(){
@@ -4993,9 +5175,9 @@ function meterUsedOnDay(meterMap, meterId, dateStr, allDates){
 
 var cmpState = { period:'day', type:'bar', showAvg:true, showHol:true };
 /* Rounds a max value UP to a "nice" round number so the axis ticks land on
-   clean figures (250,000 rather than 229,658). Picks a step of 1, 2, or 5 ×
-   the appropriate power of ten — the steps people naturally read a scale in —
-   and rounds the value up to a multiple of it. */
+   clean figures (250,000 rather than 229,658). Uses a fine ladder of steps
+   (1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10 × the power of ten) so the top of the axis
+   stays close to the peak instead of jumping, e.g. 219k → 500k. */
 function _niceCeil(v){
   v = Number(v) || 0;
   if(v <= 0) return 0;
@@ -5281,7 +5463,7 @@ async function renderCmpChart(){
     cmpChartInst = new ApexCharts(el, built.chartOpts);
     cmpChartInst.render();
     sumEl.innerHTML = built.summaryHtml;
-  }catch(e){ el.innerHTML='<div class="warn-box">❌ '+e.message+'</div>'; }
+  }catch(e){ el.innerHTML='<div class="warn-box">❌ '+esc(e.message)+'</div>'; }
 }
 
 
@@ -5394,6 +5576,13 @@ function rdShowViewer(){
 }
 // Keyboard: Enter in recorder passcode → submit
 document.addEventListener('DOMContentLoaded', () => {
+  // NOTE: Enter-key handlers for #login-user / #login-pass / #recorder-pass
+  // are already bound by the ORIGINAL app.js (see its own DOMContentLoaded
+  // listener near the bottom of the file). Since our markup now reuses those
+  // exact IDs, binding them again here would double-fire handleLogin() /
+  // handleRecorderLogin() on every Enter press — so we deliberately don't.
+
+  // ESC closes drawer
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') rdCloseDrawer();
   });
@@ -5438,23 +5627,11 @@ function rdOpenFirstMatch(){
     .find(c => c.style.display !== 'none');
   if (first) first.click();
 }
-// Sync sync-dot status class from existing sync logic (poll)
-// The original code sets background-color; we mirror it as class for the new dot.
-setInterval(() => {
-  const dot = document.getElementById('sync-dot');
-  if (!dot) return;
-  const bg = getComputedStyle(dot).backgroundColor;
-  dot.classList.remove('ok','working','err');
-  // heuristic: existing app uses green/orange/red; classify by hue
-  const m = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!m) return;
-  const [_, r, g, b] = m.map(Number);
-  if (g > r && g > b) dot.classList.add('ok');
-  else if (r > 200 && g > 100 && b < 100) dot.classList.add('working');
-  else if (r > 200 && g < 100) dot.classList.add('err');
-}, 500);
 
 async function onTabSummary(){
+  // Load the month list first — initSummaryMonth (called by renderSummary)
+  // reads availableMonths for the month picker's min/max, and records aren't
+  // loaded on this tab. See the matching comment in the Electric app.
   if(!availableMonths) await loadAvailableMonths();
   renderSummary();
 }
