@@ -1168,7 +1168,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
           <path d="M12 2c-3.5 5-7 9.2-7 13.2A7 7 0 0 0 12 22a7 7 0 0 0 7-6.8C19 11.2 15.5 7 12 2Z"/>
         </svg>
       </div>
-      <div class="rd-brand-title" id="hdr-title">Electric Meter<span class="rd-brand-code" id="rd-brand-code">SR</span></div>
+      <div class="rd-brand-title" id="hdr-title">Water Meter<span class="rd-brand-code" id="rd-brand-code">SR</span></div>
     </div>
   </div>
 
@@ -4657,7 +4657,7 @@ async function exportSummaryT1(){
   const wb = XLSX.utils.book_new();
   const safeName = String(groupLabel).replace(/[^a-zA-Z0-9ก-๛]/g,'_').slice(0,25) || 'group';
   XLSX.utils.book_append_sheet(wb, ws, safeName);
-  XLSX.writeFile(wb, `SR-Water_T1_${groupLabel}_${summaryData.month}.xlsx`);
+  XLSX.writeFile(wb, `${SITE_CODE}-Water_T1_${groupLabel}_${summaryData.month}.xlsx`);
   toast('✅ Export ตาราง 1 สำเร็จ','ok');
 }
 
@@ -4695,7 +4695,7 @@ async function exportSummaryT2(){
   ws['!cols'] = [{wch:22}, ...days.map(() => ({wch:10})), {wch:14}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'ZoneDaily');
-  XLSX.writeFile(wb, `SR-Water_T2_${summaryData.month}.xlsx`);
+  XLSX.writeFile(wb, `${SITE_CODE}-Water_T2_${summaryData.month}.xlsx`);
   toast('✅ Export ตาราง 2 สำเร็จ','ok');
 }
 
@@ -5832,6 +5832,7 @@ function rdOpenFirstMatch(){
     .find(c => c.style.display !== 'none');
   if (first) first.click();
 }
+
 async function onTabSummary(){
   // Load the month list first — initSummaryMonth (called by renderSummary)
   // reads availableMonths for the month picker's min/max, and records aren't
