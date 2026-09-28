@@ -10,6 +10,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 
+/* ═══════════════════════════════════════════════════════════
+   REDESIGN LAYER — SESSION 1
+   Design tokens matched to the IMCT Consumption hub (navy + cyan + off-white),
+   with dark-mode parity. Component styles for the new header + sidebar drawer +
+   centered login. All original panel/card/button styles below remain untouched.
+   =========================================================== */
 :root {
   --rd-ink:          #0A1628;
   --rd-ink-2:        #3A4A5F;
@@ -1861,11 +1867,31 @@ function fmtUsedCell(used, meterId){
 
 /* See the matching comment in the Electric app. */
 function meterNameById(meterId){
-  const sub = subs.find(s => s.id === meterId);
+  const sub = subById(meterId);
   return sub ? sub.name : (meterId || '—');
 }
+/* O(1) meter lookup for the hot paths. subs.find() is a linear scan, and the
+   report/chart aggregation calls it several times per (meter × day) cell —
+   a year view over ~200 meters is tens of millions of comparisons, which
+   froze the main thread for seconds on a phone. The index is self-validating
+   rather than explicitly invalidated, so no call site that changes `subs` can
+   forget to reset it: reassignment or a length change (push/splice) rebuilds
+   it, and a hit whose slot no longer holds the same object (saveEditSub
+   replaces subs[i]) rebuilds it too. First match wins, same as find(). */
+let _subIdx = null, _subIdxSrc = null, _subIdxLen = -1;
+function _rebuildSubIdx(){
+  _subIdx = new Map();
+  subs.forEach((s, i) => { if(s && !_subIdx.has(s.id)) _subIdx.set(s.id, { i, s }); });
+  _subIdxSrc = subs; _subIdxLen = subs.length;
+}
+function subById(id){
+  if(_subIdxSrc !== subs || _subIdxLen !== subs.length) _rebuildSubIdx();
+  let e = _subIdx.get(id);
+  if(e && subs[e.i] !== e.s){ _rebuildSubIdx(); e = _subIdx.get(id); }
+  return e ? e.s : undefined;
+}
 function fmtNum(val, meterId){
-  const sub = subs.find(s => s.id === meterId);
+  const sub = subById(meterId);
   const dec = sub && sub.decimal !== undefined ? sub.decimal : 0;
   return parseFloat(val || 0).toFixed(dec);
 }
@@ -1957,7 +1983,7 @@ function reopenLoginForExpiredRole(){
   if(role === 'admin') rdShowAdmin();
   else if(role === 'viewer') rdShowViewer();
   else rdShowRecorder();
-  document.getElementById('login-gate').style.display = 'flex';
+  openLoginGate();
 }
 function showSessionExpiredBanner(){
   _expiredRole = appMode;
@@ -2017,9 +2043,7 @@ function logout(){
   hideSessionExpiredBanner();
   // Land on the three-way picker so recorder/viewer/admin are an explicit
   // choice, not a default someone has to notice a small link to get past.
-  const gate = document.getElementById('login-gate');
-  gate.style.display = 'flex';
-  gate.style.opacity = '1';
+  openLoginGate();
   backToChoose();
   const errA = document.getElementById('login-err');
   if(errA) errA.style.display = 'none';
@@ -2031,10 +2055,7 @@ function showRecorderLogin(fromExpiredBanner){
   document.getElementById('login-admin').style.display    = 'none';
   document.getElementById('login-viewer').style.display   = 'none';
   document.getElementById('login-recorder').style.display = 'block';
-  if(fromExpiredBanner){
-    const gate = document.getElementById('login-gate');
-    gate.style.display = 'flex'; gate.style.opacity = '1';
-  }
+  if(fromExpiredBanner) openLoginGate();
   setTimeout(() => document.getElementById('recorder-pass')?.focus(), 100);
 }
 /* Device token for the login lockout (see _deviceNonceIfValid in Code.gs).
@@ -2198,11 +2219,22 @@ function shakeInputs(){
     setTimeout(() => { el.style.animation = ''; }, 400);
   });
 }
+/* Closing fades the gate out and hides it 300 ms later. Anything that reopens
+   it inside that window (logout, an expired session) must cancel the pending
+   hide, or the gate vanishes right after it was shown — and a reopen that set
+   only display would stay stuck at opacity 0, invisible. */
+let _gateHideTimer = null;
+function openLoginGate(){
+  clearTimeout(_gateHideTimer); _gateHideTimer = null;
+  const gate = document.getElementById('login-gate');
+  gate.style.display = 'flex'; gate.style.opacity = '1';
+}
 function closeLoginGate(){
   const gate = document.getElementById('login-gate');
   gate.style.transition = 'opacity 0.3s';
   gate.style.opacity = '0';
-  setTimeout(() => { gate.style.display = 'none'; gate.style.opacity = '1'; }, 300);
+  clearTimeout(_gateHideTimer);
+  _gateHideTimer = setTimeout(() => { _gateHideTimer = null; gate.style.display = 'none'; gate.style.opacity = '1'; }, 300);
 }
 function applyAppMode(mode){
   appMode = mode;
@@ -2288,7 +2320,14 @@ const SLOW_ACTIONS = {
   getMeterStatus:      30000,
   getMonthlySummary:   30000,
   getAvailableMonths:  20000,
-  flushCaches:         30000
+  flushCaches:         30000,
+  /* Saves wait for the script lock (withLock: up to 15 s) before doing their
+     own work. At the 12 s default the client gave up while the server was
+     still waiting, then retried — queueing a second copy behind the first on
+     the same lock. The queue is already durable, so a longer wait costs
+     nothing; the server de-duplicates by id either way. */
+  saveRecordsBatch:    30000,
+  saveRecord:          30000
 };
 
 /* Apps Script runs one execution at a time per script. Issuing several heavy
@@ -2325,25 +2364,82 @@ async function _apiPump(){
   } finally { _apiBusy = false; }
 }
 
-async function _apiPostNow(body, retries = 2){
+async function _apiPostNow(body, retries = 2) {
   const timeoutMs = (body && SLOW_ACTIONS[body.action]) || 12000;
-  for(let attempt = 0; attempt <= retries; attempt++){
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
     const ctrl = new AbortController();
-    const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
-    try{
-      const res  = await fetch(API_URL, { method:'POST', body:JSON.stringify(body), signal:ctrl.signal });
+
+    let timedOut = false;
+
+    const tid = setTimeout(() => {
+      timedOut = true;
+      ctrl.abort();
+    }, timeoutMs);
+
+    try {
+      console.log(
+        `🌐 API ${body?.action} attempt ${attempt + 1}/${retries + 1} ` +
+        `(timeout ${timeoutMs}ms)`
+      );
+
+      const start = performance.now();
+
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        signal: ctrl.signal
+        // NO custom headers here. Any header such as Content-Type:
+        // application/json turns this into a non-simple CORS request, the
+        // browser sends an OPTIONS preflight first, and Apps Script cannot
+        // answer OPTIONS — every POST then fails with "Failed to fetch".
+        // A plain string body is sent as text/plain, which Apps Script reads
+        // fine via e.postData.contents.
+      });
+
+      const elapsed = Math.round(performance.now() - start);
+
       clearTimeout(tid);
-      if(!res.ok) throw new Error('HTTP ' + res.status);
+
+      if (!res.ok) {
+        throw new Error('HTTP ' + res.status);
+      }
+
       const data = await res.json();
-      if(data.status === 'error') throw new Error(data.message || 'Server error');
+
+      if (data.status === 'error') {
+        throw new Error(data.message || 'Server error');
+      }
+
+      console.log(
+        `✅ API ${body?.action} completed in ${elapsed}ms`
+      );
+
       return data;
-    }catch(e){
+
+    } catch (e) {
       clearTimeout(tid);
-      if(attempt === retries) throw e;
-      // Log retries: previously silent, which made a 404 in the console
-      // impossible to tell apart from a call that recovered on attempt 2.
-      console.warn('⚠️ apiPost[' + (body && body.action) + '] attempt ' + (attempt+1) + ' failed (' + e.message + ') — retrying...');
-      await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+
+      const error = timedOut
+        ? new Error(`Request timeout after ${timeoutMs}ms`)
+        : e;
+
+      if (attempt === retries) {
+        console.error(
+          `❌ apiPost[${body?.action}] failed after ${attempt + 1} attempts:`,
+          error
+        );
+        throw error;
+      }
+
+      console.warn(
+        `⚠️ apiPost[${body?.action}] attempt ${attempt + 1} failed ` +
+        `(${error.message}) — retrying...`
+      );
+
+      await new Promise(r =>
+        setTimeout(r, 600 * (attempt + 1))
+      );
     }
   }
 }
@@ -2423,18 +2519,29 @@ async function _loadBulkRecentInner(){
   return bulkRecent;
 }
 
-async function loadMeterStatus(){
-  // ONE request returns both maps (see getMeterStatus in Code.gs). Kept as a
-  // single round-trip on purpose: the /exec endpoint is the slowest hop and
-  // has shown intermittent 404s under parallel load, so we don't fan out here.
-  try{
-    const res = await apiPost({ action:'getMeterStatus', meterIds: subs.map(s => s.id) });
-    if(res && res.success){
-      if(res.status) meterStatus = res.status;
-      if(res.today)  meterStatusToday = res.today;
-      if(res.date)   loggingDayLabel = res.date;
-    }
-  }catch(e){ console.warn('⚠️ โหลดสถานะมิเตอร์ไม่ได้:', e.message); }
+/* `prefetched` is the doGet payload. A backend that folds meterStatus /
+   today / date / months into doGet saves this whole round trip (and the
+   getAvailableMonths one); an older backend leaves them out and the separate
+   call below still runs, so frontend and Code.gs can be deployed in any order. */
+async function loadMeterStatus(prefetched){
+  if(prefetched && prefetched.meterStatus){
+    meterStatus = prefetched.meterStatus;
+    if(prefetched.today) meterStatusToday = prefetched.today;
+    if(prefetched.date)  loggingDayLabel = prefetched.date;
+    if(Array.isArray(prefetched.months)) availableMonths = prefetched.months;
+  } else {
+    // ONE request returns both maps (see getMeterStatus in Code.gs). Kept as a
+    // single round-trip on purpose: the /exec endpoint is the slowest hop and
+    // has shown intermittent 404s under parallel load, so we don't fan out here.
+    try{
+      const res = await apiPost({ action:'getMeterStatus', meterIds: subs.map(s => s.id) });
+      if(res && res.success){
+        if(res.status) meterStatus = res.status;
+        if(res.today)  meterStatusToday = res.today;
+        if(res.date)   loggingDayLabel = res.date;
+      }
+    }catch(e){ console.warn('⚠️ โหลดสถานะมิเตอร์ไม่ได้:', e.message); }
+  }
   // Month list is only needed by the admin report pickers — fetch it lazily
   // and never block the entry screen on it.
   if((appMode === 'admin' || appMode === 'viewer') && !availableMonths) loadAvailableMonths();
@@ -2770,7 +2877,7 @@ function loadFromServer(){
       if(data.reportGroups && Array.isArray(data.reportGroups)) reportGroups = data.reportGroups;
       if(data.calendar     && Array.isArray(data.calendar))     workCalendar = data.calendar;
       persist(); isConnected = true; invalidateSummaryCache('loadFromServer');
-      await loadMeterStatus();
+      await loadMeterStatus(data);
       // records are fetched lazily by the tabs that need them (see ensureAdminRecords)
       renderAll();
       if(activeSub){
@@ -2806,7 +2913,7 @@ function refreshData(){
       if(data.reportGroups && Array.isArray(data.reportGroups)) reportGroups = data.reportGroups;
       if(data.calendar     && Array.isArray(data.calendar))     workCalendar = data.calendar;
       persist(); isConnected = true; invalidateSummaryCache('refreshData');
-      await loadMeterStatus();
+      await loadMeterStatus(data);
       // records are fetched lazily by the tabs that need them (see ensureAdminRecords)
       renderAll();
       setSyncStatus('ok',`โหลดสำเร็จ — ${subs.length} Meter`);
@@ -2988,8 +3095,10 @@ const TAB_ORDER = ["entry","data","chart","summary","qr","settings"];
    access control — someone could still call goTab('entry') from the console
    or a stale bookmark, so the boundary is enforced here too. */
 const ROLE_TABS = {
-  admin:    ['entry','data','chart','summary','cost','qr','settings'],
-  viewer:   ['chart','summary','cost'],
+  // No 'cost' here: the Water app has no cost tab, so a stray goTab('cost')
+  // falls back to the role's first tab instead of looking up a missing panel.
+  admin:    ['entry','data','chart','summary','qr','settings'],
+  viewer:   ['chart','summary'],
   basic:    ['entry']     // recorder
 };
 function goTab(name){
@@ -3005,14 +3114,30 @@ function goTab(name){
   if(tabEl) tabEl.classList.add('active');
   if(name === 'data')     { ensureAdminRecords(); renderData(); renderStats(); updateRecordWindowNotice(); }
   if(name === 'chart'){
-    /* See the matching comment in the Electric app — the chart tab no longer
-       pulls the full record set; nothing here needs it. Fetches only the light
-       availableMonths list for picker defaults. */
+    /* The chart tab no longer pulls the full record set (ensureAdminRecords /
+       getRawRecords, thousands of rows). Nothing here needs it anymore:
+       - the two group charts read server-side summaries (getSummaryCached),
+       - the per-meter chart fetches one meter at a time (getMeterRecords),
+       - the only remaining use was picker defaults in initG9Pickers, which
+         already prefer the lightweight availableMonths list.
+       So we fetch just that light month list instead. This removes a heavy,
+       fully redundant full-sheet read from every chart-tab open. (The Data
+       tab still calls ensureAdminRecords on its own, unchanged.) */
     (async () => {
       if((appMode === 'admin' || appMode === 'viewer') && !availableMonths) await loadAvailableMonths();
       populateDDs(); setSubQuick('thisM'); buildCompareGroupOptions(); initG9Pickers(); initCmpPickers();
+      // Light the per-meter segment to match its default range (this month),
+      // consistent with the group chart's segment default.
       var subSeg = document.getElementById('sub-segment');
-      if(subSeg && !subSeg.querySelector('button.on')){ var d = subSeg.querySelector('button[data-range="thisM"]'); if(d) d.classList.add('on'); }
+      if(subSeg && !subSeg.querySelector('button.on')){
+        var d = subSeg.querySelector('button[data-slot="0"]'); if(d) d.classList.add('on');
+      }
+      /* The card the person sees first — "กราฟเทียบการใช้ไฟฟ้าแต่ละกลุ่ม" — is
+         rendered to completion before the second chart even starts. Both used to
+         fire together; they hit getSummaryCached with different date ranges (so
+         different cache keys), meaning two heavy summary requests queued back to
+         back with no ordering guarantee. Awaiting the first means the chart at
+         the top of the screen is never left waiting behind one lower down. */
       await renderCmpChart(); renderG9Chart();
     })();
   }
@@ -3182,6 +3307,11 @@ function renderZoneAreas(){
       const isSel = activeSub && activeSub.id === s.id;
       const d = document.createElement('div');
       d.className = 'sub-card' + (isSel ? ' sel' : '') + (recordedToday ? ' today' : '');
+      // The search box promises "รหัส, ชื่อ, หรือโซน", but the card shows only
+      // the name and status, so matching on textContent could never find a
+      // meter by its id or zone (and "บันทึก" matched every card via the
+      // status line). Search reads this instead.
+      d.dataset.search = [s.id, s.name, s.zone, label].join(' ').toLowerCase();
       /* Name only. The card used to show the id above the name — "SUB-31"
          then "SUB NO.31" — which is the same information twice and pushed the
          name, the part a recorder actually reads, into second place. */
@@ -3197,6 +3327,10 @@ function renderZoneAreas(){
     block.appendChild(grid);
     container.appendChild(block);
   });
+  // A rebuild resets every card to visible, but the search box keeps its text —
+  // coming back from a meter showed "SUB-3" in the box over an unfiltered list.
+  const q = document.getElementById('rd-search-input');
+  if(q && q.value) rdApplySearch(q.value);
 }
 let historyLoadFailed = false;   // true when the per-meter history fetch failed
 
@@ -3270,7 +3404,9 @@ async function selectSub(meterId){
   sb.disabled  = true;
   sb.innerHTML = '⏳ กำลังโหลดประวัติมิเตอร์...';
   activeSubRecent = [];
-  updateMeterSummary(); renderRecent(); renderZoneAreas();
+  // No renderZoneAreas() here: the list is hidden while a meter is open, and
+  // backToList() rebuilds it — redrawing every card on each tap was pure cost.
+  updateMeterSummary(); renderRecent();
   // History load must succeed before entry is allowed. If it fails, the app
   // has no previous reading to compare against, so BOTH safety checks are
   // silently disabled — "value lower than last" and "abnormally high vs
@@ -3512,7 +3648,9 @@ async function doSaveRecord(sub, kwh, date, time, user, note){
   document.getElementById('in-note').value = '';
   document.getElementById('preview-box').style.display = 'none';
   setNow();
-  renderZoneAreas(); updateBadge(); updateMeterSummary(); renderRecent();
+  // The meter list is hidden behind the entry screen; backToList() redraws it
+  // with the new "recorded today" state, so no rebuild per save.
+  updateBadge(); updateMeterSummary(); renderRecent();
   toast('✅ บันทึกแล้ว','ok');
 
   const btn = document.getElementById('save-btn');
@@ -3825,9 +3963,15 @@ function renderQR(){
 function renderSubList(){
   document.getElementById('sub-count').textContent = subs.length;
   if(!subs.length){ document.getElementById('sub-list').innerHTML='<div class="section-empty">ยังไม่มี Meter</div>'; return; }
+  // One pass over records, not two filters per meter (O(meters × records)).
+  const stat = {};
+  records.forEach(r => {
+    const t = stat[r.meterId] || (stat[r.meterId] = { cnt:0, used:0 });
+    t.cnt++; t.used += parseFloat(r.used) || 0;
+  });
   document.getElementById('sub-list').innerHTML = subs.map((s,i) => {
-    const cnt       = records.filter(r => r.meterId === s.id).length;
-    const totalUsed = records.filter(r => r.meterId === s.id).reduce((a,r) => a+(parseFloat(r.used)||0), 0);
+    const cnt       = stat[s.id] ? stat[s.id].cnt  : 0;
+    const totalUsed = stat[s.id] ? stat[s.id].used : 0;
     const dec       = s.decimal !== undefined ? s.decimal : 0;
     return `<div class="sub-row">
       <div class="sub-row-info">
@@ -4035,12 +4179,19 @@ function enqueueRecord(rec){
    endpoint, so readings keep reaching the Sheet regardless of deploy order
    instead of piling up and parking in the queue. */
 let _batchUnsupported = false;
+/* Queue saves go out with no apiPost-level retries. The queue already retries
+   on its own timer and the server de-duplicates by id, so the extra attempts
+   bought nothing — but each one held the single foreground lane for up to the
+   30 s save timeout, so one failing batch could make a login or chart wait
+   ~90 s behind it. With 0, that wait is at most one timeout. */
+const QUEUE_SAVE_RETRIES = 0;
 async function _sendOneLegacy(it){
   const r = it.rec;
   const payload = { id:r.id, meterId:r.meterId, meterName:r.meterName, zone:r.zone,
                     date:r.date, time:r.time, kwh:r.kwh, user:r.user, note:r.note,
                     ts:r.ts, editedTs:'', editedBy:'' };
-  const res = await apiPost({ action:'saveRecord', record:payload, token: sessionToken });
+  // retries = 0: the queue is the retry loop (see QUEUE_SAVE_RETRIES).
+  const res = await apiPost({ action:'saveRecord', record:payload, token: sessionToken }, QUEUE_SAVE_RETRIES);
   if(!res || res.success === false) throw new Error((res && res.error) || 'บันทึกไม่สำเร็จ');
 }
 
@@ -4090,7 +4241,7 @@ async function flushQueue(manual){
                    date:r.date, time:r.time, kwh:r.kwh, user:r.user, note:r.note,
                    ts:r.ts, editedTs:'', editedBy:'' };
         });
-        const res = await apiPost({ action:'saveRecordsBatch', records: records, token: sessionToken });
+        const res = await apiPost({ action:'saveRecordsBatch', records: records, token: sessionToken }, QUEUE_SAVE_RETRIES);
         if(res && res.success === false && /Unknown action/i.test(res.error || '')){
           _batchUnsupported = true;   // backend predates the batch endpoint — fall back, don't count as a failure
           continue;
@@ -4908,9 +5059,8 @@ function initG9Pickers(){
   // one of the three that can't be typed into freely, so deriving it from
   // `records` would hard-block older years whenever the admin record window is
   // narrow. The chart data itself is fetched server-side per selected range.
-  var dates = [];
-  records.forEach(function(r){ var d = String(r.date).slice(0,10); if(d && dates.indexOf(d)<0) dates.push(d); });
-  dates.sort();
+  // Set, not indexOf — with the full history loaded this was O(records × days).
+  var dates = Array.from(new Set(records.map(function(r){ return String(r.date).slice(0,10); }).filter(Boolean))).sort();
 
   // Years that actually contain data — derived from the server-provided month
   // list, falling back to the loaded records if it hasn't arrived yet.
@@ -4929,9 +5079,28 @@ function initG9Pickers(){
     ySel.value = (prevYear && years.indexOf(prevYear) >= 0) ? prevYear : String(thisYear);
   }
 
-  if(!dates.length) return;
-  document.getElementById('g9-date').value = dates.length >= 2 ? dates[dates.length-2] : dates[dates.length-1];
-  var months = []; dates.forEach(function(d){ var m=d.slice(0,7); if(months.indexOf(m)<0) months.push(m); }); months.sort();
+  if(!dates.length){
+    /* The chart tab no longer loads the full `records` array, so derive the
+       default day from the latest available month instead of leaving the
+       picker blank (which showed nothing). Uses the last day of the newest
+       month with data, or today if that month is the current one. */
+    if(srcMonths.length){
+      var latestM = srcMonths.slice().sort()[srcMonths.length-1];
+      var now = new Date();
+      var curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+      var dEl = document.getElementById('g9-date');
+      if(dEl){
+        if(latestM === curM) dEl.value = ymdLocal(now);
+        else { var pp=latestM.split('-'); var last=new Date(+pp[0], +pp[1], 0).getDate(); dEl.value = latestM+'-'+String(last).padStart(2,'0'); }
+      }
+      var mEl = document.getElementById('g9-month'); if(mEl) mEl.value = latestM;
+    }
+    return;
+  }
+  // Default to the latest day that has data (the most recent reading), so the
+  // main-group chart opens on current data instead of a day back.
+  document.getElementById('g9-date').value = dates[dates.length-1];
+  var months = Array.from(new Set(dates.map(function(d){ return d.slice(0,7); }))).sort();
   document.getElementById('g9-month').value = months[months.length-1] || '';
 }
 
@@ -4973,7 +5142,7 @@ async function renderG9Chart(){
     var raw = res.summary || [];
     var meterMap = {};
     raw.forEach(function(r){ if(!meterMap[r.meterId]) meterMap[r.meterId]={}; meterMap[r.meterId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
-    var allPeriods = []; raw.forEach(function(r){ if(allPeriods.indexOf(r.period)<0) allPeriods.push(r.period); }); allPeriods.sort();
+    var allPeriods = Array.from(new Set(raw.map(function(r){ return r.period; }))).sort();   // Set, not indexOf: O(rows) instead of O(rows × periods)
     var countPeriods;
     if(g9State.period==='day') countPeriods = [pick];
     else countPeriods = allPeriods.filter(function(p){return p.startsWith(pick);});
@@ -5137,7 +5306,7 @@ function getColIds(key){
    at the start of a billing cycle, right after the monthly reset. */
 function _isUsableReading(meterId, v){
   if(v === null || v === undefined || isNaN(v)) return false;
-  const meter = subs.find(s => s.id === meterId);
+  const meter = subById(meterId);
   const vt = meterValueType(meter);
   if(vt === 'demand') return true;          // 0 is a real value at cycle start
   return Number(v) !== 0;
@@ -5151,7 +5320,25 @@ function _isUsableReading(meterId, v){
    Lives in core, not in a module: core-tail's chart aggregation calls it, so a
    build without the Electric summary module would otherwise crash. */
 function _countsTowardEnergy(meterId){
-  return meterValueType(subs.find(s => s.id === meterId)) === 'cumulative';
+  return meterValueType(subById(meterId)) === 'cumulative';
+}
+
+/* Position of dateStr in a sorted, de-duplicated period list. indexOf() made
+   every meterUsedOnDay/meterSpanOnDay call O(days); callers invoke those per
+   (meter × day), so a year view went quadratic in days. The map is cached per
+   array object and rebuilt if the array's length changes; callers build the
+   list once, sort it, and never mutate it afterwards. */
+const _dateIdxCache = new WeakMap();
+function _dateIndex(allDates, dateStr){
+  let m = _dateIdxCache.get(allDates);
+  if(!m || m.len !== allDates.length){
+    const map = new Map();
+    allDates.forEach((d, i) => { if(!map.has(d)) map.set(d, i); });
+    m = { map, len: allDates.length };
+    _dateIdxCache.set(allDates, m);
+  }
+  const i = m.map.get(dateStr);
+  return i === undefined ? -1 : i;
 }
 
 function meterUsedOnDay(meterMap, meterId, dateStr, allDates){
@@ -5159,11 +5346,11 @@ function meterUsedOnDay(meterMap, meterId, dateStr, allDates){
   if(!cur || !_isUsableReading(meterId, cur.firstKwh)) return null;
   // Reports and charts consume this directly; demand/snapshot have no daily
   // consumption to report, so they must not produce a number here either.
-  const _vt = meterValueType(subs.find(s => s.id === meterId));
+  const sub  = subById(meterId);
+  const _vt = meterValueType(sub);
   if(_vt === 'demand' || _vt === 'snapshot') return null;
-  const sub  = subs.find(s => s.id === meterId);
   const mult = sub?.multiplier !== undefined ? parseFloat(sub.multiplier) : 1;
-  const idx = allDates.indexOf(dateStr);
+  const idx = _dateIndex(allDates, dateStr);
   for(let k = idx+1; k < allDates.length; k++){
     const next = meterMap[meterId]?.[allDates[k]];
     if(next && _isUsableReading(meterId, next.firstKwh)){
@@ -5366,7 +5553,17 @@ function _cmpFillPeriods(allPeriods, fromVal, toVal, period){
   }
   var startM = (fromVal ? fromVal.slice(0,7) : (allPeriods[0]||'').slice(0,7));
   var endM   = (toVal   ? toVal.slice(0,7)   : (allPeriods[allPeriods.length-1]||'').slice(0,7));
-  if(!startM || !endM) return allPeriods.slice();
+  /* Fill every month in the SELECTED range, even months with no data — so
+     "this year" shows Jan–Dec of this year and "last year" shows Jan–Dec of
+     last year (all empty if there were no readings) instead of silently
+     collapsing to whatever data exists. The selected range (fromVal/toVal)
+     is the source of truth here, never allPeriods, which is why picking a year
+     with no data no longer falls back to showing the current year. */
+  if(!startM || !endM){
+    if(!allPeriods.length) return [];
+    startM = startM || allPeriods[0].slice(0,7);
+    endM   = endM   || allPeriods[allPeriods.length-1].slice(0,7);
+  }
   var sp = startM.split('-').map(Number);
   var ep = endM.split('-').map(Number);
   var out2 = [];
@@ -5393,9 +5590,15 @@ function initCmpPickers(){
   var last  = new Date(now.getFullYear(), now.getMonth()+1, 0);
   if(!fromEl.value) fromEl.value = ymdLocal(first);
   if(!toEl.value)   toEl.value   = ymdLocal(last);
+  // Light the segment that matches the default range (this month) so the
+  // control's highlight agrees with what the chart is actually showing.
   var seg = document.getElementById('cmp-segment');
-  if(seg && !seg.querySelector('button.on')){
-    var thisM = seg.querySelector('button[data-range="thisM"]'); if(thisM) thisM.classList.add('on');
+  if(seg){
+    var active = seg.querySelector('button.on');
+    if(!active){
+      var thisM = seg.querySelector('button[data-slot="0"]');
+      if(thisM) thisM.classList.add('on');
+    }
   }
 }
 
@@ -5406,8 +5609,8 @@ async function renderCmpChart(){
   var sumEl = document.getElementById('cmp-chart-summary');
   if(!groupKey){ el.innerHTML='<div class="section-empty">เลือกกลุ่ม</div>'; return; }
   var ids = getColIds(groupKey);
-  var fromVal = document.getElementById('cmp-from').value || null;
-  var toVal = document.getElementById('cmp-to').value || null;
+  var fromVal = _normRangeStart(document.getElementById('cmp-from').value || '') || null;
+  var toVal = _normRangeEnd(document.getElementById('cmp-to').value || '') || null;
   var TC = getThemeColors();
   var MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   el.innerHTML = chartSkeletonHTML();
@@ -5425,7 +5628,7 @@ async function renderCmpChart(){
     var raw = res.summary || [];
     var meterMap = {};
     raw.forEach(function(r){ if(!meterMap[r.meterId]) meterMap[r.meterId]={}; meterMap[r.meterId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
-    var allPeriods = []; raw.forEach(function(r){ if(allPeriods.indexOf(r.period)<0) allPeriods.push(r.period); }); allPeriods.sort();
+    var allPeriods = Array.from(new Set(raw.map(function(r){ return r.period; }))).sort();   // Set, not indexOf: O(rows) instead of O(rows × periods)
     var dataPoints;
     if(cmpState.period === 'year'){
       var displayPeriods = allPeriods.filter(function(p){
@@ -5449,7 +5652,9 @@ async function renderCmpChart(){
         var label;
         if(cmpState.period==='day') label=parseInt(p.split('-')[2])+'/'+parseInt(p.split('-')[1]);
         else label=MN[parseInt(p.split('-')[1])]+' '+p.slice(0,4);
-        // See the matching comment in the Electric app.
+        // hasData: this period actually had a reading (a filled-in gap from
+        // _cmpFillPeriods, or a future day in a this-month range, is false) so
+        // the average in buildChartOpts divides by real days only.
         return { label:label, value:valByPeriod[p]||0, hol:(cmpState.period==='day' && getDayType(p)==='holiday'), hasData: !!hasByPeriod[p] };
       });
     }
@@ -5611,7 +5816,7 @@ function rdApplySearch(q){
   let visible = 0;
   cards.forEach(card => {
     if (!query) { card.style.display = ''; visible++; return; }
-    const text = card.textContent.toLowerCase();
+    const text = card.dataset.search || card.textContent.toLowerCase();
     const show = text.includes(query);
     card.style.display = show ? '' : 'none';
     if (show) visible++;
@@ -5627,7 +5832,6 @@ function rdOpenFirstMatch(){
     .find(c => c.style.display !== 'none');
   if (first) first.click();
 }
-
 async function onTabSummary(){
   // Load the month list first — initSummaryMonth (called by renderSummary)
   // reads availableMonths for the month picker's min/max, and records aren't
