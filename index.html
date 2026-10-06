@@ -19,7 +19,7 @@
 :root {
   --rd-ink:          #0A1628;
   --rd-ink-2:        #3A4A5F;
-  --rd-ink-3:        #6B7A90;
+  --rd-ink-3:        #5B6A80;
   --rd-line:         #E5E9F0;
   --rd-line-2:       #F0F3F8;
   --rd-surface:      #FBFCFE;
@@ -60,7 +60,7 @@
 [data-theme="dark"] {
   --rd-ink:          #E8F0FF;
   --rd-ink-2:        #A8B4C8;
-  --rd-ink-3:        #6B7A90;
+  --rd-ink-3:        #8090A6;
   --rd-line:         #1E2A3D;
   --rd-line-2:       #172131;
   --rd-surface:      #0B1220;
@@ -212,6 +212,9 @@
 /* Mobile: hide search until user opens drawer */
 @media (max-width: 720px) {
   .rd-search { display: none; }
+  /* ...but not the meter search on the entry screen — on a phone it is the
+     only way to find a meter without scrolling through every card. */
+  .rd-search.rd-search-inline { display: block; }
   .rd-header { grid-template-columns: auto 1fr auto; padding: 0 12px; gap: 8px; }
   .rd-brand-title { font-size: 13px; }
 }
@@ -595,7 +598,7 @@
 #zone-areas .zone-title .zt-name { flex: 0 0 auto; }
 #zone-areas .zone-title .zt-count {
   font-family: var(--rd-font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--rd-ink-3);
   background: var(--rd-line-2);
@@ -684,9 +687,18 @@
   flex-shrink: 0;
 }
 #zone-areas .sub-card.today .sc-status-dot { background: var(--rd-success); }
+/* Saved on this phone but not yet on the server (offline, or still sending). */
+#zone-areas .sub-card.queued { border-left-color: var(--rd-warning); }
+#zone-areas .sub-card.queued .sc-status-dot { background: var(--rd-warning); }
+.rd-queue-chip { font-family: var(--rd-font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 100px;
+  border: 1px solid var(--rd-warning); background: var(--rd-warning-soft); color: var(--rd-ink); cursor: pointer; white-space: nowrap; }
+.rd-queue-chip.stuck { border-color: var(--rd-danger); background: var(--rd-danger-soft); }
+@media (max-width: 720px) { .rd-hdr-right.has-queue #rd-last-sync { display: none; } }
+/* Labels are upper-cased for style; a unit is not ("KWH"). */
+#in-kwh-label { text-transform: none; }
 .sc-status-txt {
   font-family: var(--rd-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--rd-ink-3);
   text-transform: uppercase;
   letter-spacing: .04em;
@@ -707,7 +719,7 @@
   --shadow-md:0 4px 16px rgba(0,0,0,.18);
   --shadow-lg:0 8px 32px rgba(0,0,0,.22);
   --trans:all .2s cubic-bezier(.4,0,.2,1);
-  --fs-xs:clamp(10px,2vw,11px);
+  --fs-xs:clamp(11px,2.6vw,12px);
   --fs-sm:clamp(12px,2.5vw,13px);
   --fs-md:clamp(14px,3vw,15px);
   --fs-lg:clamp(16px,3.5vw,17px);
@@ -717,7 +729,7 @@
 [data-theme="dark"]{
   --bg:#090E17;--surface-1:#111827;--surface-2:#182233;--surface-3:#1f2c3f;--surface-4:#26354c;
   --border:#1e2c42;--border-hi:#2d425f;
-  --text-1:#e8f0ff;--text-2:#8fa8c8;--text-3:#566d8a;
+  --text-1:#e8f0ff;--text-2:#8fa8c8;--text-3:#788fac;
   --accent:#00D4FF;--accent-dim:rgba(0,212,255,.12);--accent-border:rgba(0,212,255,.32);
   --green:#22C55E;--green-dim:rgba(34,197,94,.12);--green-border:rgba(34,197,94,.32);
   --orange:#fb923c;--orange-dim:rgba(251,146,60,.12);
@@ -729,7 +741,7 @@
 [data-theme="light"]{
   --bg:#f0f4f8;--surface-1:#ffffff;--surface-2:#f8fafc;--surface-3:#eef2f7;--surface-4:#e4eaf4;
   --border:#d1dce8;--border-hi:#b8c9de;
-  --text-1:#0f1e33;--text-2:#3d5a7a;--text-3:#7a98b8;
+  --text-1:#0f1e33;--text-2:#3d5a7a;--text-3:#56708d;
   --accent:#0284c7;--accent-dim:rgba(2,132,199,.08);--accent-border:rgba(2,132,199,.25);
   --green:#059669;--green-dim:rgba(5,150,105,.08);--green-border:rgba(5,150,105,.25);
   --orange:#d97706;--orange-dim:rgba(217,119,6,.08);
@@ -814,7 +826,7 @@ select.rd-select-hint{
 }
 .f-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .f-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-#entry-section{display:none;position:fixed;top:52px;left:0;right:0;bottom:0;background:var(--bg);z-index:100;padding:12px 12px 90px;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:fadeIn .18s ease-out}
+#entry-section{display:none;position:fixed;top:60px;left:0;right:0;bottom:0;background:var(--bg);z-index:100;padding:12px 12px 90px;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:fadeIn .18s ease-out}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .sub-banner{background:var(--accent-dim);border:1.5px solid var(--accent-border);border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
 .sb-icon{font-size:26px;flex-shrink:0}
@@ -825,9 +837,10 @@ select.rd-select-hint{
 .meter-row{display:flex;gap:8px;margin-bottom:12px}
 .meter-box{flex:1;background:var(--surface-1);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;text-align:center}
 .meter-box.hi{border-color:var(--green-border);background:var(--green-dim)}
-.mb-label{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.mb-label{font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
 .mb-val{font-size:var(--fs-xl);font-weight:700;font-family:var(--font-mono)}
-.mb-unit{font-size:10px;color:var(--text-3);margin-top:3px}
+.mb-unit{font-size:12px;color:var(--text-3);margin-top:3px}
+.mb-date{font-size:12px;color:var(--text-2);margin-top:4px;font-family:var(--font-mono)}
 .arrow-box{display:flex;align-items:center;justify-content:center;padding-top:16px;font-size:16px;color:var(--text-3)}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:var(--fs-sm);font-weight:700}
 .chip-green{background:var(--green-dim);color:var(--green);border:1px solid var(--green-border)}
@@ -888,7 +901,7 @@ tr:hover td{background:var(--surface-2)}
   .f-2col,.f-3col{grid-template-columns:1fr;gap:8px}
   .qr-grid{grid-template-columns:1fr}
   .desktop-only{display:none}
-  td,th{padding:7px 6px!important;font-size:10px!important}
+  td,th{padding:7px 6px!important;font-size:12px!important}
   .meter-row{gap:6px}
   .mb-val{font-size:18px!important}
   .stats-row{gap:6px}
@@ -1081,10 +1094,10 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         </div>
       </div>
 
-      <!-- RECORDER form — default visible. Every element ID below matches the
-           ORIGINAL app.js exactly (#recorder-pass / #recorder-login-err /
-           #recorder-login-btn) so handleRecorderLogin() needs no changes. -->
-      <div class="rd-login-body" id="login-recorder">
+      <!-- RECORDER form (#recorder-pass / #recorder-login-err /
+           #recorder-login-btn, read by handleRecorderLogin). Hidden until the
+           role picker opens it, like the viewer and admin forms. -->
+      <div class="rd-login-body" id="login-recorder" style="display:none">
         <div class="rd-field">
           <label class="rd-field-label" for="recorder-pass">Passcode / รหัสผ่านทีม</label>
           <input class="rd-field-input" type="password" id="recorder-pass" placeholder="กรอกรหัสผ่าน" autocomplete="current-password">
@@ -1178,6 +1191,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
     <span id="rd-last-sync" title="เวลาที่ข้อมูลอัปเดตล่าสุด" style="font-family:var(--rd-font-mono);font-size:11px;color:var(--rd-ink-3);white-space:nowrap;margin-right:2px"></span>
+    <button type="button" class="rd-queue-chip" id="hdr-queue" style="display:none" onclick="onQueueChip()"></button>
     <div class="rd-status-dot" id="sync-dot" title="Sync status"></div>
     <span id="hdr-small" style="display:none"></span>
   </div>
@@ -1314,17 +1328,19 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
           <div class="meter-box">
             <div class="mb-label">ครั้งก่อน</div>
             <div class="mb-val" style="color:var(--text-3)" id="prev-reading">—</div>
-            <div class="mb-unit">m³ สะสม</div>
+            <div class="mb-unit" id="prev-unit">m³ สะสม</div>
+            <div class="mb-date" id="prev-reading-date"></div>
           </div>
           <div class="arrow-box">→</div>
           <div class="meter-box hi">
             <div class="mb-label">ล่าสุด</div>
             <div class="mb-val" style="color:var(--accent)" id="last-reading">—</div>
-            <div class="mb-unit">m³ สะสม</div>
+            <div class="mb-unit" id="last-unit">m³ สะสม</div>
+            <div class="mb-date" id="last-reading-date"></div>
           </div>
         </div>
         <div class="chip-center">
-          <span class="chip chip-green">💧 ใช้น้ำล่าสุด: <span id="last-used">—</span> m³</span>
+          <span class="chip chip-green">💧 ใช้น้ำล่าสุด: <span id="last-used">—</span> <span id="last-used-unit">m³</span></span>
         </div>
       </div>
 
@@ -1341,7 +1357,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <div class="f-2col">
           <div class="f-row">
             <label class="f-label">📅 วันที่</label>
-            <input class="f-input" type="date" id="in-date">
+            <input class="f-input" type="date" id="in-date" onchange="previewUsed()">
           </div>
           <div class="f-row">
             <label class="f-label">🕐 เวลา</label>
@@ -1361,13 +1377,14 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
           style="margin-top:8px;background:var(--orange-dim);border:1px solid rgba(251,146,60,.4);color:var(--orange)">
           ⚠️ ไม่สามารถบันทึกค่าได้วันนี้
         </button>
+        <button class="btn btn-ghost btn-full" id="next-btn" style="display:none;margin-top:8px" onclick="openNextMeter()"></button>
       </div>
 
       <div class="card" id="recent-card" style="display:none">
         <div class="card-title">🕒 5 รายการล่าสุด</div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>วันที่</th><th>เวลา</th><th>มิเตอร์</th><th>ใช้ไป</th><th>ผู้บันทึก</th><th></th></tr></thead>
+            <thead><tr><th>วันที่</th><th>เวลา</th><th>ค่าที่อ่าน</th><th>ใช้ไป</th><th>ผู้บันทึก</th><th></th></tr></thead>
             <tbody id="recent-body"></tbody>
           </table>
         </div>
@@ -1409,33 +1426,33 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <button class="btn btn-primary btn-sm" onclick="applyFilter()">🔍 กรอง</button>
         <button class="btn btn-ghost btn-sm" onclick="clearFilter()">✖ ล้าง</button>
         <button class="btn btn-yellow btn-sm" onclick="exportExcel()">📥 Excel</button>
-        <button class="btn btn-yellow btn-sm" onclick="loadFromServer()">🔄 Refresh</button>
+        <button class="btn btn-yellow btn-sm" onclick="refreshDataTab()">🔄 Refresh</button>
         <button class="btn btn-ghost btn-sm" id="load-all-btn" onclick="loadAllAdminRecords()">📚 โหลดข้อมูลทั้งหมด</button>
       </div>
       <div class="info-box" id="record-window-notice" style="display:none;margin-top:10px;margin-bottom:0"></div>
     </div>
 
     <div class="card">
-      <div class="card-title">📋 รายการทั้งหมด <span id="data-count" style="font-size:10px;color:var(--text-3);font-weight:400;margin-left:4px"></span></div>
+      <div class="card-title">📋 รายการทั้งหมด <span id="data-count" style="font-size:var(--fs-xs);color:var(--text-3);font-weight:400;margin-left:4px"></span></div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>รหัส</th><th>วันที่</th><th>เวลา</th><th>มิเตอร์</th><th>ใช้ไป</th><th class="desktop-only">ผู้บันทึก</th><th class="desktop-only">หมายเหตุ</th><th></th></tr></thead>
+          <thead><tr><th>มิเตอร์</th><th>วันที่</th><th>เวลา</th><th>ค่าที่อ่าน</th><th>ใช้ไป</th><th class="desktop-only">ผู้บันทึก</th><th class="desktop-only">หมายเหตุ</th><th></th></tr></thead>
           <tbody id="main-body"></tbody>
         </table>
         <div class="empty" id="main-empty" style="display:none"><i>📭</i>ยังไม่มีข้อมูล</div>
       </div>
-      <div class="pagination-bar" style="display:flex; justify-content:space-between; align-items:center; padding-top:14px; margin-top:10px; border-top:1px solid rgba(255,255,255,0.05); flex-wrap:wrap; gap:12px; font-size:13px;">
+      <div class="pagination-bar" style="display:flex; justify-content:space-between; align-items:center; padding-top:14px; margin-top:10px; border-top:1px solid var(--border); flex-wrap:wrap; gap:12px; font-size:13px;">
         <div style="color:var(--text-3); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
           <span>แสดงข้อมูล</span>
-          <span id="rowStart" style="font-weight:700; color:#00c8f0;">0</span>
+          <span id="rowStart" style="font-weight:700; color:var(--accent);">0</span>
           <span>ถึง</span>
-          <span id="rowEnd" style="font-weight:700; color:#00c8f0;">0</span>
+          <span id="rowEnd" style="font-weight:700; color:var(--accent);">0</span>
           <span>จากทั้งหมด</span>
           <span id="totalRows" style="font-weight:700;">0</span>
           <span>รายการ</span>
-          <span style="color:rgba(255,255,255,0.2); margin:0 4px;">|</span>
+          <span style="color:var(--border-hi); margin:0 4px;">|</span>
           <span>แถวต่อหน้า:</span>
-          <select id="pageSize" onchange="onPageSizeChange()" style="background:#182640; color:#d8eaff; border:1px solid #1a2e48; padding:4px 8px; border-radius:6px; outline:none; font-family:inherit; cursor:pointer;">
+          <select id="pageSize" onchange="onPageSizeChange()" style="background:var(--surface-2); color:var(--text-1); border:1px solid var(--border); padding:4px 8px; border-radius:6px; outline:none; font-family:inherit; cursor:pointer;">
             <option value="10">10</option>
             <option value="15" selected>15</option>
             <option value="20">20</option>
@@ -1486,6 +1503,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <div class="ctrl-sep"></div>
         <button class="ctrl-btn on" id="cmp-avg" onclick="toggleCmpOpt('avg')">เส้นเฉลี่ย</button>
         <button class="ctrl-btn on" id="cmp-hol" onclick="toggleCmpOpt('hol')">แยกสีวันหยุด</button>
+        <button class="ctrl-btn on" id="cmp-norm" onclick="toggleCmpOpt('norm')" title="เทียบแต่ละวันกับค่ากลางของวันประเภทเดียวกันย้อนหลัง">ช่วงปกติ</button>
         <div class="ctrl-sep"></div>
         <button class="ctrl-btn green" id="cmp-t-bar" onclick="setCmpType('bar')">แท่ง</button>
         <button class="ctrl-btn" id="cmp-t-line" onclick="setCmpType('line')">เส้น</button>
@@ -1509,7 +1527,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       </div>
       <div class="chart-ctrl">
         <button class="ctrl-nav" onclick="navG9(-1)">◀</button>
-        <input class="ctrl-date" type="date" id="g9-date" onchange="renderG9ChartDebounced()">
+        <input class="ctrl-date" type="date" id="g9-date" onchange="g9State.autoDay=false; renderG9ChartDebounced()">
         <input class="ctrl-date" type="month" id="g9-month" onchange="renderG9ChartDebounced()" style="display:none">
         <select class="ctrl-date" id="g9-year" onchange="renderG9ChartDebounced()" style="display:none"></select>
         <button class="ctrl-nav" onclick="navG9(1)">▶</button>
@@ -1566,6 +1584,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
         <div class="ctrl-sep"></div>
         <button class="ctrl-btn on" id="sub-avg" onclick="toggleSubOpt('avg')">เส้นเฉลี่ย</button>
         <button class="ctrl-btn on" id="sub-hol" onclick="toggleSubOpt('hol')">แยกสีวันหยุด</button>
+        <button class="ctrl-btn on" id="sub-norm" onclick="toggleSubOpt('norm')" title="เทียบแต่ละวันกับค่ากลางของวันประเภทเดียวกันย้อนหลัง">ช่วงปกติ</button>
         <div class="ctrl-sep"></div>
         <button class="ctrl-btn green" id="sub-t-bar" onclick="setSubType('bar')">แท่ง</button>
         <button class="ctrl-btn" id="sub-t-line" onclick="setSubType('line')">เส้น</button>
@@ -1641,6 +1660,12 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
       </div>
     </div>
 
+    <div class="card" id="settings-card">
+      <div class="card-title">⚙️ ค่าตั้งระบบ</div>
+      <div class="info-box" style="margin-bottom:8px">เก็บในชีต <strong>_SETTINGS</strong> · ใช้กับทุกเครื่องเมื่อเปิดแอปใหม่หรือกด 🔄 โหลด · เว้นว่าง = ค่าเริ่มต้น</div>
+      <div id="settings-form"><button class="btn btn-ghost btn-sm" onclick="loadSettingsForm()">⚙️ โหลดค่าตั้ง</button></div>
+    </div>
+
     <div class="card" style="border-color:rgba(248,113,113,.3)">
       <div class="card-title" style="color:var(--orange)">⚠️ Backup</div>
       <div class="btn-row">
@@ -1682,7 +1707,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     <div class="card">
       <div class="card-title">📅 ปฏิทินวันทำงาน</div>
       <div class="info-box" style="margin-bottom:8px">
-        ปกติ จ–ศ = วันทำงาน, ส–อา = วันหยุด<br>
+        ปกติ <span id="cal-weekend-note">จ–ศ = วันทำงาน, ส–อา = วันหยุด</span> (ตั้งได้ในค่าตั้งระบบ)<br>
         เพิ่มเฉพาะวันที่<strong>ต่างจากปกติ</strong> เช่น เสาร์ทำงาน หรือวันหยุดพิเศษ
       </div>
       <div class="f-3col">
@@ -1706,7 +1731,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-head"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></i> แก้ไขรายการ<button class="modal-close" onclick="closeEdit()">✕</button></div>
-    <div class="warn-box">⚠️ การแก้ไขค่ามิเตอร์จะกระทบค่า "ใช้ไป" ของรายการถัดไป</div>
+    <div class="warn-box">⚠️ การแก้ไขค่ามิเตอร์จะกระทบค่า "ใช้ไป" ของรายการนี้และรายการก่อนหน้า</div>
     <div class="f-row"><label class="f-label">Meter</label><select class="f-input" id="edit-sub"></select></div>
     <div class="f-row"><label class="f-label">ค่ามิเตอร์ (m³ สะสม)</label><input class="f-input kwh-input" type="number" id="edit-kwh" step="1" inputmode="decimal"></div>
     <div class="f-2col">
@@ -1769,8 +1794,9 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
    ════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════
-   CONFIG — the ONLY block that differs between the four apps
-   (Electric/Water × SR/GW). Generating another app = change this block.
+   CONFIG — per-app values (Electric/Water × SR/GW). The GW pages are
+   generated from the SR ones (gen_gw.py), which also changes a few other
+   spots: title, brand code, app links, cost page (Electric GW: off).
    ═══════════════════════════════════════════════════════════ */
 const APP_ID      = 'water-sr';   // must equal doGet's `app`; verified on load
 const APP_NS      = 'watersr';    // localStorage namespace — UNIQUE per app
@@ -1781,7 +1807,6 @@ const API_URL     = 'https://script.google.com/macros/s/AKfycby_szz8ArFF3Z-sVCvo
 const QR_BASE_URL = 'https://imctconsumption.github.io/Water-Meter-SR/';
 const UNIT_WORD = "ใช้น้ำ";
 const UNIT_ICON = "💧";
-const ABNORMAL_MULTIPLIER = 5;
 const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // matches SESSION_TTL_SECONDS in Code.gs
 
 /* ── localStorage namespacing ──
@@ -1822,7 +1847,46 @@ let isConnected            = false;
 let currentEditingRecordId = null;
 let currentUser            = '';
 let sessionToken           = null;
-let compareMode            = 'day';
+/* Values from the _SETTINGS sheet (doGet → settings; an admin edits them in
+   the Settings tab). The defaults match SETTINGS_SPEC in Code.gs and apply
+   until the first load, or with a Code.gs that predates the settings. */
+const SETTINGS_DEFAULTS = { loggingDayCutoff:'16:30', weekendDays:'6,0', abnormalMultiplier:5,
+                            lowUsageRatio:0.2, reportTitle:'SUBSTATION', adminRecordWindowDays:90,
+                            countByRoundDay:true, usageDayOffset:1, normalWeeks:4, normalBandPct:20,
+                            alertMinDiff:(UNIT === 'kWh' ? 100 : 5) };
+let appSettings = Object.assign({}, SETTINGS_DEFAULTS, (lsGet('settings') && typeof lsGet('settings') === 'object') ? lsGet('settings') : {});
+function setting(k){ const v = appSettings[k]; return (v === undefined || v === null || v === '') ? SETTINGS_DEFAULTS[k] : v; }
+function abnormalMult(){ const v = Number(setting('abnormalMultiplier')); return v > 1 ? v : SETTINGS_DEFAULTS.abnormalMultiplier; }
+function lowUsageRatio(){ const v = Number(setting('lowUsageRatio')); return (v >= 0 && v < 1) ? v : SETTINGS_DEFAULTS.lowUsageRatio; }
+function adminWindowDays(){ const v = parseInt(setting('adminRecordWindowDays'), 10); return v >= 7 ? v : SETTINGS_DEFAULTS.adminRecordWindowDays; }
+function weekendDays(){ return String(setting('weekendDays')).split(',').map(Number).filter(n => n >= 0 && n <= 6); }
+function usageOffset(){ return Number(setting('usageDayOffset')) === 0 ? 0 : 1; }
+function normalWeeks(){ const v = parseInt(setting('normalWeeks'), 10); return (v >= 2 && v <= 26) ? v : SETTINGS_DEFAULTS.normalWeeks; }
+function normalBandPct(){ const v = Number(setting('normalBandPct')); return v >= 1 ? v : SETTINGS_DEFAULTS.normalBandPct; }
+function alertMinDiff(){ const v = Number(setting('alertMinDiff')); return v >= 0 ? v : SETTINGS_DEFAULTS.alertMinDiff; }
+const NORMAL_MIN_DAYS = 4;   // fewer comparable days than this = no normal yet (Code.gs: same name)
+function ymdAdd(ymd, n){
+  const d = new Date(Date.UTC(+ymd.slice(0,4), +ymd.slice(5,7) - 1, +ymd.slice(8,10)) + n * 86400000);
+  return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
+}
+/* The day a reading counts for in charts and reports (Code.gs "REPORT DAY"):
+   taken before the round cut-off, it is the reading of the day before. The
+   round can run past midnight; left on its calendar date such a reading made
+   one day look missed and the day before twice as high. The stored date, and
+   the Data tab, are not changed. No time, or countByRoundDay off → its date. */
+function reportDayOf(date, time){
+  const d = String(date || '').slice(0, 10);
+  if(setting('countByRoundDay') === false || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(time == null ? '' : time).trim());
+  if(!m) return d;
+  const c = /^(\d{1,2}):(\d{2})$/.exec(String(setting('loggingDayCutoff'))) || [0, 16, 30];
+  return (+m[1] * 60 + +m[2]) < (+c[1] * 60 + +c[2]) ? ymdAdd(d, -1) : d;
+}
+/* The bar dated D runs from the reading of D to the next reading. With night
+   rounds that is the energy of the NEXT day (usageDayOffset = 1), so that day
+   decides working day / holiday for colours, averages and the normal range. */
+function usageDay(ymd){ const o = usageOffset(); return o ? ymdAdd(ymd, o) : ymd; }
+function isUsageHoliday(ymd){ return getDayType(usageDay(ymd)) === 'holiday'; }
 
 /* ───────── UTILITIES ───────── */
 function esc(str){
@@ -1838,6 +1902,158 @@ function persist(){
   lsSetRaw('subs',         JSON.stringify(subs));
   lsSetRaw('calendar',     JSON.stringify(workCalendar));
   lsSetRaw('reportGroups', JSON.stringify(reportGroups));
+  lsSetRaw('settings',     JSON.stringify(appSettings));
+}
+/* ── Settings tab: the _SETTINGS sheet (admin) ── */
+const SETTING_LABELS = {
+  loggingDayCutoff:'เวลาเปลี่ยนรอบจด', weekendDays:'วันหยุดประจำสัปดาห์',
+  abnormalMultiplier:'เตือน "สูงผิดปกติ" เมื่อเกิน (เท่าของปกติต่อวัน)', lowUsageRatio:'เตือน "ต่ำกว่าปกติ" เมื่อน้อยกว่า (สัดส่วนของปกติ, 0 = ไม่เตือน)',
+  reportTitle:'หัวรายงานรายเดือน (คำท้าย)', adminRecordWindowDays:'แท็บข้อมูลโหลดย้อนหลัง (วัน)',
+  tariffCacheMinutes:'อัตราค่าไฟที่แก้ในชีตโดยตรง เห็นในแอปภายใน (นาที)',
+  countByRoundDay:'ค่าที่จดก่อนเวลาเปลี่ยนรอบ นับเป็นของวันก่อนหน้า (กราฟ รายงาน Excel เมล)',
+  usageDayOffset:'วันทำงาน/วันหยุดของแท่ง ดูจากวันที่จด + กี่วัน (จดกลางคืน = 1)',
+  normalWeeks:'ค่าปกติ: ค่ากลางย้อนหลัง (สัปดาห์)', normalBandPct:'นอกช่วงปกติเมื่อต่างเกิน (%)',
+  alertMinDiff:'…และต่างอย่างน้อย (หน่วยของมิเตอร์)',
+  alertEmail:'เมลแจ้งเตือนรายวัน', alertEmailHour:'ส่งเมลหลัง (นาฬิกา 0–23)', alertRecipients:'ผู้รับเมล (สูงสุด 50 คน)'
+};
+const SETTING_CHOICES = { alertEmail: { off:'ไม่ส่ง', abnormal:'ส่งเฉพาะวันที่มีรายการนอกช่วงปกติหรือข้อมูลน่าสงสัย', daily:'ส่งทุกวัน' } };
+const DOW_TH = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+let _settingsSpec = null;
+async function loadSettingsForm(){
+  const box = document.getElementById('settings-form');
+  if(!box) return;
+  if(appMode !== 'admin'){ box.innerHTML = '<div class="section-empty" style="min-height:0">เฉพาะแอดมิน</div>'; return; }
+  box.innerHTML = '⏳ กำลังโหลด...';
+  try{
+    const res = await apiPostAuthed({ action:'getSettings' });
+    if(!res || !res.success) throw new Error((res && res.error) || 'โหลดไม่ได้');
+    _settingsSpec = res.spec || [];
+    box.innerHTML = _settingsSpec.map(sp => {
+      const v = res.settings[sp.key];
+      const lbl = esc(SETTING_LABELS[sp.key] || sp.key);
+      const defTxt = sp.type === 'bool' ? (sp.def ? 'เปิด' : 'ปิด') : (sp.type === 'choice' ? ((SETTING_CHOICES[sp.key] || {})[sp.def] || sp.def) : (sp.def === '' ? 'ว่าง' : String(sp.def)));
+      const help = '<div style="font-size:var(--fs-xs);color:var(--text-3);margin-top:3px">' + esc(sp.note || '') + ' · ค่าเริ่มต้น ' + esc(defTxt) + '</div>';
+      let input;
+      if(sp.type === 'days'){
+        const on = String(v).split(',').map(Number);
+        input = '<div style="display:flex;gap:10px;flex-wrap:wrap">' + DOW_TH.map((d, i) =>
+          `<label style="display:flex;align-items:center;gap:4px;font-size:var(--fs-sm)"><input type="checkbox" data-set-day="${sp.key}" value="${i}" ${on.indexOf(i) >= 0 ? 'checked' : ''}>${d}</label>`).join('') + '</div>';
+      } else if(sp.type === 'bool'){
+        input = `<label style="display:flex;align-items:center;gap:6px;font-size:var(--fs-sm)"><input type="checkbox" data-set-bool="${sp.key}" ${v !== false ? 'checked' : ''}>เปิดใช้</label>`;
+      } else if(sp.type === 'choice'){
+        const names = SETTING_CHOICES[sp.key] || {};
+        input = `<select class="f-input" data-set="${sp.key}">` + (sp.options || []).map(o =>
+          `<option value="${esc(o)}" ${o === v ? 'selected' : ''}>${esc(names[o] || o)}</option>`).join('') + '</select>';
+      } else if(sp.type === 'emails'){
+        input = `<textarea class="f-input" data-set="${sp.key}" rows="2" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="name@example.com, name2@example.com">${esc(String(v || ''))}</textarea>`;
+      } else if(sp.type === 'time'){
+        input = `<input class="f-input" type="time" data-set="${sp.key}" value="${esc(String(v))}">`;
+      } else if(sp.type === 'int' || sp.type === 'num'){
+        input = `<input class="f-input" type="number" inputmode="decimal" data-set="${sp.key}" value="${esc(String(v))}"` +
+                (sp.min != null ? ` min="${sp.min}"` : '') + (sp.max != null ? ` max="${sp.max}"` : '') + ` step="${sp.type === 'int' ? 1 : 'any'}">`;
+      } else {
+        input = `<input class="f-input" type="text" data-set="${sp.key}" value="${esc(String(v))}"` + (sp.max ? ` maxlength="${sp.max}"` : '') + '>';
+      }
+      return `<div class="f-row"><label class="f-label">${lbl}</label>${input}${help}</div>`;
+    }).join('') + '<button class="btn btn-primary btn-full" id="settings-save-btn" onclick="saveSettingsForm()">💾 บันทึกค่าตั้ง</button>' +
+      (_settingsSpec.some(sp => sp.key === 'alertEmail') ? ALERT_PANEL_HTML : '');
+  }catch(e){
+    box.innerHTML = '<div class="warn-box">❌ ' + esc(e.message || 'โหลดไม่ได้') + '</div><button class="btn btn-ghost btn-sm" onclick="loadSettingsForm()">🔄 ลองใหม่</button>';
+  }
+}
+async function saveSettingsForm(){
+  if(!_settingsSpec) return;
+  const values = {};
+  _settingsSpec.forEach(sp => {
+    if(sp.type === 'days'){
+      values[sp.key] = Array.from(document.querySelectorAll('[data-set-day="' + sp.key + '"]:checked')).map(x => x.value).join(',');
+    } else if(sp.type === 'bool'){
+      const cb = document.querySelector('[data-set-bool="' + sp.key + '"]');
+      if(cb) values[sp.key] = cb.checked;
+    } else {
+      const el = document.querySelector('[data-set="' + sp.key + '"]');
+      if(el) values[sp.key] = el.value.trim();
+    }
+  });
+  if('weekendDays' in values && !values.weekendDays) return toast('เลือกวันหยุดประจำสัปดาห์อย่างน้อย 1 วัน','err');
+  const btn = document.getElementById('settings-save-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...'; }
+  try{
+    const res = await apiPostAuthed({ action:'saveSettings', settings: values });
+    if(!res || !res.success) throw new Error((res && res.error) || 'บันทึกไม่สำเร็จ');
+    // Public values take effect here right away; other devices on next load.
+    Object.keys(SETTINGS_DEFAULTS).forEach(k => { if(res.settings && k in res.settings) appSettings[k] = res.settings[k]; });
+    // The day rules and the normal range shape every figure already fetched.
+    invalidateSummaryCache('settings'); subChartRecords = {}; _aggCache = {};
+    persist(); renderAll();
+    toast('💾 บันทึกค่าตั้งแล้ว','ok');
+    loadSettingsForm();
+  }catch(e){
+    toast('❌ ' + (e.message || 'บันทึกไม่สำเร็จ'),'err');
+    if(btn){ btn.disabled = false; btn.textContent = '💾 บันทึกค่าตั้ง'; }
+  }
+}
+/* ── Settings tab: the daily alert email (admin) ──
+   The mail itself is built and sent by Code.gs; this only shows what it would
+   say, sends a test, and switches the hourly trigger on or off. The preview is
+   put in a sandboxed frame — it is the server's HTML, not this page's. */
+const ALERT_PANEL_HTML = '<div id="alert-email-box" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">' +
+  '<div class="f-label" style="margin-bottom:6px">✉️ เมลแจ้งเตือนรายวัน</div>' +
+  '<div id="alert-email-status" style="font-size:var(--fs-sm);color:var(--text-2);margin-bottom:8px">กด "ดูตัวอย่าง" เพื่อดูสถานะและเนื้อหาเมลของวันล่าสุด</div>' +
+  '<div class="btn-row">' +
+    '<button class="btn btn-ghost btn-sm" id="alert-preview-btn" onclick="alertEmailOp(\'preview\')">👁 ดูตัวอย่าง</button>' +
+    '<button class="btn btn-ghost btn-sm" id="alert-send-btn" onclick="alertEmailOp(\'send\')">📨 ส่งทดสอบถึงผู้รับ</button>' +
+    '<button class="btn btn-ghost btn-sm" id="alert-install-btn" onclick="alertEmailOp(\'install\')">⏰ เปิดส่งอัตโนมัติ</button>' +
+    '<button class="btn btn-ghost btn-sm" id="alert-remove-btn" onclick="alertEmailOp(\'remove\')">⏹ ปิดส่งอัตโนมัติ</button>' +
+  '</div>' +
+  '<div id="alert-email-preview" style="margin-top:10px"></div></div>';
+async function alertEmailOp(op){
+  const st = document.getElementById('alert-email-status'), pv = document.getElementById('alert-email-preview');
+  if(!st || !pv) return;
+  if(op === 'send' && !confirm('ส่งเมลของวันล่าสุดถึงผู้รับที่ตั้งไว้ตอนนี้?')) return;
+  if(op === 'remove' && !confirm('ปิดการส่งเมลอัตโนมัติ?')) return;
+  const btns = ['preview','send','install','remove'].map(k => document.getElementById('alert-' + k + '-btn')).filter(Boolean);
+  btns.forEach(b => b.disabled = true);
+  st.textContent = '⏳ กำลังทำงาน...';
+  try{
+    // No automatic retry: a "send" that timed out may still have gone out.
+    const res = await apiPostAuthed({ action:'alertEmail', op }, { retries: 0 });
+    if(op === 'send'){ st.textContent = '📨 ส่งแล้วถึง ' + res.sent + ' คน — ' + (res.subject || ''); toast('📨 ส่งเมลแล้ว','ok'); return; }
+    const auto = res.installed === true ? '✅ ส่งอัตโนมัติ: เปิดอยู่' : res.installed === false ? '⏹ ส่งอัตโนมัติ: ยังไม่เปิด' : '❔ ส่งอัตโนมัติ: ตรวจไม่ได้ (รัน alertEmail_Install() ใน Apps Script หนึ่งครั้ง)';
+    const mode = (SETTING_CHOICES.alertEmail || {})[res.mode] || res.mode;
+    st.innerHTML = esc(auto) + ' · ' + esc(mode) + ' · หลัง ' + esc(String(res.hour)) + ':00 น. · ผู้รับ ' + esc(String(res.recipients)) + ' คน' +
+      (res.lastDay ? ' · ทำงานล่าสุด ' + esc(fmtDate(res.lastDay)) : '') +
+      '<br>วันนี้' + (res.worthSending ? 'มีรายการที่จะแจ้ง' : 'ไม่มีรายการนอกช่วงปกติ') + ': ' + esc(res.subject || '');
+    pv.innerHTML = '';
+    const frame = document.createElement('iframe');
+    frame.setAttribute('sandbox', '');            // no scripts, no same-origin access
+    frame.setAttribute('title', 'ตัวอย่างเมลแจ้งเตือน');
+    frame.style.cssText = 'width:100%;height:460px;border:1px solid var(--border);border-radius:8px;background:#fff';
+    frame.srcdoc = '<!doctype html><meta charset="utf-8"><body style="margin:12px">' + (res.html || '') + '</body>';
+    pv.appendChild(frame);
+    if(op === 'install') toast('⏰ เปิดส่งอัตโนมัติแล้ว','ok');
+    if(op === 'remove') toast('ปิดส่งอัตโนมัติแล้ว');
+  }catch(e){
+    st.textContent = '❌ ' + (e.message || 'ทำไม่สำเร็จ');
+  }finally{
+    btns.forEach(b => b.disabled = false);
+  }
+}
+function renderWeekendNote(){
+  const el = document.getElementById('cal-weekend-note');
+  if(!el) return;
+  const we = weekendDays();
+  const work = [0,1,2,3,4,5,6].filter(d => we.indexOf(d) < 0);
+  const names = ds => ds.length ? ds.map(d => DOW_TH[d]).join(', ') : '—';
+  el.textContent = names(work) + ' = วันทำงาน, ' + names(we) + ' = วันหยุด';
+}
+/* Applies a doGet payload (loadFromServer and refreshData share it). */
+function _applyDoGet(data){
+  if(data.meters       && Array.isArray(data.meters))       subs         = data.meters;
+  if(data.reportGroups && Array.isArray(data.reportGroups)) reportGroups = data.reportGroups;
+  if(data.calendar     && Array.isArray(data.calendar))     workCalendar = data.calendar;
+  if(data.settings     && typeof data.settings === 'object') appSettings = Object.assign({}, SETTINGS_DEFAULTS, data.settings);
+  persist();
 }
 function fmtDate(d){
   if(!d) return '—';
@@ -1932,11 +2148,12 @@ function getSubRecs(meterId){
     .sort((a,b) => (`${a.date} ${a.time||'00:00'}`).localeCompare(`${b.date} ${b.time||'00:00'}`));
 }
 
-async function loadSubChartRecords(meterId){
+async function loadSubChartRecords(meterId, isStale, opts){
   if(!meterId) return [];
-  const res = await apiPostAuthed({ action:'getMeterRecords', meterId });
+  const res = await apiPostAuthed({ action:'getMeterRecords', meterId }, Object.assign({}, opts || {}, isStale ? { isStale } : {}));
   const raw = (res && res.records) || [];
   subChartRecords[meterId] = computeUsed(raw);
+  _aggCache = {};   // the per-meter chart's aggregate cache keys on count/last row only; an edited middle reading would not change it
   return subChartRecords[meterId];
 }
 
@@ -2023,11 +2240,23 @@ setInterval(checkSessionExpiry, 60000);
 /* ════════════ LOGIN ════════════ */
 function logout(){
   if(!confirm('ออกจากระบบและกลับไปหน้าเลือกโหมด?')) return;
+  _doLogout();
+}
+/* Sign-out the app does by itself (the server said the session is gone). It
+   used to go through logout() and its "sign out?" dialog: Cancel left the app
+   half signed out — token cleared, screens still logged in, the send queue
+   silently stopped. Runs once per expiry. */
+let _forcedLogoutPending = false;
+function forceLogout(){
+  if(_forcedLogoutPending) return;
+  _forcedLogoutPending = true;
+  setTimeout(() => { _forcedLogoutPending = false; _doLogout(); }, 1200);
+}
+function _doLogout(){
   if(sessionToken){
     const tokenToRevoke = sessionToken;
     apiPost({ action:'logout', token: tokenToRevoke }).catch(() => {});
   }
-  lsRemove('loginMode');
   clearSessionStorage();
   currentUser = '';
   sessionToken = null;
@@ -2039,6 +2268,16 @@ function logout(){
   historyLoadFailed = false;
   activeSub = null;
   activeSubRecent = [];
+  // Nothing an admin had on screen stays in the page for the next person: the
+  // settings form holds the alert recipients, the caches hold figures.
+  _settingsSpec = null;
+  const _sf = document.getElementById('settings-form');
+  if(_sf) _sf.innerHTML = '<button class="btn btn-ghost btn-sm" onclick="loadSettingsForm()">⚙️ โหลดค่าตั้ง</button>';
+  invalidateSummaryCache('logout'); subChartRecords = {}; _aggCache = {};
+  // Close the meter screen too: the next person to sign in on this phone
+  // otherwise lands on the previous meter's form.
+  const _es = document.getElementById('entry-section'); if(_es) _es.style.display = 'none';
+  const _ls = document.getElementById('sub-list-screen'); if(_ls) _ls.style.display = 'block';
   lsRemove('records');
   hideSessionExpiredBanner();
   // Land on the three-way picker so recorder/viewer/admin are an explicit
@@ -2070,6 +2309,7 @@ async function handleRecorderLogin(){
   const passVal  = document.getElementById('recorder-pass').value.trim();
   const errDiv   = document.getElementById('recorder-login-err');
   const loginBtn = document.getElementById('recorder-login-btn');
+  if(loginBtn.disabled) return;   // Enter again while signing in: one login, not two
   if(!passVal){ errDiv.style.display = 'block'; errDiv.innerText = '⚠️ กรุณากรอกรหัสผ่าน'; return; }
   errDiv.style.display = 'none';
   const originalHTML = loginBtn.innerHTML;
@@ -2122,7 +2362,13 @@ function showAdminLogin(){
   document.getElementById('login-recorder').style.display = 'none';
   document.getElementById('login-viewer').style.display   = 'none';
   document.getElementById('login-admin').style.display    = 'block';
-  setTimeout(() => document.getElementById('login-user')?.focus(), 100);
+  // Autofocus the username, unless focus is already in this form: a user who
+  // tapped the password box first (or a slow phone firing this timer late)
+  // had focus pulled back, and the password landed in the username box.
+  setTimeout(() => {
+    if(document.getElementById('login-admin')?.contains(document.activeElement)) return;
+    document.getElementById('login-user')?.focus();
+  }, 100);
 }
 function showViewerLogin(){
   document.getElementById('login-choose').style.display   = 'none';
@@ -2147,6 +2393,7 @@ async function handleViewerLogin(){
   const passVal  = document.getElementById('viewer-pass').value.trim();
   const errDiv   = document.getElementById('viewer-login-err');
   const loginBtn = document.getElementById('viewer-login-btn');
+  if(loginBtn.disabled) return;
   if(!passVal){ errDiv.style.display = 'block'; errDiv.innerText = '⚠️ กรุณากรอกรหัสผ่าน'; return; }
   errDiv.style.display = 'none';
   const originalHTML = loginBtn.innerHTML;
@@ -2181,6 +2428,7 @@ async function handleLogin(){
   const passVal  = document.getElementById('login-pass').value.trim();
   const errDiv   = document.getElementById('login-err');
   const loginBtn = document.getElementById('login-btn');
+  if(loginBtn.disabled) return;
   if(!userVal || !passVal){
     errDiv.style.display = 'block'; errDiv.innerText = '⚠️ กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return;
   }
@@ -2195,9 +2443,7 @@ async function handleLogin(){
       sessionToken = res.token || null;
       persistSession(res.token, 'admin', currentUser);
       applyAppMode('admin');
-      lsRemove('loginMode');
       closeLoginGate();
-      loginBtn.innerHTML = '⏳ กำลังโหลดข้อมูล...';
       // records are fetched lazily — see ensureAdminRecords()
       renderAll();
     } else if(res && res.success){
@@ -2319,6 +2565,8 @@ const SLOW_ACTIONS = {
   getRecentRecordsAll: 45000,
   getMeterStatus:      30000,
   getMonthlySummary:   30000,
+  getGroupTotals:      30000,
+  alertEmail:          45000,
   getAvailableMonths:  20000,
   flushCaches:         30000,
   /* Saves wait for the script lock (withLock: up to 15 s) before doing their
@@ -2327,7 +2575,16 @@ const SLOW_ACTIONS = {
      the same lock. The queue is already durable, so a longer wait costs
      nothing; the server de-duplicates by id either way. */
   saveRecordsBatch:    30000,
-  saveRecord:          30000
+  saveRecord:          30000,
+  /* These also wait for the script lock or may read the whole sheet on a cold
+     cache. At the 12 s default they timed out and retried while the server was
+     still working — a retried login even created a second session, and a
+     retried edit came back as a false "someone else edited this". */
+  login:               30000,
+  editRecord:          30000,
+  deleteRecord:        30000,
+  getMeterRecords:     30000,
+  getRecentRecords:    30000
 };
 
 /* Apps Script runs one execution at a time per script. Issuing several heavy
@@ -2345,12 +2602,23 @@ const SLOW_ACTIONS = {
    in-flight call is never aborted — the server would keep executing it anyway. */
 const _apiFg = [], _apiBg = [];
 let _apiBusy = false;
+/* opts.isStale: optional () => boolean, asked just before the call would
+   start. A chart request queued behind a slow one is often abandoned (the
+   person has already picked something else) by the time its turn comes; it is
+   then skipped instead of making the current selection wait for it. The
+   promise rejects with err.superseded = true. A call already on the wire is
+   never abandoned — see above. */
 function apiPost(body, retries = 2, opts){
   const background = !!(opts && opts.background);
+  const isStale = (opts && typeof opts.isStale === 'function') ? opts.isStale : null;
   return new Promise((resolve, reject) => {
-    (background ? _apiBg : _apiFg).push({ body, retries: background ? 0 : retries, resolve, reject });
+    (background ? _apiBg : _apiFg).push({ body, retries: background ? 0 : retries, isStale, resolve, reject });
     _apiPump();
   });
+}
+function _jobIsStale(job){
+  if(!job.isStale) return false;
+  try { return !!job.isStale(); } catch(e){ return false; }
 }
 async function _apiPump(){
   if(_apiBusy) return;
@@ -2358,6 +2626,12 @@ async function _apiPump(){
   try{
     while(_apiFg.length || _apiBg.length){
       const job = _apiFg.length ? _apiFg.shift() : _apiBg.shift();
+      if(_jobIsStale(job)){
+        const err = new Error('superseded: ' + (job.body && job.body.action));
+        err.superseded = true;
+        job.reject(err);
+        continue;
+      }
       try { job.resolve(await _apiPostNow(job.body, job.retries)); }
       catch(e){ job.reject(e); }   // a failure must not stop the worker
     }
@@ -2452,7 +2726,7 @@ async function _apiPostNow(body, retries = 2) {
    Only work the person actually initiated is allowed to trigger a logout. */
 async function apiPostAuthed(body, opts){
   const background = !!(opts && opts.background);
-  const res = await apiPost(Object.assign({}, body, { token: sessionToken }), undefined, { background });
+  const res = await apiPost(Object.assign({}, body, { token: sessionToken }), (opts && opts.retries !== undefined) ? opts.retries : undefined, { background, isStale: opts && opts.isStale });
   if(!res || res.success === false){
     const msg = (res && res.error) || 'การดำเนินการล้มเหลว';
     const isSessionErr = res && /session|เข้าสู่ระบบ/i.test(res.error || '');
@@ -2463,9 +2737,11 @@ async function apiPostAuthed(body, opts){
     toast('❌ ' + msg, 'err');
     if(isSessionErr){
       sessionToken = null;
-      setTimeout(() => { logout(); }, 1200);
+      forceLogout();
     }
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.response = res;          // callers can look at e.g. res.conflict
+    throw err;
   }
   return res;
 }
@@ -2474,10 +2750,10 @@ async function apiPostAuthed(body, opts){
 let meterStatus = {};
 let meterStatusToday = {};
 /* The logging day the red/green marks refer to. The round runs late at night,
-   so the backend rolls this over at 16:30 rather than midnight — without
+   so the backend rolls it over at the loggingDayCutoff setting (default 16:30), not midnight — without
    showing it, a green board on the morning of the 19th looks wrong to anyone
    who reads it as "recorded today". */
-let loggingDayLabel = null;  // {meterId: true/false} — has a reading dated TODAY (Asia/Bangkok)
+let loggingDayLabel = null;  // 'YYYY-MM-DD' — the round meterStatusToday refers to (see loggingDayCutoff)
 let activeSubRecent = [];
 
 /* Months that actually contain data, fetched from the server.
@@ -2512,6 +2788,9 @@ async function loadBulkRecent(){
 
 async function _loadBulkRecentInner(){
   if(!sessionToken) return null;   // nothing to authenticate with yet
+  // Entry-screen data: recorder and admin only. The server refuses a viewer,
+  // and the refused request still took a turn in the one-at-a-time queue.
+  if(appMode !== 'basic' && appMode !== 'admin') return null;
   try{
     const res = await apiPostAuthed({ action:'getRecentRecordsAll' }, { background:true });
     if(res && res.success && res.byMeter) bulkRecent = res.byMeter;
@@ -2561,7 +2840,6 @@ async function loadMeterStatus(prefetched){
    NOTE: the Summary/report numbers do NOT come from this array — they're
    computed server-side by getMonthlySummary — so narrowing this window never
    changes any reported consumption figure. */
-const ADMIN_RECORD_WINDOW_DAYS = 90;
 let recordsWindowFrom = null;   // 'YYYY-MM-DD', or null when the full set is loaded
 
 function _windowStartDate(days){
@@ -2576,24 +2854,23 @@ function _windowStartDate(days){
    for both to hit the client timeout. Callers now share one in-flight promise. */
 let _adminRecordsInFlight = null;
 
-/* The raw record set is only needed by two tabs: Data (the table, and editing
-   or deleting a row) and Charts (the per-meter series). Summary and Cost read
-   server-side aggregates and never touch it.
-
-   It used to be fetched during login, so everyone who signed in waited for
-   thousands of rows before seeing anything — and since report viewers all have
-   admin accounts, every one of them paid that cost for data they never opened.
-   With a 45s timeout and two retries a slow fetch could stall the app for over
-   two minutes. It is now pulled the first time a tab that needs it is opened. */
+/* The raw record set is only needed by the admin Data tab (the table, editing
+   or deleting a row). Charts, Summary and Cost read server-side aggregates or
+   one meter at a time. It used to be fetched during login, so everyone waited
+   for thousands of rows before seeing anything; it is now pulled the first
+   time the Data tab is opened, within the adminRecordWindowDays setting. */
 let _adminRecordsLoaded = false;
 
-/* Admin or report-viewer — see the matching comment in the Electric app. */
+/* Admin only — the server allows getRawRecords for admins only (a viewer's
+   per-meter chart uses getMeterRecords instead). */
 async function ensureAdminRecords(){
-  const allowed = appMode === 'admin' || appMode === 'viewer';
+  const allowed = appMode === 'admin';
   if(_adminRecordsLoaded || !allowed || !sessionToken) return;
   setSyncStatus('busy','กำลังโหลดข้อมูล...');
   try{
-    await loadAdminRecords();
+    // A failed load must not count as loaded: the flag used to be set anyway,
+    // so the Data tab stayed empty for the rest of the session.
+    if(!(await loadAdminRecords())){ setSyncStatus('error','โหลดข้อมูลไม่สำเร็จ'); return; }
     _adminRecordsLoaded = true;
     setSyncStatus('ok','โหลดข้อมูลแล้ว');
     if(appMode === 'admin'){ renderData(); updateRecordWindowNotice(); updateBadge(); }
@@ -2614,26 +2891,36 @@ async function loadAdminRecords(opts){
 
 async function _loadAdminRecordsInner(opts){
   const loadAll = !!(opts && opts.all);
-  const dateFrom = loadAll ? null : _windowStartDate(ADMIN_RECORD_WINDOW_DAYS);
+  const dateFrom = loadAll ? null : _windowStartDate(adminWindowDays());
   try{
     const payload = { action:'getRawRecords' };
     if(dateFrom) payload.dateFrom = dateFrom;
-    const res = await apiPostAuthed(payload);
+    // No automatic retries: the server keeps running a call that timed out, so
+    // a retry only doubled the wait (45 s × 3) in front of everything else.
+    const res = await apiPostAuthed(payload, { retries: 0 });
     records = computeUsed(res.records || []);
     recordsWindowFrom = dateFrom;
     persist();
     updateRecordWindowNotice();
-  }catch(e){ /* apiPostAuthed already surfaced the error toast */ }
+    return true;
+  }catch(e){ return false; /* apiPostAuthed already surfaced the error toast */ }
 }
 
 async function loadAllAdminRecords(){
   const btn = document.getElementById('load-all-btn');
   if(btn){ btn.disabled = true; btn.innerHTML = '⏳ กำลังโหลด...'; }
   setSyncStatus('busy','กำลังโหลดข้อมูลทั้งหมด...');
-  await loadAdminRecords({ all:true });
-  renderAll();
-  setSyncStatus('ok','โหลดข้อมูลทั้งหมดแล้ว — ' + records.length + ' รายการ');
-  if(btn){ btn.disabled = false; btn.innerHTML = '📚 โหลดข้อมูลทั้งหมด'; }
+  try{
+    // Wait out a window load already running, then load everything: sharing
+    // that in-flight load returned only the window yet reported "all".
+    if(_adminRecordsInFlight){ try { await _adminRecordsInFlight; } catch(e){} }
+    const ok = await loadAdminRecords({ all:true });
+    renderAll();
+    if(ok) setSyncStatus('ok','โหลดข้อมูลทั้งหมดแล้ว — ' + records.length + ' รายการ');
+    else setSyncStatus('error','โหลดข้อมูลทั้งหมดไม่สำเร็จ');
+  } finally {
+    if(btn){ btn.disabled = false; btn.innerHTML = '📚 โหลดข้อมูลทั้งหมด'; }
+  }
 }
 
 function updateRecordWindowNotice(){
@@ -2641,7 +2928,7 @@ function updateRecordWindowNotice(){
   if(!el) return;
   if(recordsWindowFrom){
     el.style.display = 'block';
-    el.innerHTML = 'กำลังแสดงข้อมูล <strong>' + ADMIN_RECORD_WINDOW_DAYS + ' วันล่าสุด</strong> (ตั้งแต่ ' + fmtDate(recordsWindowFrom) + ') · ' + records.length + ' รายการ — ตัวเลขในหน้าสรุปไม่ได้รับผลกระทบ';
+    el.innerHTML = 'กำลังแสดงข้อมูล <strong>' + adminWindowDays() + ' วันล่าสุด</strong> (ตั้งแต่ ' + fmtDate(recordsWindowFrom) + ') · ' + records.length + ' รายการ — ตัวเลขในหน้าสรุปไม่ได้รับผลกระทบ';
   } else {
     el.style.display = 'block';
     el.innerHTML = 'กำลังแสดง <strong>ข้อมูลทั้งหมด</strong> · ' + records.length + ' รายการ';
@@ -2662,26 +2949,125 @@ function _snapDayRangeToMonths(dateFrom, dateTo){
   const to = dateTo.slice(0,7) + '-' + String(lastDay).padStart(2,'0');
   return [from, to];
 }
-async function getSummaryCached(dateFrom, dateTo, granularity){
+/* In-flight requests by cache key. Switching away from a chart while its
+   summary loads and back again used to queue a second copy of the same request
+   behind the first (calls run one at a time), so coming back cost two server
+   round trips. Now the second caller shares the first's promise.
+   _summaryGen changes on every invalidation: a request that started before a
+   save/edit/refresh must not put its (older) answer into the fresh cache, and
+   callers after the invalidation must not share it. */
+let _summaryInflight = {};
+let _summaryGen = 0;
+const _neverStale = function(){ return false; };
+function _fetchSummary(key, qFrom, qTo, granularity, isStale){
+  const gen = _summaryGen;
+  const entry = { checks: [isStale || _neverStale] };
+  entry.promise = (async () => {
+    try{
+      const _t0 = (DEBUG_PERF && performance.now()) || 0;
+      // The queued call is skipped only when EVERY caller sharing it has moved on.
+      const res = await apiPostAuthed({ action:'getMonthlySummary', dateFrom:qFrom, dateTo:qTo, granularity },
+                                      { isStale: () => entry.checks.every(fn => fn()) });
+      if(DEBUG_PERF) console.log(`⏱ getSummaryCached [MISS→network] ${key}: ${(performance.now()-_t0).toFixed(0)} ms`);
+      if(res && res.success && gen === _summaryGen) summaryCache[key] = res;
+      return res;
+    } finally {
+      if(_summaryInflight[key] === entry) delete _summaryInflight[key];
+    }
+  })();
+  _summaryInflight[key] = entry;
+  return entry;
+}
+/* isStale (optional): () => true once the caller no longer wants the answer.
+   Callers without it (report, cost) are never skipped. */
+async function getSummaryCached(dateFrom, dateTo, granularity, isStale){
   let qFrom = dateFrom, qTo = dateTo;
   if(granularity === 'day' && dateFrom && dateTo){
     [qFrom, qTo] = _snapDayRangeToMonths(dateFrom, dateTo);
   }
   const key = `${qFrom||''}|${qTo||''}|${granularity||'day'}`;
-  if(summaryCache[key]){
-    if(DEBUG_PERF) console.log(`⏱ getSummaryCached [HIT] ${key}: 0 ms (cached)`);
-    return summaryCache[key];
+  for(let attempt = 0; attempt < 3; attempt++){
+    if(summaryCache[key]){
+      if(DEBUG_PERF) console.log(`⏱ getSummaryCached [HIT] ${key}: 0 ms (cached)`);
+      return summaryCache[key];
+    }
+    let entry = _summaryInflight[key];
+    if(entry) entry.checks.push(isStale || _neverStale);
+    else entry = _fetchSummary(key, qFrom, qTo, granularity, isStale);
+    try { return await entry.promise; }
+    catch(e){
+      // Skipped because everyone sharing it had moved on — but this caller
+      // joined after that check and still wants it: ask again.
+      if(e && e.superseded && !(isStale && isStale())) continue;
+      throw e;
+    }
   }
-  const _t0 = (DEBUG_PERF && performance.now()) || 0;
-  const res = await apiPostAuthed({ action:'getMonthlySummary', dateFrom:qFrom, dateTo:qTo, granularity });
-  if(DEBUG_PERF) console.log(`⏱ getSummaryCached [MISS→network] ${key}: ${(performance.now()-_t0).toFixed(0)} ms`);
-  if(res && res.success) summaryCache[key] = res;
-  return res;
+  throw new Error('โหลดข้อมูลสรุปไม่ได้');
 }
 function invalidateSummaryCache(reason){
-  const keys = Object.keys(summaryCache).length;
+  const keys = Object.keys(summaryCache).length + Object.keys(groupTotalsCache).length;
   summaryCache = {};
+  _summaryInflight = {};
+  groupTotalsCache = {};
+  _groupTotalsInflight = {};
+  _summaryGen++;
   console.log(`🗑 invalidateSummaryCache — ล้าง ${keys} keys, reason: ${reason||'ไม่ระบุ'}`);
+}
+
+/* ════════════ GROUP TOTALS (server) ════════════
+   The group charts no longer add meters up here. Code.gs does it once
+   (getGroupTotals — the monthly report's rules, the normal range, and which
+   days are holidays) and both charts draw what it returns, so a chart, the
+   report and the alert email cannot disagree. Same caching as the summary:
+   ranges snap to whole months so the two charts share one request, a request
+   in flight is shared, and _summaryGen keeps an answer that started before a
+   save / edit / refresh out of the cache. */
+let groupTotalsCache = {};
+let _groupTotalsInflight = {};
+function _fetchGroupTotals(key, qFrom, qTo, granularity, isStale){
+  const gen = _summaryGen;
+  const entry = { checks: [isStale || _neverStale] };
+  entry.promise = (async () => {
+    try{
+      let res;
+      try{
+        res = await apiPostAuthed({ action:'getGroupTotals', dateFrom:qFrom, dateTo:qTo, granularity },
+                                  { isStale: () => entry.checks.every(fn => fn()) });
+      }catch(e){
+        if(/^Unknown action/.test(String(e && e.message))) throw new Error('Code.gs ยังเป็นรุ่นเก่า — ต้อง deploy Code.gs ชุด 3 (New version) ก่อน กราฟกลุ่มจึงจะแสดงได้');
+        throw e;
+      }
+      if(res && res.success && gen === _summaryGen) groupTotalsCache[key] = res;
+      return res;
+    } finally {
+      if(_groupTotalsInflight[key] === entry) delete _groupTotalsInflight[key];
+    }
+  })();
+  _groupTotalsInflight[key] = entry;
+  return entry;
+}
+async function getGroupTotalsCached(dateFrom, dateTo, granularity, isStale){
+  let qFrom = dateFrom, qTo = dateTo;
+  if(dateFrom && dateTo) [qFrom, qTo] = _snapDayRangeToMonths(dateFrom, dateTo);
+  const key = `${qFrom||''}|${qTo||''}|${granularity||'day'}`;
+  for(let attempt = 0; attempt < 3; attempt++){
+    if(groupTotalsCache[key]) return groupTotalsCache[key];
+    let entry = _groupTotalsInflight[key];
+    if(entry) entry.checks.push(isStale || _neverStale);
+    else entry = _fetchGroupTotals(key, qFrom, qTo, granularity, isStale);
+    try { return await entry.promise; }
+    catch(e){
+      if(e && e.superseded && !(isStale && isStale())) continue;   // see getSummaryCached
+      throw e;
+    }
+  }
+  throw new Error('โหลดยอดกลุ่มไม่ได้');
+}
+/* The series behind a comparison-chart choice: TOTAL, or the first group with
+   that key (a sheet can hold two rows with one key; the picker lists the first). */
+function groupSeriesOf(res, key){
+  if(key === '__TOTAL__') return res.total;
+  return (res.groups || []).find(g => g.key === key) || null;
 }
 
 /* See the matching comment in the Electric app for why this is manual, not
@@ -2709,8 +3095,9 @@ async function onSubChartMeterChange(){
   var meterId = document.getElementById('chart-sub').value;
   var el = document.getElementById('sub-chart-el');
   if(!meterId){ renderSubChart(); return; }
-  if(el && !subChartRecords[meterId]) el.innerHTML = chartSkeletonHTML();
-  try { await loadSubChartRecords(meterId); }
+  if(el && !subChartRecords[meterId]) chartPlaceholder(el, subChartInst, chartSkeletonHTML());
+  // Skipped in the queue if another meter is picked before this one's turn.
+  try { await loadSubChartRecords(meterId, function(){ return document.getElementById('chart-sub').value !== meterId; }); }
   catch(e){ /* fall back to whatever getSubRecs can find in global records */ }
   // If the user switched to another meter while this one was loading, drop
   // this stale result — the newer selection's own call will render.
@@ -2731,7 +3118,7 @@ function preloadAdjacentMeter(currentMeterId){
   if(subChartRecords[nextId]) return;
   requestIdleCallback(function(){
     if(!subChartRecords[nextId]){
-      loadSubChartRecords(nextId).catch(function(){ /* preload is best-effort */ });
+      loadSubChartRecords(nextId, null, { background:true }).catch(function(){ /* preload is best-effort */ });
     }
   }, { timeout: 3000 });
 }
@@ -2748,9 +3135,27 @@ function refreshSubChart(){
 }
 
 function safeDestroyChart(inst){
-  if(!inst) return;
+  if(!inst || inst.__destroyed) return;
+  inst.__destroyed = true;
+  // ApexCharts redraws a chart 150 ms after its card changes size, and
+  // destroy() does not cancel a redraw that is already scheduled. A chart
+  // destroyed inside that window came back to life and drew itself into the
+  // box over (or instead of) its replacement — the screen showed the previous
+  // selection until the next switch.
+  try{ clearTimeout(inst.w && inst.w.globals && inst.w.globals.resizeTimer); }catch(e){ /* already torn down */ }
   try{ inst.destroy(); }
   catch(e){ console.warn('chart destroy guarded:', e && e.message); }
+}
+/* Put a placeholder (loading skeleton, "no data", an error) where a chart is.
+   The chart is destroyed first: swapping its DOM for the placeholder changes
+   the card's height, and a live chart answers a size change by redrawing
+   itself — on phones the old chart reappeared while the new data loaded.
+   The instance variable keeps pointing at the destroyed chart on purpose:
+   callers use "has an instance" to mean "this chart has been shown", e.g.
+   refreshSubChartIfVisible() and the theme toggle. */
+function chartPlaceholder(el, inst, html){
+  safeDestroyChart(inst);
+  if(el) el.innerHTML = html;
 }
 
 const _scriptPromises = {};
@@ -2785,15 +3190,20 @@ var _cmpDebounceTimer = null, _g9DebounceTimer = null;
 var CHART_DEBOUNCE_MS = 220;
 function renderCmpChartDebounced(){
   var el = document.getElementById('cmp-chart-el');
-  if(el && document.getElementById('cmp-group').value) el.innerHTML = chartSkeletonHTML();
-  cmpReqId++;   // invalidate any in-flight render — see the Electric version's comment
+  if(el && document.getElementById('cmp-group').value) chartPlaceholder(el, cmpChartInst, chartSkeletonHTML());
+  // Bump the request id NOW so any render still awaiting its summary fetch sees
+  // itself as stale and bails, instead of racing the debounced one that's about
+  // to fire. Without this a fast series of switches could let an earlier
+  // in-flight render finish last and leave the wrong (or blank) chart. A stale
+  // request still waiting in the queue is skipped (see getSummaryCached).
+  cmpReqId++;
   if(_cmpDebounceTimer) clearTimeout(_cmpDebounceTimer);
   _cmpDebounceTimer = setTimeout(function(){ _cmpDebounceTimer = null; renderCmpChart(); }, CHART_DEBOUNCE_MS);
 }
 function renderG9ChartDebounced(){
   var el = document.getElementById('g9-chart-el');
-  if(el) el.innerHTML = chartSkeletonHTML();
-  g9ReqId++;
+  if(el) chartPlaceholder(el, g9ChartInst, chartSkeletonHTML());
+  g9ReqId++;   // invalidate any in-flight render — see the cmp version's comment
   if(_g9DebounceTimer) clearTimeout(_g9DebounceTimer);
   _g9DebounceTimer = setTimeout(function(){ _g9DebounceTimer = null; renderG9Chart(); }, CHART_DEBOUNCE_MS);
 }
@@ -2856,7 +3266,7 @@ async function _fetchDoGet(retries = 2){
   throw lastErr;
 }
 
-function loadFromServer(){
+function loadFromServer(opts){
   const _plApi = perfLabel('loadFromServer:api'); perfStart(_plApi);
   return _fetchDoGet()
     .then(data => {
@@ -2873,10 +3283,13 @@ function loadFromServer(){
       if(data.app && data.app !== APP_ID){
         throw new Error('Backend ผิดแอป: ได้ ' + data.app + ' คาดว่า ' + APP_ID);
       }
-      if(data.meters       && Array.isArray(data.meters))       subs         = data.meters;
-      if(data.reportGroups && Array.isArray(data.reportGroups)) reportGroups = data.reportGroups;
-      if(data.calendar     && Array.isArray(data.calendar))     workCalendar = data.calendar;
-      persist(); isConnected = true; invalidateSummaryCache('loadFromServer');
+      _applyDoGet(data);
+      isConnected = true;
+      // Summary rows are raw readings and don't depend on anything doGet
+      // carries; dropping them here is only for a refresh someone asked for.
+      // At start-up it threw away the charts' first answers (a viewer's
+      // restored session fetches them before doGet returns).
+      if(!(opts && opts.keepSummary)) invalidateSummaryCache('loadFromServer');
       await loadMeterStatus(data);
       // records are fetched lazily by the tabs that need them (see ensureAdminRecords)
       renderAll();
@@ -2909,10 +3322,8 @@ function refreshData(){
       if(data.app && data.app !== APP_ID){
         throw new Error('Backend ผิดแอป: ได้ ' + data.app + ' คาดว่า ' + APP_ID);
       }
-      if(data.meters       && Array.isArray(data.meters))       subs         = data.meters;
-      if(data.reportGroups && Array.isArray(data.reportGroups)) reportGroups = data.reportGroups;
-      if(data.calendar     && Array.isArray(data.calendar))     workCalendar = data.calendar;
-      persist(); isConnected = true; invalidateSummaryCache('refreshData');
+      _applyDoGet(data);
+      isConnected = true; invalidateSummaryCache('refreshData');
       await loadMeterStatus(data);
       // records are fetched lazily by the tabs that need them (see ensureAdminRecords)
       renderAll();
@@ -2942,6 +3353,8 @@ async function testConn(){
 function computeUsed(rawRecords){
   const _pl = perfLabel('computeUsed(n='+rawRecords.length+')'); perfStart(_pl);
   rawRecords.forEach(r => { if(r.date && String(r.date).includes('T')) r.date = String(r.date).slice(0, 10); });
+  // The day each reading counts for in the charts (reportDayOf); r.date stays as entered.
+  rawRecords.forEach(r => { r.rday = reportDayOf(r.date, r.time); r.open = false; });
   const groups = {};
   rawRecords.forEach(r => { if(!groups[r.meterId]) groups[r.meterId]=[]; groups[r.meterId].push(r); });
   // Index the meter list once. This used to call subs.find() inside the loop,
@@ -2980,7 +3393,19 @@ function computeUsed(rawRecords){
         const v = parseFloat(chain[k].kwh);
         if(_isUsableReading(meterId, v)){ nextVal = v; break; }
       }
-      if(nextVal === null){ rec.used = 0; return; }
+      let nextDate = null;
+      rec.closeNote = '';
+      for(let k = i + 1; k < chain.length; k++){
+        // The note written with the reading that closes this figure describes the period it covers.
+        if(_isUsableReading(meterId, parseFloat(chain[k].kwh))){ nextDate = chain[k].rday; rec.closeNote = String(chain[k].note || ''); break; }
+      }
+      // Newest real reading: its usage only exists once the next reading is
+      // taken. It used to be 0 — a confident zero that pulled every average
+      // down and made "today" look like a shutdown.
+      // open: a real reading with nothing after it yet — its day is not closed.
+      if(nextVal === null){ rec.used = null; rec.open = true; return; }
+      // Days this figure covers: >1 when the readings in between are missing.
+      rec.spanDays = (nextDate && rec.rday) ? Math.max(1, Math.round((new Date(nextDate+'T00:00:00') - new Date(rec.rday+'T00:00:00')) / 86400000)) : 1;
 
       const diff = nextVal - parseFloat(rec.kwh);
       // A counter's difference IS meaningful (events elapsed), so it is
@@ -2998,8 +3423,12 @@ async function init(){
   if(!Array.isArray(subs)) subs = [];
   subs = subs.map(s => ({ ...s, decimal: s.decimal !== undefined ? s.decimal : 0 }));
   initTheme(); setNow();
-  { const t = document.getElementById('hdr-title'); if(t) t.textContent = SITE_NAME + ' — ' + SITE_CODE; }
   const hasSession = restoreSession();
+  // The send queue is local and needs no server data: load it and start the
+  // sweep now, so unsent readings go out (and show) as soon as there is a
+  // session, instead of after the startup fetch — which may never come offline.
+  loadQueue(); startQueueTimer();
+  if(hasSession) flushQueue();
   renderAll();
   document.getElementById('qr-url-preview').textContent = QR_BASE_URL + '?meter=WM-XX';
   const params = new URLSearchParams(location.search);
@@ -3014,9 +3443,9 @@ async function init(){
         await selectSub(cached.id);
         toast('📍 เปิด ' + cached.id + ' จาก QR','ok');
         pendingQrSub = null;
-        loadFromServer();                 // non-blocking background refresh
+        loadFromServer({ keepSummary:true });   // non-blocking background refresh
       } else {
-        await loadFromServer();           // not cached (first load) — must fetch first
+        await loadFromServer({ keepSummary:true });   // not cached (first load) — must fetch first
         const found = subs.find(s => s.id === pendingQrSub);
         if(found){ await selectSub(found.id); toast('📍 เปิด ' + found.id + ' จาก QR','ok'); }
         else{ toast('ไม่พบ Meter: ' + pendingQrSub + ' (ลองรีเฟรช)','err'); }
@@ -3025,17 +3454,21 @@ async function init(){
     } else {
       // Show picker immediately, load in background — see Electric comment.
       backToChoose();
-      loadFromServer();
+      loadFromServer({ keepSummary:true });
     }
   } else {
-    loadFromServer();
+    loadFromServer({ keepSummary:true });
     if(!hasSession) backToChoose();
   }
 }
 
+/* The Data table re-filters and re-sorts every loaded record (up to ~14k), so
+   it is only rebuilt while its tab is on screen; goTab('data') builds it on
+   entry. */
+function _panelActive(name){ const p = document.getElementById('panel-' + name); return !!(p && p.classList.contains('active')); }
 function renderAll(){
   if(!DEBUG_PERF){
-    renderZoneAreas(); renderData(); renderStats(); populateDDs(); updateBadge();
+    renderZoneAreas(); if(_panelActive('data')){ renderData(); renderStats(); } populateDDs(); updateBadge(); renderWeekendNote();
     if(activeSub){ updateMeterSummary(); renderRecent(); }
     refreshSubChartIfVisible();
     return;
@@ -3055,6 +3488,8 @@ function renderAll(){
 /* See the matching comment in the Electric app. */
 function refreshSubChartIfVisible(){
   if(typeof subChartInst === 'undefined' || !subChartInst) return;
+  // Off screen: the Charts tab redraws it when opened (goTab('chart')).
+  if(!_panelActive('chart')) return;
   /* Keep the per-meter store and reconcile it with local changes, instead of
      clearing it. Clearing made getSubRecs fall back to the global `records`
      array, which is empty for a viewer and for an admin who hasn't opened the
@@ -3085,10 +3520,10 @@ function refreshSubChartIfVisible(){
     subChartRecords[meterId] = computeUsed(merged);
   }
   _aggCache = {};              // rows may have changed — recompute aggregates
-  _subChartStructKey = null;   // force a clean rebuild
   try { renderSubChart(); } catch(e){ /* chart redraw is best-effort */ }
 }
 
+let _chartTabVisited = false;
 const TAB_ORDER = ["entry","data","chart","summary","qr","settings"];
 /* Tabs a role may open, independent of what the drawer happens to show. The
    drawer hides buttons a role shouldn't use, but hiding a button is not
@@ -3116,7 +3551,7 @@ function goTab(name){
   if(name === 'chart'){
     /* The chart tab no longer pulls the full record set (ensureAdminRecords /
        getRawRecords, thousands of rows). Nothing here needs it anymore:
-       - the two group charts read server-side summaries (getSummaryCached),
+       - the two group charts read the server's group totals (getGroupTotalsCached),
        - the per-meter chart fetches one meter at a time (getMeterRecords),
        - the only remaining use was picker defaults in initG9Pickers, which
          already prefer the lightweight availableMonths list.
@@ -3125,24 +3560,26 @@ function goTab(name){
        tab still calls ensureAdminRecords on its own, unchanged.) */
     (async () => {
       if((appMode === 'admin' || appMode === 'viewer') && !availableMonths) await loadAvailableMonths();
-      populateDDs(); setSubQuick('thisM'); buildCompareGroupOptions(); initG9Pickers(); initCmpPickers();
+      // Defaults only on the first visit. Every visit used to reset the ranges
+      // people had chosen (and wrote full dates into month inputs, blanking them).
+      populateDDs(); buildCompareGroupOptions(); initG9Pickers(); initCmpPickers();
+      if(!_chartTabVisited){ _chartTabVisited = true; setSubQuick('thisM'); } else renderSubChart();
       // Light the per-meter segment to match its default range (this month),
       // consistent with the group chart's segment default.
       var subSeg = document.getElementById('sub-segment');
       if(subSeg && !subSeg.querySelector('button.on')){
         var d = subSeg.querySelector('button[data-slot="0"]'); if(d) d.classList.add('on');
       }
-      /* The card the person sees first — "กราฟเทียบการใช้ไฟฟ้าแต่ละกลุ่ม" — is
-         rendered to completion before the second chart even starts. Both used to
-         fire together; they hit getSummaryCached with different date ranges (so
-         different cache keys), meaning two heavy summary requests queued back to
-         back with no ordering guarantee. Awaiting the first means the chart at
-         the top of the screen is never left waiting behind one lower down. */
+      /* The card the person sees first — the group comparison — is rendered to
+         completion before the second chart starts. On their default ranges
+         (this month by day) the two now share one getGroupTotals request, so
+         the second draws from the cache; with other ranges the chart at the
+         top of the screen is still never left waiting behind one lower down. */
       await renderCmpChart(); renderG9Chart();
     })();
   }
   if(name === 'qr')       { renderQR(); }
-  if(name === 'settings') { renderSubList(); renderCalendarList(); }
+  if(name === 'settings') { renderSubList(); renderCalendarList(); renderWeekendNote(); if(!_settingsSpec) loadSettingsForm(); }
   if(name === 'summary')  { onTabSummary(); }
   if(name === 'cost')     { onTabCost(); }
 }
@@ -3153,7 +3590,7 @@ function getDayType(dateStr){
   if(found) return found.type;
   const [y,m,d] = String(dateStr).split('-').map(Number);
   const dow = new Date(y, m-1, d).getDay();
-  return (dow === 0 || dow === 6) ? 'holiday' : 'work';
+  return weekendDays().indexOf(dow) >= 0 ? 'holiday' : 'work';   // weekendDays setting (default Sat+Sun)
 }
 async function addCalendarDay(){
   const date = document.getElementById('cal-date').value;
@@ -3199,7 +3636,7 @@ function renderCalendarList(){
       <div class="sub-row-id" style="color:${c.type==='work'?'var(--green)':'var(--orange)'}">${fmtDate(c.date)} · ${c.type==='work'?'🟢 ทำงาน':'🔴 หยุด'}</div>
       <div class="sub-row-meta">${esc(c.note)||'—'}</div>
     </div>
-    <div class="sub-row-actions"><button class="btn btn-danger btn-sm" onclick="removeCalendarDay('${c.date}')">🗑</button></div>
+    <div class="sub-row-actions"><button class="btn btn-danger btn-sm" data-date="${esc(c.date)}" onclick="removeCalendarDay(this.dataset.date)">🗑</button></div>
   </div>`).join('');
 }
 
@@ -3255,8 +3692,8 @@ function renderTable(){
     <td class="td-used"><strong>${fmtUsedCell(r.used, r.meterId)}</strong></td>
     <td class="desktop-only">${esc(r.user)||'—'}</td><td class="desktop-only">${esc(r.note)||'—'}</td>
     <td><div class="td-act">
-      <button class="btn btn-primary btn-sm" onclick="openEdit('${r.id}')">✏️</button>
-      <button class="btn btn-danger btn-sm"  onclick="deleteRecord('${r.id}')">🗑</button>
+      <button class="btn btn-primary btn-sm" data-id="${esc(r.id)}" onclick="openEdit(this.dataset.id)">✏️</button>
+      <button class="btn btn-danger btn-sm"  data-id="${esc(r.id)}" onclick="deleteRecord(this.dataset.id)">🗑</button>
     </div></td></tr>`).join('');
   renderPaginationControls(total);
   perfEnd(_plT);
@@ -3268,7 +3705,7 @@ function renderZoneAreas(){
   if(note){
     if(loggingDayLabel){
       note.style.display = 'block';
-      note.textContent = 'สถานะสี = รอบจดของวันที่ ' + fmtDate(loggingDayLabel) + ' (รอบเปลี่ยน 16:30)';
+      note.textContent = 'สถานะสี = รอบจดของวันที่ ' + fmtDate(loggingDayLabel) + ' (รอบเปลี่ยน ' + setting('loggingDayCutoff') + ')';
     } else {
       note.style.display = 'none';
     }
@@ -3285,13 +3722,8 @@ function renderZoneAreas(){
   }
   // Group meters by their display `zone` field (decoupled from report groups).
   // Section order follows _REPORT_GROUPS, then any unknown zones, then "อื่นๆ".
-  const grouped = {}; const order = [];
-  function bucket(key){ if(!(key in grouped)){ grouped[key] = []; order.push(key); } return grouped[key]; }
-  reportGroups.forEach(g => { if(g.key) bucket(g.key); });           // seed order
-  subs.forEach(s => {
-    const z = (s.zone && String(s.zone).trim()) ? String(s.zone).trim() : '__OTHER__';
-    bucket(z).push(s);
-  });
+  const { grouped, order } = _zoneBuckets();
+  const queuedIds = _queuedMeterIds();
   order.forEach(key => {
     const list = grouped[key];
     if(!list || !list.length) return;                                // skip empty seeded groups
@@ -3304,9 +3736,11 @@ function renderZoneAreas(){
     grid.className = 'sub-grid';
     list.forEach(s => {
       const recordedToday = !!meterStatusToday[s.id];
+      const queued = queuedIds.has(s.id);
       const isSel = activeSub && activeSub.id === s.id;
       const d = document.createElement('div');
-      d.className = 'sub-card' + (isSel ? ' sel' : '') + (recordedToday ? ' today' : '');
+      d.className = 'sub-card' + (isSel ? ' sel' : '') + (recordedToday ? ' today' : '') + (queued ? ' queued' : '');
+      d.dataset.id = s.id;
       // The search box promises "รหัส, ชื่อ, หรือโซน", but the card shows only
       // the name and status, so matching on textContent could never find a
       // meter by its id or zone (and "บันทึก" matched every card via the
@@ -3319,7 +3753,7 @@ function renderZoneAreas(){
         <div class="sc-name-main">${esc(s.name)}</div>
         <div class="sc-status-row">
           <span class="sc-status-dot"></span>
-          <span class="sc-status-txt">${recordedToday ? 'บันทึกแล้ววันนี้' : 'ยังไม่บันทึกวันนี้'}</span>
+          <span class="sc-status-txt">${_cardStatusText(recordedToday, queued)}</span>
         </div>`;
       d.onclick = () => selectSub(s.id);
       grid.appendChild(d);
@@ -3331,6 +3765,10 @@ function renderZoneAreas(){
   // coming back from a meter showed "SUB-3" in the box over an unfiltered list.
   const q = document.getElementById('rd-search-input');
   if(q && q.value) rdApplySearch(q.value);
+  updateBadge();
+}
+function _cardStatusText(today, queued){
+  return queued ? 'อยู่ในเครื่อง · รอส่ง' : today ? 'บันทึกแล้ววันนี้' : 'ยังไม่บันทึกวันนี้';
 }
 let historyLoadFailed = false;   // true when the per-meter history fetch failed
 
@@ -3341,16 +3779,23 @@ let historyLoadFailed = false;   // true when the per-meter history fetch failed
    kW and a tap counter in events, so calling everything "kWh สะสม" mislabels
    them. Unit text comes from the meter's own `unit` column, so it can be
    corrected in the sheet without touching code. */
+/* A meter's reading unit: its own `unit` column, else the default for its type. */
+function meterUnit(sub){
+  const unit = String((sub && sub.unit) || '').trim();
+  const vt = meterValueType(sub);
+  if(vt === 'demand')   return unit || 'kW';
+  if(vt === 'counter')  return unit || 'ครั้ง';
+  if(vt === 'snapshot') return unit;
+  return unit || UNIT;
+}
 function applyReadingLabel(){
   const el = document.getElementById('in-kwh-label');
   if(!el || !activeSub) return;
-  const unit = String(activeSub.unit || '').trim();
-  const vt = activeValueType();
+  const vt = activeValueType(), u = meterUnit(activeSub);
   let txt;
-  if(vt === 'demand')       txt = `ค่าที่อ่านได้ (${unit || 'kW'})`;
-  else if(vt === 'counter') txt = `ค่าที่อ่านได้ (${unit || 'ครั้ง'})`;
-  else if(vt === 'snapshot')txt = `ค่าที่อ่านได้ (${unit || 'หน่วยตามมิเตอร์'})`;
-  else                      txt = `ค่าที่อ่านได้ (${unit || UNIT} สะสม)`;
+  if(vt === 'cumulative')    txt = `ค่าที่อ่านได้ (${u} สะสม)`;
+  else if(vt === 'snapshot') txt = `ค่าที่อ่านได้ (${u || 'หน่วยตามมิเตอร์'})`;
+  else                       txt = `ค่าที่อ่านได้ (${u})`;
   el.innerHTML = '📟 ' + esc(txt);
 }
 
@@ -3371,8 +3816,11 @@ async function retryLoadHistory(){
   if(!activeSub) return;
   const box = document.getElementById('history-error-box');
   if(box) box.innerHTML = '⏳ กำลังโหลดประวัติอีกครั้ง...';
+  const openedId = activeSub.id;
   try{
-    activeSubRecent = _recomputeRecentUsed(await loadRecentForSub(activeSub.id, 5), activeSub.id);
+    const loaded = await loadRecentForSub(openedId, 5);
+    if(!activeSub || activeSub.id !== openedId) return;   // meter changed meanwhile
+    activeSubRecent = _recomputeRecentUsed(loaded, openedId);
     historyLoadFailed = false;
     toast('✅ โหลดประวัติสำเร็จ','ok');
   }catch(e){
@@ -3395,8 +3843,12 @@ async function selectSub(meterId){
   inKwh.value = '';
   if(dec === 0){ inKwh.setAttribute('step','1'); inKwh.setAttribute('placeholder','กรอกเลขจำนวนเต็มเท่านั้น'); }
   else { inKwh.setAttribute('step',(1/Math.pow(10,dec)).toString()); inKwh.setAttribute('placeholder',`กรอกทศนิยม ${dec} ตำแหน่ง`); }
+  // The recorder account is shared (its name is the team's), so it said nothing
+  // about who read the meter — every row in Data had the same name. The name
+  // typed here is remembered on this device instead; an admin gets their own.
   const inUser = document.getElementById('in-user');
-  if(inUser && currentUser && !inUser.value) inUser.value = currentUser;
+  if(inUser && !inUser.value) inUser.value = lsGetRaw('recorderName') || (appMode === 'admin' ? (currentUser || '') : '');
+  const nb = document.getElementById('next-btn'); if(nb) nb.style.display = 'none';
   document.getElementById('in-note').value = '';
   document.getElementById('preview-box').style.display = 'none';
   setNow();
@@ -3419,22 +3871,74 @@ async function selectSub(meterId){
     activeSubRecent = _recomputeRecentUsed(bulkRecent[activeSub.id] || [], activeSub.id);   // server `used` has no zero guard
     applyReadingLabel();
     applyHistoryLoadState(); updateMeterSummary(); renderRecent();
+    // Enabled state comes from applyHistoryLoadState() above, which respects
+    // the expired-session write lock; only the label is set here.
     const sbFast = document.getElementById('save-btn');
-    if(sbFast){ sbFast.innerHTML = isConnected ? '✅ บันทึกข้อมูล' : '⚠️ บันทึก (Offline)'; sbFast.disabled = false; }
+    if(sbFast && !sbFast.disabled) sbFast.innerHTML = isConnected ? '✅ บันทึกข้อมูล' : '⚠️ บันทึก (Offline)';
+    _focusReading();
     return;
   }
-  try{
-    activeSubRecent = _recomputeRecentUsed(await loadRecentForSub(activeSub.id, 5), activeSub.id);
-  }catch(e){
+  const openedId = activeSub.id;
+  let loaded = null, failed = false;
+  try{ loaded = await loadRecentForSub(openedId, 5); }
+  catch(e){ failed = true; }
+  // Another meter was opened (or the screen closed) while this one loaded:
+  // its history must not be applied to whatever is open now.
+  if(!activeSub || activeSub.id !== openedId) return;
+  if(failed){
     historyLoadFailed = true;
     activeSubRecent = [];
     toast('❌ โหลดประวัติมิเตอร์ไม่ได้ — ยังบันทึกไม่ได้','err');
+  } else {
+    activeSubRecent = _recomputeRecentUsed(loaded, openedId);
   }
   sb.innerHTML = isConnected ? '✅ บันทึกข้อมูล' : '⚠️ บันทึก (Offline)';
-  sb.disabled  = false;
   applyReadingLabel();
   applyHistoryLoadState();
   updateMeterSummary(); renderRecent();
+  _focusReading();
+}
+/* Meters in the order the list shows them: zones in _REPORT_GROUPS order, then
+   unknown zones, then "อื่นๆ". Shared by the list and the "next" button. */
+function _zoneBuckets(){
+  const grouped = {}, order = [];
+  const bucket = key => { if(!(key in grouped)){ grouped[key] = []; order.push(key); } return grouped[key]; };
+  reportGroups.forEach(g => { if(g.key) bucket(g.key); });
+  subs.forEach(s => bucket((s.zone && String(s.zone).trim()) ? String(s.zone).trim() : '__OTHER__').push(s));
+  return { grouped, order };
+}
+/* The next meter in list order not yet recorded this round (wraps around). */
+function _nextUnrecorded(fromId){
+  const b = _zoneBuckets();
+  const list = b.order.flatMap(k => b.grouped[k]);
+  const i = list.findIndex(s => s.id === fromId);
+  for(let k = 1; k < list.length; k++){
+    const s = list[(i + k) % list.length];
+    if(s.id !== fromId && !meterStatusToday[s.id]) return s;
+  }
+  return null;
+}
+function _showNextButton(fromId){
+  const nb = document.getElementById('next-btn');
+  if(!nb) return;
+  const n = _nextUnrecorded(fromId);
+  if(!n){ nb.style.display = 'none'; return; }
+  nb.dataset.id = n.id;
+  nb.textContent = '➡️ ถัดไป (ยังไม่จด): ' + n.name;
+  nb.style.display = '';
+}
+function openNextMeter(){
+  const nb = document.getElementById('next-btn');
+  const id = nb && nb.dataset.id;
+  if(!id) return;
+  const es = document.getElementById('entry-section'); if(es) es.scrollTop = 0;
+  selectSub(id);
+}
+/* Reading box gets the cursor when a meter opens, once saving is possible. */
+function _focusReading(){
+  const k = document.getElementById('in-kwh'), sb = document.getElementById('save-btn');
+  if(!k || !sb || sb.disabled || document.activeElement === k) return;
+  try { k.focus({ preventScroll:true }); } catch(e){ k.focus(); }
 }
 function backToList(){
   activeSub = null;
@@ -3448,10 +3952,23 @@ function updateMeterSummary(){
   const sm = document.getElementById('meter-summary');
   if(!activeSubRecent.length){ sm.style.display = 'none'; return; }
   sm.style.display = 'block';
-  const last = activeSubRecent[0];
-  const prev = activeSubRecent.length > 1 ? activeSubRecent[1] : null;
+  // Real readings only: an "unable to read" row (0) is not the last reading.
+  const _usable = recentUsable();
+  const last = _usable[0] || activeSubRecent[0];
+  const prev = _usable.length > 1 ? _usable[1] : null;
   document.getElementById('last-reading').textContent = fmtNum(last.kwh, activeSub.id);
   document.getElementById('prev-reading').textContent = prev ? fmtNum(prev.kwh, activeSub.id) : '—';
+  // When each was read: a "previous" reading from last week reads very
+  // differently from last night's, and nothing on this screen said which.
+  const _when = r => r ? fmtDate(r.date) + (r.time ? ' ' + fmtTime(r.time) : '') : '';
+  const _ago = r => { if(!r) return ''; const d = _daysBetween(String(r.date).slice(0,10), ymdLocal()); return d > 1 ? ' (' + d + ' วันก่อน)' : ''; };
+  document.getElementById('last-reading-date').textContent = _when(last) + _ago(last);
+  document.getElementById('prev-reading-date').textContent = _when(prev);
+  const _u = meterUnit(activeSub), _vtU = activeValueType();
+  const _uTxt = _vtU === 'cumulative' ? _u + ' สะสม' : _u;
+  document.getElementById('last-unit').textContent = _uTxt;
+  document.getElementById('prev-unit').textContent = _uTxt;
+  document.getElementById('last-used-unit').textContent = _u;
   // For a demand or snapshot meter there is no "used since last time" to show.
   const _lu = document.getElementById('last-used');
   const _vt = activeValueType();
@@ -3499,7 +4016,8 @@ function previewUsed(){
   const box  = document.getElementById('preview-box');
   const chip = document.getElementById('preview-chip');
   if(isNaN(val) || val < 0){ box.style.display = 'none'; return; }
-  const lastKwh    = activeSubRecent.length ? (parseFloat(activeSubRecent[0].kwh) || 0) : null;
+  const _lastUsable = recentUsable()[0];   // skip an "unable to read" 0 (see saveRecord)
+  const lastKwh    = _lastUsable ? parseFloat(_lastUsable.kwh) : null;
   const multiplier = activeSub.multiplier !== undefined ? parseFloat(activeSub.multiplier) : 1;
   const vtype = activeValueType();
   box.style.display = 'block';
@@ -3508,7 +4026,10 @@ function previewUsed(){
     // No difference is shown: for a demand register the reading IS the value.
     // What the recorder needs to know is whether it beats this month's peak.
     const pk = demandPeakThisMonth();
-    if(pk.peak === null){
+    if(lastKwh !== null && lastKwh > 0 && val > lastKwh * abnormalMult()){
+      chip.className = 'chip chip-orange';
+      chip.textContent = `🔺 สูงกว่าครั้งก่อน (${fmtNum(lastKwh, activeSub.id)}) เกิน ${abnormalMult()} เท่า — ตรวจค่าอีกครั้ง`;
+    } else if(pk.peak === null){
       chip.className = 'chip chip-green';
       chip.textContent = activeSubRecent.length
         ? `📌 ค่าแรกของเดือนนี้: ${fmtNum(val, activeSub.id)}`
@@ -3545,14 +4066,22 @@ function previewUsed(){
       chip.className = 'chip chip-orange';
       chip.textContent = `⚠️ ค่าน้อยกว่าครั้งก่อน (${fmtNum(lastKwh, activeSub.id)})`;
     } else {
-      // Live abnormally-high check — see the matching comment in the Electric app.
-      const recentAvg = getRecentAvgUsed(activeSub.id);
-      if(recentAvg > 0 && diff > recentAvg * ABNORMAL_MULTIPLIER){
+      // Live usage checks — see the matching comment in the Electric app.
+      const chk = _usageCheck(diff, document.getElementById('in-date').value);
+      const inDays = chk.days > 1 ? ` ใน ${chk.days} วัน` : '';
+      const usual  = ` · ปกติ ~${fmtNum(chk.avg, activeSub.id)}/วัน`;
+      if(chk.level === 'high'){
         chip.className = 'chip chip-orange';
-        chip.textContent = `🔺 สูงผิดปกติ: +${fmtNum(diff, activeSub.id)} ${UNIT} (เฉลี่ย ${fmtNum(recentAvg, activeSub.id)})`;
+        chip.textContent = `🔺 สูงผิดปกติ: +${fmtNum(diff, activeSub.id)} ${UNIT}${inDays}${usual}`;
+      } else if(chk.level === 'zero'){
+        chip.className = 'chip chip-orange';
+        chip.textContent = `➖ เท่าครั้งก่อน (ใช้ 0)${usual} — มิเตอร์หยุด หรืออ่านผิดมิเตอร์?`;
+      } else if(chk.level === 'low'){
+        chip.className = 'chip chip-orange';
+        chip.textContent = `🔻 ต่ำกว่าปกติ: +${fmtNum(diff, activeSub.id)} ${UNIT}${inDays}${usual}`;
       } else {
         chip.className = 'chip chip-green';
-        chip.textContent = `${UNIT_ICON} ${UNIT_WORD}ไปรอบนี้: +${fmtNum(diff, activeSub.id)} ${UNIT}`;
+        chip.textContent = `${UNIT_ICON} ${UNIT_WORD}ไปรอบนี้: +${fmtNum(diff, activeSub.id)} ${UNIT}${inDays}`;
       }
     }
   }
@@ -3570,7 +4099,7 @@ function renderRecent(){
     <td class="td-kwh">${fmtNum(r.kwh, activeSub.id)}</td>
     <td class="td-used">${fmtUsedCell(r.used, activeSub.id)}</td>
     <td>${esc(r.user)||'—'}</td>
-    <td>${canEdit ? `<button class="btn btn-ghost btn-sm" onclick="openEdit('${r.id}')">✏️</button>` : ''}</td>
+    <td>${canEdit ? `<button class="btn btn-ghost btn-sm" data-id="${esc(r.id)}" onclick="openEdit(this.dataset.id)">✏️</button>` : ''}</td>
   </tr>`).join('');
 }
 
@@ -3580,14 +4109,18 @@ async function saveRecord(){
   const kwh  = parseFloat(document.getElementById('in-kwh').value);
   if(isNaN(kwh) || kwh < 0) return toast('กรอกค่ามิเตอร์ด้วย','err');
   const user = document.getElementById('in-user').value.trim();
-  if(!user) return toast('กรอกชื่อผู้บันทึกด้วย','err');
+  if(!user){ document.getElementById('in-user').focus(); return toast('กรอกชื่อผู้บันทึกด้วย','err'); }
+  try { lsSetRaw('recorderName', user); } catch(e){ /* storage full — typed again next time */ }
   const date = document.getElementById('in-date').value;
   if(!date) return toast('เลือกวันที่ด้วย','err');
   const time = document.getElementById('in-time').value;
   const note = document.getElementById('in-note').value || '';
   const dupe = activeSubRecent.find(r => r.date === date);
-  if(dupe){ if(!confirm(`⚠️ Meter ${activeSub.id} วันที่ ${fmtDate(date)} มีการบันทึกแล้ว (${fmtNum(dupe.kwh, activeSub.id)} kWh)\nบันทึกเพิ่มอีกหรือไม่?`)) return; }
-  const lastKwh = activeSubRecent.length ? (parseFloat(activeSubRecent[0].kwh) || 0) : null;
+  if(dupe){ if(!confirm(`⚠️ Meter ${activeSub.id} วันที่ ${fmtDate(date)} มีการบันทึกแล้ว (${fmtNum(dupe.kwh, activeSub.id)} ${meterUnit(activeSub)})\nบันทึกเพิ่มอีกหรือไม่?`)) return; }
+  // Compare against the last REAL reading: after an "unable to read" (saved as
+  // 0) the newest row is 0, and every check below would compare against it.
+  const _lastUsable = recentUsable()[0];
+  const lastKwh = _lastUsable ? parseFloat(_lastUsable.kwh) : null;
   const vtype = activeValueType();
 
   /* Validation depends on what kind of register this is.
@@ -3605,15 +4138,25 @@ async function saveRecord(){
     if(!confirm(msg)) return;
   }
 
-  // The "abnormally high" check compares consumption deltas, which only mean
-  // something for a totalising register.
-  if(vtype === 'cumulative' && lastKwh !== null && kwh > lastKwh){
+  // Usage checks compare consumption per day, which only means something for
+  // a totalising register. Low use is shown while typing but not asked here
+  // (see previewUsed); a reading equal to the last one is asked on a working
+  // day only, when the meter normally moves.
+  if(vtype === 'cumulative' && lastKwh !== null && kwh >= lastKwh){
     const multiplier = activeSub.multiplier !== undefined ? parseFloat(activeSub.multiplier) : 1;
-    const diff       = (kwh - lastKwh) * multiplier;
-    const recentUsed = getRecentAvgUsed(activeSub.id);
-    if(recentUsed > 0 && diff > recentUsed * ABNORMAL_MULTIPLIER){
-      if(!confirm(`⚠️ ค่าที่ใช้รอบนี้ (${Math.round(diff).toLocaleString()}) สูงผิดปกติ\nมากกว่าค่าเฉลี่ยที่ผ่านมา (${Math.round(recentUsed).toLocaleString()}) เกิน ${ABNORMAL_MULTIPLIER} เท่า\n\nกรอกค่าผิดหรือไม่? ยืนยันบันทึก?`)) return;
+    const diff = (kwh - lastKwh) * multiplier;
+    const chk  = _usageCheck(diff, date);
+    const per  = chk.days > 1 ? ` ใน ${chk.days} วัน (${Math.round(chk.perDay).toLocaleString()}/วัน)` : '';
+    if(chk.level === 'high'){
+      if(!confirm(`⚠️ ค่าที่ใช้รอบนี้ ${Math.round(diff).toLocaleString()}${per} สูงผิดปกติ\nเกิน ${abnormalMult()} เท่าของปกติ (~${Math.round(chk.avg).toLocaleString()}/วัน)\n\nกรอกค่าผิดหรือไม่? ยืนยันบันทึก?`)) return;
+    } else if(chk.level === 'zero' && getDayType(chk.usedOn) === 'work'){
+      if(!confirm(`⚠️ ค่าเท่ากับครั้งก่อน (${fmtNum(lastKwh, activeSub.id)}) — ใช้ไป 0\nปกติใช้ประมาณ ${Math.round(chk.avg).toLocaleString()} ต่อวัน\n\nมิเตอร์หยุด หรืออ่านผิดมิเตอร์? ยืนยันบันทึก?`)) return;
     }
+  }
+  // A demand register rises and falls, but a jump to many times the last
+  // reading is almost always a misplaced decimal point.
+  if(vtype === 'demand' && lastKwh !== null && lastKwh > 0 && kwh > lastKwh * abnormalMult()){
+    if(!confirm(`⚠️ ค่าที่กรอก (${kwh}) สูงกว่าครั้งก่อน (${lastKwh}) เกิน ${abnormalMult()} เท่า\n\nกรอกค่าผิดหรือไม่? ยืนยันบันทึก?`)) return;
   }
   await doSaveRecord(activeSub, kwh, date, time, user, note);
 }
@@ -3651,31 +4194,77 @@ async function doSaveRecord(sub, kwh, date, time, user, note){
   // The meter list is hidden behind the entry screen; backToList() redraws it
   // with the new "recorded today" state, so no rebuild per save.
   updateBadge(); updateMeterSummary(); renderRecent();
-  toast('✅ บันทึกแล้ว','ok');
+  // "Saved" only when it is on its way; offline it is on this phone only.
+  const _online = navigator.onLine !== false && !!sessionToken;
+  toast(_online ? '✅ บันทึกแล้ว — กำลังส่ง' : '💾 เก็บไว้ในเครื่องแล้ว — จะส่งเมื่อออนไลน์', _online ? 'ok' : 'warn');
+  _showNextButton(sub.id);
 
   const btn = document.getElementById('save-btn');
   if(btn){ btn.disabled = false; btn.innerHTML = '✅ บันทึกข้อมูล'; }
 }
-function getRecentAvgUsed(meterId){
-  // Only real consumption figures feed the "abnormally high" check. Entries
-  // with a null `used` (demand/snapshot) are excluded explicitly rather than
-  // relying on null||0 falling below the > 0 test.
-  const chain = activeSubRecent.filter(r => r.used !== null && r.used !== undefined && r.used > 0);
-  if(!chain.length) return 0;
-  return chain.reduce((a,r) => a + r.used, 0) / chain.length;
-}
 async function markUnableToRecord(){
   if(!activeSub) return toast('เลือก Meter ก่อน','err');
-  const lastRec = activeSubRecent[0];
+  const lastRec = recentUsable()[0];
   if(!lastRec){ return toast('⚠️ ยังไม่มีค่ามิเตอร์ก่อนหน้า ไม่สามารถใช้ฟังก์ชันนี้ได้','err'); }
+  const user = document.getElementById('in-user').value.trim();
+  if(!user){ document.getElementById('in-user').focus(); return toast('กรอกชื่อผู้บันทึกด้วย','err'); }
+  try { lsSetRaw('recorderName', user); } catch(e){ /* storage full */ }
   const reason = prompt('📝 ระบุเหตุผลที่จดไม่ได้:\n(เช่น มิเตอร์เสีย, เข้าพื้นที่ไม่ได้)', 'ไม่สามารถบันทึกค่าได้');
   if(reason === null) return;
   const date = document.getElementById('in-date').value;
-  if(!confirm(`ยืนยันว่า Meter ${activeSub.id} วันที่ ${fmtDate(date)} จดไม่ได้?\n\nระบบจะใช้ค่าเดิม ${fmtNum(lastRec.kwh, activeSub.id)} kWh\nหมายเหตุ: ${reason}`)) return;
-  const user = document.getElementById('in-user').value.trim() || currentUser || 'ไม่ระบุ';
+  /* Saved as 0 — the app's existing "nothing was read" value (see
+     _isUsableReading) — so charts and reports see a missing reading and mark
+     the gap. It used to repeat the last value, which is a real-looking reading:
+     that day showed 0 use and the next one carried two days, unmarked.
+     A demand register is the exception: 0 is a real value there (cycle reset)
+     and repeating the held peak changes nothing, so it keeps the old way. */
+  const isDemand = activeValueType() === 'demand';
+  const value = isDemand ? parseFloat(lastRec.kwh) : 0;
+  const how = isDemand ? `ระบบจะใช้ค่าเดิม ${fmtNum(lastRec.kwh, activeSub.id)}` : 'ระบบจะบันทึกเป็น "ไม่มีค่า" และกราฟจะแสดงว่าวันนี้จดขาด';
+  if(!confirm(`ยืนยันว่า Meter ${activeSub.id} วันที่ ${fmtDate(date)} จดไม่ได้?\n\n${how}\nหมายเหตุ: ${reason}`)) return;
   const time = document.getElementById('in-time').value;
-  await doSaveRecord(activeSub, parseFloat(lastRec.kwh), date, time, user, '⚠️ ' + reason);
+  await doSaveRecord(activeSub, value, date, time, user, '⚠️ จดไม่ได้: ' + reason);
   toast('📌 บันทึกว่าจดไม่ได้แล้ว','warn');
+}
+/* Whole days from date a to date b ('YYYY-MM-DD'); negative if b is earlier. */
+function _daysBetween(a, b){ return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000); }
+/* Usual use per day of the open meter: everything used between its oldest and
+   newest recent real readings, over the days between them. Per day, not per
+   reading — the old per-reading average made the day after a missed round
+   look twice as high, and two readings on one day look half as high. */
+function getRecentPerDay(){
+  const u = recentUsable();                  // newest first
+  if(u.length < 2) return 0;
+  const days = _daysBetween(reportDayOf(u[u.length-1].date, u[u.length-1].time), reportDayOf(u[0].date, u[0].time));
+  if(days < 1) return 0;
+  const used = u.slice(1).reduce((a, r) => a + (r.used > 0 ? r.used : 0), 0);   // the newest has no figure yet
+  return used / days;
+}
+/* Classifies this round's use against the usual per-day figure.
+   level: 'high' (> abnormalMultiplier × usual), 'zero' (same as last time on a
+   meter that normally moves), 'low' (< lowUsageRatio × usual) or null. */
+function _usageCheck(diff, dateStr){
+  const last = recentUsable()[0];
+  // Counted in report days: a reading at 00:30 belongs to the night before, so
+  // it is one day after last night's reading, not two.
+  const tEl = document.getElementById('in-time');
+  const today = reportDayOf(dateStr || ymdLocal(), tEl ? tEl.value : '');
+  const days = last ? Math.max(1, _daysBetween(reportDayOf(last.date, last.time), today)) : 1;
+  const perDay = diff / days;
+  const avg = getRecentPerDay();
+  let level = null;
+  if(avg > 0){
+    if(perDay > avg * abnormalMult()) level = 'high';
+    else if(diff === 0) level = 'zero';
+    else if(lowUsageRatio() > 0 && perDay < avg * lowUsageRatio()) level = 'low';
+  }
+  // usedOn: the day this round's use happened (the reading closes the bar of the day before).
+  return { days, perDay, avg, level, usedOn: usageDay(ymdAdd(today, -1)) };
+}
+/* Recent readings that are real readings (an "unable to read" 0 is not), newest first. */
+function recentUsable(){
+  if(!activeSub) return [];
+  return (activeSubRecent || []).filter(r => _isUsableReading(activeSub.id, parseFloat(r.kwh)));
 }
 
 /* ════════════ EDIT / DELETE RECORD ════════════ */
@@ -3684,7 +4273,7 @@ function openEdit(recordId){
   if(!r) return toast('❌ ไม่พบข้อมูลรายการนี้','err');
   currentEditingRecordId = recordId;
   const editSubSelect = document.getElementById('edit-sub');
-  editSubSelect.innerHTML = subs.map(s => `<option value="${s.id}" ${s.id === r.meterId ? 'selected' : ''}>${s.id} — ${s.name}</option>`).join('');
+  editSubSelect.innerHTML = subs.map(s => `<option value="${esc(s.id)}" ${s.id === r.meterId ? 'selected' : ''}>${esc(s.id)} — ${esc(s.name)}</option>`).join('');
   document.getElementById('edit-kwh').value  = r.kwh;
   document.getElementById('edit-date').value = r.date;
   document.getElementById('edit-time').value = r.time || '';
@@ -3749,14 +4338,10 @@ async function saveEdit(){
   try{
     const payload = { id:saved.id, meterId:saved.meterId, meterName:saved.meterName, zone:saved.zone, date:saved.date, time:saved.time, kwh:saved.kwh, user:saved.user, note:saved.note, ts:saved.ts, editedTs:saved.editedTs, editedBy:saved.editedBy, baseTs:baseTs };
     const editRes = await apiPostAuthed({ action:'editRecord', record:payload });
-    if(editRes && editRes.conflict){
-      records = records.filter(r => r.id !== recordId);
-      records.push(originalRecord);
-      records = computeUsed(records); persist(); renderAll();
-      setSyncStatus('error','มีการแก้ไขชนกัน');
-      toast('⚠️ ' + (editRes.error || 'รายการถูกแก้โดยผู้อื่น กรุณาโหลดใหม่'), 'err');
-      return;
-    }
+    // The server stamps its own editedTs; keep that one. Keeping ours made the
+    // next edit of the same row (same session) send a baseTs the server had
+    // never seen, so it was always refused as "edited by someone else".
+    if(editRes && editRes.editedTs){ const t = records.find(r => r.id === recordId); if(t) t.editedTs = editRes.editedTs; }
     invalidateSummaryCache('editRecord:'+saved.meterId+'@'+saved.date);
     setSyncStatus('ok','แก้ไขสำเร็จ');
   }catch(e){
@@ -3764,7 +4349,11 @@ async function saveEdit(){
     records = records.filter(r => r.id !== recordId);
     records.push(originalRecord);
     records = computeUsed(records); persist(); renderAll();
-    setSyncStatus('error','แก้ไขไม่สำเร็จ — ยกเลิกการเปลี่ยนแปลงในเครื่องแล้ว');
+    // apiPostAuthed throws on success:false, so a conflict arrives here; the
+    // server's message was already shown as a toast.
+    const conflict = !!(e && e.response && e.response.conflict);
+    setSyncStatus('error', conflict ? 'มีการแก้ไขชนกัน — โหลดข้อมูลใหม่แล้วลองอีกครั้ง'
+                                    : 'แก้ไขไม่สำเร็จ — ยกเลิกการเปลี่ยนแปลงในเครื่องแล้ว');
   }
 }
 async function deleteRecord(id){
@@ -3830,6 +4419,9 @@ async function saveEditSub(){
   try{
     await apiPostAuthed({ action:'updateMeterConfig', meter:updatedSub });
     setSyncStatus('ok','บันทึกข้อมูล Meter ลงแผ่นชีทสำเร็จ');
+    // The group charts show the server's figures: drop the ones worked out
+    // with the old multiplier (the page used to recompute them from `subs`).
+    invalidateSummaryCache('meter-config');
   }catch(e){
     // Keeping the unsaved config "in cache" meant this device silently disagreed
     // with the Sheet (and every other device) until the next full load. Revert.
@@ -3879,11 +4471,13 @@ function clearFilter(){
   applyFilter();
 }
 function populateDDs(){
-  const sOpts = '<option value="">ทั้งหมด</option>' + subs.map(s => `<option value="${s.id}"${s.id===activeFilter.sub?' selected':''}>${s.id} — ${s.name}</option>`).join('');
-  const cOpts = '<option value="">เลือก Sub...</option>' + subs.map(s => `<option value="${s.id}">${s.id}</option>`).join('');
+  const sOpts = '<option value="">ทั้งหมด</option>' + subs.map(s => `<option value="${esc(s.id)}"${s.id===activeFilter.sub?' selected':''}>${esc(s.id)} — ${esc(s.name)}</option>`).join('');
+  const cOpts = '<option value="">เลือก Sub...</option>' + subs.map(s => `<option value="${esc(s.id)}">${esc(s.id)}</option>`).join('');
   document.getElementById('fl-sub').innerHTML = sOpts;
   const cs = document.getElementById('chart-sub');
-  if(cs) cs.innerHTML = cOpts;
+  // Rebuilding the options dropped the selection, so every refresh, edit or
+  // return to the Charts tab emptied the per-meter chart.
+  if(cs){ const keep = cs.value; cs.innerHTML = cOpts; if(keep && subs.some(s => s.id === keep)) cs.value = keep; }
   if(document.getElementById('chart-sub-picker')){
     _pickerData['chart-sub-picker'] = {
       items: subs.map(s => ({ key:s.id, label:`${s.name} (${s.id})` })),
@@ -3922,9 +4516,13 @@ function renderStats(){
    returns the first match, so every update landed on the invisible one and the
    badge the user actually sees never changed. The header copy is gone and the
    remaining one has its own id. */
+/* Progress of this round on the meter list. It used to show records.length —
+   the admin's loaded rows — which is 0 for a recorder. */
 function updateBadge(){
   const el = document.getElementById('entry-record-badge');
-  if(el) el.textContent = records.length + ' rec';
+  if(!el) return;
+  const done = subs.filter(s => meterStatusToday[s.id]).length;
+  el.textContent = 'จดแล้ว ' + done + '/' + subs.length;
 }
 
 /* ════════════ QR ════════════ */
@@ -3935,18 +4533,18 @@ function renderQR(){
   if(zoneSel && zoneSel.options.length <= 1){
     const zoneKeys = [...new Set(subs.map(s => s.zone))].sort();
     zoneSel.innerHTML = '<option value="">ทั้งหมด</option>' +
-      zoneKeys.map(z => `<option value="${z}">${esc(zoneName(z))}</option>`).join('');
+      zoneKeys.map(z => `<option value="${esc(z)}">${esc(zoneName(z))}</option>`).join('');
   }
   const filterZone = zoneSel?.value || '';
   const list = filterZone ? subs.filter(s => s.zone === filterZone) : subs;
   if(!list.length){ grid.innerHTML = '<div class="section-empty">ไม่มี Meter ใน Zone นี้</div>'; return; }
   ensureQRCode().catch(function(e){ grid.innerHTML = '<div class="warn-box">❌ โหลด QR library ไม่ได้</div>'; });
   list.forEach(sub => {
-    const url = QR_BASE_URL.replace(/\/$/, '') + '?sub=' + encodeURIComponent(sub.id);
+    const url = QR_BASE_URL.replace(/\/$/, '') + '?meter=' + encodeURIComponent(sub.id);   // ?sub= on older printed codes still works
     const qid = 'qr_' + sub.id.replace(/\W/g,'_');
     const div = document.createElement('div');
     div.className = 'qr-item';
-    div.innerHTML = `<div class="qi-name">${esc(sub.name)}<br><span style="color:var(--purple)">${esc(zoneName(sub.zone))}</span></div><div class="qi-id">${sub.id}</div><div class="qi-qr" id="${qid}"></div><div class="qi-url">${url.length>55 ? url.slice(0,52)+'…' : url}</div>`;
+    div.innerHTML = `<div class="qi-name">${esc(sub.name)}<br><span style="color:var(--purple)">${esc(zoneName(sub.zone))}</span></div><div class="qi-id">${esc(sub.id)}</div><div class="qi-qr" id="${qid}"></div><div class="qi-url">${esc(url.length>55 ? url.slice(0,52)+'…' : url)}</div>`;
     grid.appendChild(div);
     ensureQRCode().then(function(){
       const elQ = document.getElementById(qid);
@@ -4001,6 +4599,7 @@ async function addSub(){
   }
   subs.push(newSub);
   persist();
+  invalidateSummaryCache('meter-added');
   ['new-id','new-name','new-zone'].forEach(x => { document.getElementById(x).value=''; });
   document.getElementById('new-decimal').value = '0';
   renderSubList(); renderZoneAreas(); populateDDs();
@@ -4020,6 +4619,7 @@ async function removeSub(i){
     return;
   }
   subs.splice(i, 1); persist();
+  invalidateSummaryCache('meter-removed');
   renderSubList(); renderZoneAreas(); populateDDs();
   toast('ลบ ' + s.id);
 }
@@ -4087,9 +4687,20 @@ async function clearServerCache(){
   }
 }
 
+/* Data tab 🔄: reload the records themselves. It used to call
+   loadFromServer(), which refreshes meters and status but never records, so
+   the table did not change. */
+async function refreshDataTab(){
+  _adminRecordsLoaded = false;
+  await Promise.all([loadFromServer(), ensureAdminRecords()]);
+  renderData(); renderStats();
+}
 function clearCache(){
   if(!confirm('ล้าง Cache ในเครื่องนี้?\n(ข้อมูลใน Google Sheets ยังอยู่ครบ)')) return;
   records = []; subs = []; workCalendar = []; filteredRecords = []; currentPage = 1;
+  // Same flags as clearServerCache: with _adminRecordsLoaded still true the
+  // emptied Data tab never reloaded until the next login.
+  _adminRecordsLoaded = false; bulkRecent = null; availableMonths = null;
   lsRemove('records'); lsRemove('subs'); lsRemove('calendar');
   toast('ล้าง Cache แล้ว — กำลังโหลดจาก Sheets ใหม่...','warn');
   loadFromServer();
@@ -4111,10 +4722,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if(recorderPassEl) recorderPassEl.addEventListener('keydown', e => { if(e.key === 'Enter') handleRecorderLogin(); });
   const viewerPassEl = document.getElementById('viewer-pass');
   if(viewerPassEl) viewerPassEl.addEventListener('keydown', e => { if(e.key === 'Enter') handleViewerLogin(); });
+  // Enter (the phone keyboard's Go/Done) in the reading box saves.
+  const kwhEl = document.getElementById('in-kwh');
+  if(kwhEl) kwhEl.addEventListener('keydown', e => {
+    if(e.key !== 'Enter') return;
+    e.preventDefault();
+    const sb = document.getElementById('save-btn');
+    if(sb && !sb.disabled) saveRecord();
+  });
 });
 
-// init() is called at the very end of the concatenated script (core-tail.js),
-// not here — see the note there for why.
+// init() is called on the last line of this script, once every function above exists.
 
 
 
@@ -4149,11 +4767,26 @@ let sendQueue = [];
 let _queueTimer = null;
 let _queueRunning = false;
 
+let _queueLoaded = false;
 function loadQueue(){
-  try {
-    const raw = lsGetRaw(QUEUE_KEY);
-    sendQueue = raw ? (JSON.parse(raw) || []) : [];
-  } catch(e){ sendQueue = []; }
+  /* The stored queue is read once per page and MERGED into the in-memory one,
+     keeping the array itself. It used to be replaced wholesale, after the
+     startup fetch: a reading saved before that (a QR scan opens the meter
+     straight away) was pushed onto the empty array and persistQueue() wrote
+     it over the stored queue — readings still unsent from the last session
+     were gone. Replacing the array also broke flushQueue(), which removes
+     sent items by identity while a batch is in flight. */
+  if(!_queueLoaded){
+    _queueLoaded = true;
+    let stored = [];
+    try {
+      const raw = lsGetRaw(QUEUE_KEY);
+      stored = raw ? (JSON.parse(raw) || []) : [];
+    } catch(e){ stored = []; }
+    const have = new Set(sendQueue.map(q => String(q && q.rec && q.rec.id)));
+    const older = stored.filter(q => q && q.rec && !have.has(String(q.rec.id)));
+    if(older.length){ sendQueue.unshift(...older); persistQueue(); }   // older readings first: send order = reading order
+  }
   // App open and login are a fresh start for items that failed for transient
   // reasons (network, or a session that expired mid-round — the server rejects
   // the whole batch, which counted against every reading in it). Without this
@@ -4168,6 +4801,7 @@ function persistQueue(){
 }
 
 function enqueueRecord(rec){
+  if(!_queueLoaded) loadQueue();   // merge what is stored before writing the queue back
   sendQueue.push({ rec: rec, attempts: 0, lastError: '', queuedAt: Date.now() });
   persistQueue();
   flushQueue();               // fire and forget
@@ -4290,7 +4924,44 @@ function startQueueTimer(){
   _queueTimer = setInterval(() => { if(sendQueue.length) flushQueue(); }, QUEUE_RETRY_MS);
 }
 
+/* Meters with a reading still waiting in the send queue. */
+function _queuedMeterIds(){
+  const ids = new Set();
+  sendQueue.forEach(q => { if(q && q.rec && q.rec.meterId) ids.add(q.rec.meterId); });
+  return ids;
+}
+/* Header chip (visible on every screen, the entry screen included) and the
+   meter cards' "waiting to send" state follow the queue. */
+function _renderQueueChip(){
+  const c = document.getElementById('hdr-queue');
+  if(!c) return;
+  const right = c.parentElement; if(right) right.classList.toggle('has-queue', sendQueue.length > 0);
+  if(!sendQueue.length){ c.style.display = 'none'; return; }
+  const stuck = sendQueue.filter(q => q.attempts >= QUEUE_MAX_ATTEMPTS).length;
+  c.style.display = '';
+  c.className = 'rd-queue-chip' + (stuck ? ' stuck' : '');
+  c.textContent = (stuck ? '⚠️ ' : '📤 ') + sendQueue.length;
+  c.title = 'รอส่ง ' + sendQueue.length + ' รายการ' + (stuck ? ' — ส่งไม่สำเร็จ ' + stuck + ' รายการ' : '');
+}
+function _markQueuedCards(){
+  const ids = _queuedMeterIds();
+  document.querySelectorAll('#zone-areas .sub-card').forEach(d => {
+    const q = ids.has(d.dataset.id);
+    if(d.classList.contains('queued') === q) return;
+    d.classList.toggle('queued', q);
+    const t = d.querySelector('.sc-status-txt');
+    if(t) t.textContent = _cardStatusText(d.classList.contains('today'), q);
+  });
+}
+function onQueueChip(){
+  if(!sendQueue.length) return;
+  const lines = sendQueue.slice(0, 15).map((q, i) => `${i+1}. ${q.rec.meterId} — ${q.rec.kwh} (${q.rec.date} ${q.rec.time})` + (q.attempts ? `  [ลองแล้ว ${q.attempts} ครั้ง]` : ''));
+  const more = sendQueue.length > 15 ? `\n...และอีก ${sendQueue.length - 15} รายการ` : '';
+  if(confirm('ยังไม่ถึงเซิร์ฟเวอร์ ' + sendQueue.length + ' รายการ (เก็บอยู่ในเครื่องนี้)\n\n' + lines.join('\n') + more + '\n\nส่งเดี๋ยวนี้?')) flushQueue(true);
+}
 function renderQueueBanner(){
+  _renderQueueChip();
+  _markQueuedCards();
   const el = document.getElementById('queue-banner');
   if(!el) return;
   if(!sendQueue.length){ el.style.display = 'none'; return; }
@@ -4360,7 +5031,7 @@ function buildSummaryGroupOptions(){
   const sel = document.getElementById('sum-group');
   if(!sel) return;
   const prev = sel.value;
-  sel.innerHTML = reportGroups.map(g => `<option value="${g.key}">${esc(g.icon||'')} ${esc(g.name)}</option>`).join('')
+  sel.innerHTML = reportGroups.map(g => `<option value="${esc(g.key)}">${esc(g.icon||'')} ${esc(g.name)}</option>`).join('')
     + '<option value="__OTHER__">📦 Other (มิเตอร์ที่ไม่อยู่ในกลุ่มใดๆ)</option>';
   if(prev) sel.value = prev;
 }
@@ -4580,7 +5251,7 @@ function renderSummaryTable2(){
       cells += `<td style="text-align:right;font-family:var(--font-mono);font-size:11px">${Math.round(zoneNet[g.key][d]).toLocaleString()}</td>`;
     });
     html += `<tr>
-      <td style="position:sticky;left:0;background:var(--surface-1);color:${g.color||'var(--accent)'};font-weight:700;z-index:1">${g.icon||'📦'} ${esc(g.name)}</td>
+      <td style="position:sticky;left:0;background:var(--surface-1);color:${esc(g.color||'var(--accent)')};font-weight:700;z-index:1">${esc(g.icon||'📦')} ${esc(g.name)}</td>
       ${cells}
       <td style="text-align:right;background:var(--accent-dim);color:var(--accent);font-weight:700;font-family:var(--font-mono)">${Math.round(zoneRowTotal[g.key]).toLocaleString()}</td>
     </tr>`;
@@ -4703,7 +5374,6 @@ async function exportSummaryT2(){
    APEXCHARTS SYSTEM
    ════════════════════════════════════════════════════════════ */
 let subChartInst = null;
-let _subChartStructKey = null;   // 'type:seriesCount' of the live chart, for safe updateOptions reuse
 let subReqId = 0;                // guards against out-of-order renders (rapid meter/period switching)
 let g9ChartInst = null;
 let cmpChartInst = null;
@@ -4749,15 +5419,65 @@ function aggregateRecordsCached(recs, period, dateFrom, dateTo, meterId){
   return out;
 }
 
+/* Demand and snapshot meters have no "use": the reading is the value. The
+   per-meter chart plots the readings themselves — a demand meter's highest
+   reading of each day/month (its bill is the monthly peak), a snapshot's last
+   one. Same shape as aggregateRecords. It used to plot `used`, which is null
+   for these, as a flat 0 line labelled kWh. */
+function aggregateLevels(recs, period, dateFrom, dateTo, meterId){
+  var MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var isDemand = meterValueType(subById(meterId)) === 'demand';
+  var keyOf = period === 'day' ? function(d){ return d; } : period === 'month' ? function(d){ return d.slice(0,7); } : function(d){ return d.slice(0,4); };
+  var by = {};
+  recs.slice().sort(function(a,b){ return (a.date+' '+(a.time||'')).localeCompare(b.date+' '+(b.time||'')); }).forEach(function(r){
+    var v = parseFloat(r.kwh);
+    if(!_isUsableReading(meterId, v)) return;
+    var k = keyOf(r.rday || String(r.date).slice(0,10));                    // its report day, like the usage charts
+    by[k] = (isDemand && by[k] !== undefined) ? Math.max(by[k], v) : v;   // sorted oldest first, so a snapshot keeps its last
+  });
+  var keys = Object.keys(by).sort();
+  if(!keys.length) return [];
+  var out = [];
+  if(period === 'day'){
+    var cur = new Date((dateFrom || keys[0])+'T00:00:00'), endD = new Date((dateTo || keys[keys.length-1])+'T00:00:00');
+    while(cur <= endD){
+      var ds = ymdLocal(cur), p = ds.split('-').map(Number);
+      out.push({ label:p[2]+'/'+p[1], value: by[ds] || 0, date:ds, hol:getDayType(ds)==='holiday', hasData: by[ds] !== undefined, span:1 });
+      cur.setDate(cur.getDate()+1);
+    }
+    return out;
+  }
+  if(period === 'month'){
+    var s = (dateFrom ? dateFrom.slice(0,7) : keys[0]).split('-').map(Number), e = (dateTo ? dateTo.slice(0,7) : keys[keys.length-1]).split('-').map(Number);
+    var c = new Date(s[0], s[1]-1, 1), last = new Date(e[0], e[1]-1, 1);
+    while(c <= last){
+      var km = c.getFullYear()+'-'+String(c.getMonth()+1).padStart(2,'0');
+      out.push({ label:MN[c.getMonth()+1]+' '+c.getFullYear(), value: by[km] || 0, date:km, hasData: by[km] !== undefined });
+      c.setMonth(c.getMonth()+1);
+    }
+    return out;
+  }
+  return keys.map(function(k){ return { label:k, value:by[k], date:k, hasData:true }; });
+}
 function aggregateRecords(recs, period, dateFrom, dateTo){
   var MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   var fmt = function(dt){ return ymdLocal(dt); };
+  // Readings are placed on their report day (computeUsed sets rday).
+  var dayOf = function(r){ return r.rday || String(r.date).slice(0,10); };
   if(period === 'day'){
-    var byDate = {};
+    var byDate = {}, openDay = {};
     recs.forEach(function(r){
-      if(!byDate[r.date]) byDate[r.date] = { used:0, count:0 };
-      byDate[r.date].used += parseFloat(r.used)||0;
-      byDate[r.date].count++;
+      // A day whose last reading has nothing after it yet is still open: any
+      // figure on it is only what moved between two readings of that day.
+      if(r.open) openDay[dayOf(r)] = true;
+      // No figure yet (newest reading) or not a reading → not a data day.
+      if(r.used === null || r.used === undefined || isNaN(parseFloat(r.used))) return;
+      var d = dayOf(r);
+      if(!byDate[d]) byDate[d] = { used:0, count:0, span:1, note:'' };
+      byDate[d].used += parseFloat(r.used);
+      byDate[d].count++;
+      if((r.spanDays || 1) > byDate[d].span) byDate[d].span = r.spanDays;
+      if(r.closeNote && byDate[d].note.indexOf(r.closeNote) < 0) byDate[d].note += (byDate[d].note ? ' · ' : '') + r.closeNote;
     });
     var dates = Object.keys(byDate).sort();
     var start = dateFrom || (dates.length ? dates[0] : null);
@@ -4770,7 +5490,8 @@ function aggregateRecords(recs, period, dateFrom, dateTo){
       var ds = fmt(cur);
       var p = ds.split('-').map(Number);
       var val = byDate[ds] ? byDate[ds].used : 0;
-      result.push({ label:p[2]+'/'+p[1], value:val, date:ds, hol:getDayType(ds)==='holiday', hasData: !!byDate[ds] });
+      // hol: the day the energy was used (usageDay), not the day it was read.
+      result.push({ label:p[2]+'/'+p[1], value:val, date:ds, hol:isUsageHoliday(ds), hasData: !!byDate[ds], span: byDate[ds] ? byDate[ds].span : 1, note: byDate[ds] ? byDate[ds].note : '', open: !!(byDate[ds] && openDay[ds]) });
       cur.setDate(cur.getDate()+1);
     }
     return result;
@@ -4778,9 +5499,11 @@ function aggregateRecords(recs, period, dateFrom, dateTo){
   if(period === 'month'){
     var byM = {};
     recs.forEach(function(r){
-      var key = String(r.date).slice(0,7);
+      // Same rule as days: a reading with no figure yet is not data.
+      if(r.used === null || r.used === undefined || isNaN(parseFloat(r.used))) return;
+      var key = dayOf(r).slice(0,7);
       if(!byM[key]) byM[key] = 0;
-      byM[key] += parseFloat(r.used)||0;
+      byM[key] += parseFloat(r.used);
     });
     var months = Object.keys(byM).sort();
     var startM = dateFrom ? dateFrom.slice(0,7) : (months.length ? months[0] : null);
@@ -4800,17 +5523,60 @@ function aggregateRecords(recs, period, dateFrom, dateTo){
   }
   var byY = {};
   recs.forEach(function(r){
-    var y = String(r.date).slice(0,4);
+    if(r.used === null || r.used === undefined || isNaN(parseFloat(r.used))) return;
+    var y = dayOf(r).slice(0,4);
     if(!byY[y]) byY[y] = 0;
-    byY[y] += parseFloat(r.used)||0;
+    byY[y] += parseFloat(r.used);
   });
   return Object.entries(byY).sort(function(a,b){return a[0]-b[0];}).map(function(e){
     return { label:e[0], value:e[1], date:e[0], hasData:true };
   });
 }
+/* Normal for each point of a dense daily series (normalOfDay): the median of
+   the same kind of day over the lookDays before it. */
+function attachNormals(points, lookDays){
+  const vals = points.map(d => d.hasData ? d.value : null);
+  const hol  = points.map(d => !!d.hol);
+  const good = points.map(d => !!d.hasData && (d.span || 1) === 1 && !d.missing && !d.open);
+  points.forEach((d, i) => { d.normal = normalOfDay(vals, hol, good, i, lookDays, NORMAL_MIN_DAYS); });
+}
+function _pctVsNormal(v, normal){
+  if(!normal) return '';
+  const p = (v - normal) / Math.abs(normal) * 100;
+  return (p >= 0 ? '+' : '−') + Math.abs(p).toFixed(Math.abs(p) < 10 ? 1 : 0) + '%';
+}
+const NORMAL_LOW_COLOR = '#3b82f6';
+/* NORMAL-SHARED-BEGIN */
+/* Median of the usable figures of the same kind of day in the lookDays days
+   before index i. vals/hol/good are parallel arrays, one entry per calendar
+   day; good[k] = a complete single-day figure. null when fewer than minN. */
+function normalOfDay(vals, hol, good, i, lookDays, minN) {
+  const pool = [];
+  for (let k = Math.max(0, i - lookDays); k < i; k++) {
+    if (good[k] && hol[k] === hol[i] && vals[k] !== null && vals[k] !== undefined) pool.push(vals[k]);
+  }
+  if (pool.length < minN) return null;
+  pool.sort(function (a, b) { return a - b; });
+  const h = pool.length >> 1;
+  return pool.length % 2 ? pool[h] : (pool[h - 1] + pool[h]) / 2;
+}
+/* 'high' | 'low' | 'ok', or null when there is nothing to compare. */
+function judgeAgainstNormal(v, normal, bandPct, minDiff) {
+  if (v === null || v === undefined || normal === null || normal === undefined) return null;
+  const diff = v - normal;
+  if (Math.abs(diff) < minDiff) return 'ok';
+  const band = Math.abs(normal) * bandPct / 100;
+  return diff > band ? 'high' : (diff < -band ? 'low' : 'ok');
+}
+/* NORMAL-SHARED-END */
 
 /* See the matching comment in the Electric app. */
 function buildChartOpts(dataPoints, state, TC){
+  // Unit/word default to the app's (kWh / m³); the per-meter chart passes the
+  // meter's own. `level`: the values are readings (demand/snapshot), so there
+  // is no total and they keep their decimals.
+  const U = state.unit || UNIT, W = state.word || UNIT_WORD, isLevel = !!state.level;
+  const R = isLevel ? (v => Math.round(v * 100) / 100) : Math.round;
   const total = dataPoints.reduce((a,d) => a + d.value, 0);
   /* Average must divide by days that actually have a reading, not by every
      slot on the axis. "This month" spans day 1 to the last day of the month,
@@ -4819,7 +5585,24 @@ function buildChartOpts(dataPoints, state, TC){
      hasData (set by aggregateRecords) marks the real ones; empty future/blank
      days still render on the axis, they just don't dilute the average. */
   const withData = dataPoints.filter(d => d.hasData);
-  const avg = withData.length ? total / withData.length : 0;
+  /* A bar that covers several days (a reading was missed, see span) counts as
+     that many days in the averages — dividing it by one made the average
+     jump every time someone skipped a meter. Only the days that have no bar
+     of their own are added, though: in a group, one meter's three-day figure
+     sits beside the other meters' ordinary days, and counting those days
+     twice (once in the span, once as their own bars) pulled the group's
+     average down every time a single meter was missed. */
+  const _dayN = new Map();
+  dataPoints.forEach((d, i) => {
+    if(!d.hasData) return;
+    let n = 1;
+    if(state.period === 'day' && d.span > 1)
+      for(let k = 1; k < d.span; k++){ const nx = dataPoints[i + k]; if(!nx || !nx.hasData) n++; }
+    _dayN.set(d, n);
+  });
+  const daysOf = d => _dayN.get(d) || 1;
+  const nDays = withData.reduce((a, d) => a + daysOf(d), 0);
+  const avg = nDays ? total / nDays : 0;
   const pl = state.period === 'day' ? 'วัน' : state.period === 'month' ? 'เดือน' : 'ปี';
 
   let avgWork = 0, avgHol = 0, nWork = 0, nHol = 0;
@@ -4827,11 +5610,37 @@ function buildChartOpts(dataPoints, state, TC){
     let sumWork = 0, sumHol = 0;
     dataPoints.forEach(d => {
       if(!d.hasData) return;   // skip empty days in both the average and the day count
-      if(d.hol){ sumHol += d.value; nHol++; } else { sumWork += d.value; nWork++; }
+      if(d.hol){ sumHol += d.value; nHol += daysOf(d); } else { sumWork += d.value; nWork += daysOf(d); }
     });
     avgWork = nWork ? sumWork / nWork : 0;
     avgHol  = nHol  ? sumHol  / nHol  : 0;
   }
+
+  /* Normal range (daily use). Each point may carry `normal` — the median of
+     the same kind of day over the weeks before it (the server's for a group,
+     attachNormals for a meter). A single-day figure is judged against it:
+     outside = more than band % away AND at least minDiff away. A meter's
+     figure that covers several days, or whose round is not closed yet (open),
+     is not judged. For a group the server leaves such meters — and missing
+     ones — out of both sides (cmp and cmpN), so what is compared is like
+     for like and one missed meter does not stop the group being judged. The
+     range lines follow `normal` (the bar as it stands), so a bar that holds
+     somebody's two days stands above its range, grey, and says why. */
+  const rule = state.rule || { weeks: normalWeeks(), bandPct: normalBandPct(), minDiff: alertMinDiff() };
+  const isDay = state.period === 'day';
+  const showNorm = isDay && !isLevel && state.showNorm !== false && dataPoints.some(d => d.normal !== null && d.normal !== undefined);
+  dataPoints.forEach(d => {
+    d.partial = !!(isDay && d.hasData && d.missing > 0);
+    // What is compared: for a group, the server's `cmp` against `cmpN` (the
+    // meters that have a whole single day, and their normal); for one meter,
+    // its figure unless it is a multi-day lump or an open round. d.normal is
+    // the range drawn: the normal for the bar as it stands.
+    d.cmpVal = !d.hasData ? null : (d.cmp !== undefined ? d.cmp : ((d.span > 1 || d.open) ? null : d.value));
+    d.cmpNorm = d.cmpN !== undefined ? d.cmpN : d.normal;
+    d.judge = (showNorm && d.cmpVal !== null) ? judgeAgainstNormal(d.cmpVal, d.cmpNorm, rule.bandPct, rule.minDiff) : null;
+  });
+  const nHigh = dataPoints.filter(d => d.judge === 'high').length;
+  const nLow  = dataPoints.filter(d => d.judge === 'low').length;
 
   const labels = dataPoints.map(d => d.label);
   const chartType = state.type === 'bar' ? 'bar' : 'line';
@@ -4850,30 +5659,70 @@ function buildChartOpts(dataPoints, state, TC){
     const _avgForMax = state.period === 'day' ? Math.max(avgWork, avgHol) : avg;
     if(_avgForMax > _peak) _peak = _avgForMax;
   }
+  if(showNorm) dataPoints.forEach(d => { if(d.normal > 0 && d.normal * (1 + rule.bandPct / 100) > _peak) _peak = d.normal * (1 + rule.bandPct / 100); });
   const yMax = _peak > 0 ? _niceCeil(_peak * 1.1) : undefined;
 
   let series, chartColors;
+  // Bars that are not an ordinary day's use get their own colour: red / blue =
+  // above / below the normal range, grey = one figure covering several days,
+  // or some meters missing (so the bar is lower than its neighbours for a
+  // reason that is not consumption). The colour comes from
+  // a fill function, not per-point objects: ApexCharts switches a whole series
+  // to {x,y} parsing when one point is an object.
+  const hasGap = isDay && dataPoints.some(d => d.hasData && (d.span > 1 || d.partial || d.open));
+  const GAP_FILL = '#94a3b8', HIGH_FILL = TC.red, LOW_FILL = NORMAL_LOW_COLOR;
+  const specialFill = d => (!d || !d.hasData) ? null : d.judge === 'high' ? HIGH_FILL : d.judge === 'low' ? LOW_FILL : (isDay && (d.span > 1 || d.partial || d.open)) ? GAP_FILL : null;
+  const hasSpecial = dataPoints.some(d => specialFill(d));
+  const barFill = base => function(o){ return specialFill(dataPoints[o.dataPointIndex]) || base; };
   if(useHolSplit){
-    const workData = dataPoints.map(d => d.hol ? null : Math.round(d.value));
-    const holData  = dataPoints.map(d => d.hol ? Math.round(d.value) : null);
+    const workData = dataPoints.map(d => d.hol ? null : R(d.value));
+    const holData  = dataPoints.map(d => d.hol ? R(d.value) : null);
     series = [
-      { name:UNIT_WORD+' (วันทำงาน)', data:workData },
-      { name:UNIT_WORD+' (วันหยุด)',  data:holData  }
+      { name:W+' (วันทำงาน)', data:workData },
+      { name:W+' (วันหยุด)',  data:holData  }
     ];
     chartColors = [TC.green, TC.orange];
   } else {
-    const values = dataPoints.map(d => Math.round(d.value));
-    series = [{ name:UNIT_WORD+' ('+UNIT+'/'+pl+')', data:values }];
+    const values = dataPoints.map(d => R(d.value));
+    series = [{ name: isLevel ? W+' ('+U+')' : W+' ('+U+'/'+pl+')', data:values }];
     chartColors = [chartType === 'bar' ? TC.green : TC.accent];
   }
+  const nValueSeries = series.length;
   let strokeW = series.map(() => chartType === 'bar' ? 0 : 2.5);
   let strokeDash = series.map(() => 0);
   if(state.showAvg){
-    const avgLine = Math.round(state.period === 'day' ? avgWork : avg);
+    const avgLine = R(state.period === 'day' ? avgWork : avg);
     series.push({ name:'ค่าเฉลี่ย', data:dataPoints.map(() => avgLine), type:'line' });
     chartColors.push(TC.orange+'77');
     strokeW.push(2); strokeDash.push(5);
   }
+  if(showNorm){
+    // The range as two thin lines: each day's own upper and lower limit.
+    const lim = f => dataPoints.map(d => (d.normal === null || d.normal === undefined) ? null : R(Math.max(0, d.normal * f)));
+    series.push({ name:'ช่วงปกติ +'+rule.bandPct+'%', data:lim(1 + rule.bandPct / 100), type:'line' },
+                { name:'ช่วงปกติ −'+rule.bandPct+'%', data:lim(1 - rule.bandPct / 100), type:'line' });
+    chartColors.push(TC.text2, TC.text2);
+    strokeW.push(1.5, 1.5); strokeDash.push(3, 3);
+  }
+  // Line chart: mark the points outside the range (bars are coloured instead).
+  const discrete = [];
+  if(chartType === 'line' && showNorm) dataPoints.forEach((d, i) => {
+    if(d.judge === 'high' || d.judge === 'low') discrete.push({ seriesIndex:0, dataPointIndex:i, fillColor: d.judge === 'high' ? HIGH_FILL : LOW_FILL, strokeColor:'#fff', size:5 });
+  });
+
+  /* Tooltip header for a day: which day the energy was used and what kind of
+     day that was (with the calendar note), then the recorder's note. The
+     header is inserted as HTML, so everything typed by a person is escaped. */
+  const tipOf = d => {
+    if(!d) return '';
+    if(!isDay || !d.date || isLevel) return esc(d.label);
+    const off = usageOffset(), u = off ? ymdAdd(d.date, off) : d.date, up = u.split('-').map(Number);
+    const cal = workCalendar.find(c => c.date === u);
+    let t = esc(d.label) + (off ? ' → ' + esc(W) + ' ' + DOW_TH[new Date(up[0], up[1]-1, up[2]).getDay()] + ' ' + up[2] + '/' + up[1] : '') + ' · ' + (d.hol ? 'วันหยุด' : 'วันทำงาน');
+    if(cal && cal.note) t += ' (' + esc(cal.note) + ')';
+    if(d.note) t += '<br>📝 ' + esc(d.note.length > 90 ? d.note.slice(0, 90) + '…' : d.note);
+    return t;
+  };
 
   const chartOpts = {
     chart:{ type:chartType, height:340, fontFamily:'IBM Plex Mono,monospace', foreColor:TC.text2,
@@ -4888,7 +5737,7 @@ function buildChartOpts(dataPoints, state, TC){
             tickAmount: Math.min(labels.length, 8),
             labels:{ rotate:0, rotateAlways:false, hideOverlappingLabels:true, trim:false,
                      style:{fontSize:'11px',colors:TC.text2} } },
-    yaxis:{ title:{ text: UNIT, style:{fontSize:'12px', fontWeight:700, color:TC.text2} },
+    yaxis:{ title:{ text: U, style:{fontSize:'12px', fontWeight:700, color:TC.text2} },
             min: 0,
             max: yMax,
             tickAmount: 5,
@@ -4896,12 +5745,37 @@ function buildChartOpts(dataPoints, state, TC){
             labels:{style:{fontSize:'12px',colors:TC.text2}, formatter:v => _fmtAxisNum(v)},
             axisBorder:{show:false} },
     grid:{ borderColor:TC.border, strokeDashArray:3, xaxis:{lines:{show:false}}, yaxis:{lines:{show:true}} },
-    tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'}, y:{formatter:v => v!=null?Math.round(v).toLocaleString()+' '+UNIT:'—'} },
+    tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'},
+      x:{ formatter:(val, o) => tipOf(o && dataPoints[o.dataPointIndex]) || esc(String(val)) },
+      y:{formatter:(v, o) => {
+      if(v == null) return '—';
+      const d = o && dataPoints[o.dataPointIndex];
+      let extra = '';
+      if(isDay && d && d.hasData && o.seriesIndex < nValueSeries){
+        const grp = d.cmp !== undefined;       // a group (server figures)
+        const why = [];
+        if(d.span > 1) why.push(grp ? 'รวม '+d.span+' วันของบางมิเตอร์' : 'รวม '+d.span+' วัน — จดขาด');
+        if(d.open) why.push(grp ? 'บางมิเตอร์ยังไม่ปิดรอบ' : 'ยังไม่ปิดรอบ — มีแต่ค่าจดซ้ำในวันเดียว');
+        if(d.partial) why.push('ขาด '+d.missing+' มิเตอร์');
+        const partCmp = d.cmpN !== undefined;   // some meter of the bar is left out of the comparison
+        if(showNorm && d.cmpVal !== null && d.cmpNorm !== null && d.cmpNorm !== undefined){
+          extra = ' · ' + (d.judge === 'high' ? '🔺 สูงกว่าปกติ ' : d.judge === 'low' ? '🔻 ต่ำกว่าปกติ ' : 'ปกติ ') + _pctVsNormal(d.cmpVal, d.cmpNorm) +
+                  (partCmp ? '' : ' (ค่าปกติ ' + R(d.cmpNorm).toLocaleString() + ')') +
+                  (why.length ? ' (' + why.join(', ') + ' — ' + (partCmp ? 'เทียบเฉพาะมิเตอร์ที่มีค่าเต็มวัน ' + R(d.cmpVal).toLocaleString() + ' กับค่าปกติ ' + R(d.cmpNorm).toLocaleString() : 'เทียบเฉพาะที่จดได้') + ')' : '');
+        } else {
+          extra = (why.length ? ' (' + why.join(', ') + ')' : '') + ((showNorm && !why.length) ? ' · ยังไม่มีค่าปกติ' : '');
+        }
+      }
+      return R(v).toLocaleString()+' '+U+extra;
+    }} },
     colors: chartColors,
     responsive:[{ breakpoint:640, options:{ chart:{height:300}, xaxis:{labels:{rotate:-45, rotateAlways:true, hideOverlappingLabels:true, style:{fontSize:'8px'}}}, plotOptions:{bar:{columnWidth:'80%'}} } }],
     plotOptions:{ bar:{borderRadius:4,columnWidth:'70%'} },
     stroke:{ width:strokeW, dashArray:strokeDash },
-    fill:{ opacity:chartType==='bar'?0.7:0.8 },
+    markers:{ discrete: discrete },
+    fill:{ opacity:chartType==='bar'?0.7:0.8,
+           // Bar series: per-bar colour (see specialFill); legend keeps `colors`.
+           colors: (chartType === 'bar' && hasSpecial) ? chartColors.map((c, i) => (series[i] && series[i].type === 'line') ? c : barFill(c)) : undefined },
     legend:{ show:series.length>1, fontSize:'11px', labels:{colors:TC.text2}, markers:{shape:'square',size:6} },
     dataLabels:{ enabled:false },
     states:{ hover:{filter:{type:'lighten',value:0.08}} }
@@ -4909,19 +5783,35 @@ function buildChartOpts(dataPoints, state, TC){
 
   let avgChips;
   if(state.period === 'day' && (nWork || nHol)){
-    avgChips = '<span class="chip chip-green">เฉลี่ยวันทำงาน '+Math.round(avgWork).toLocaleString()+' '+UNIT+' ('+nWork+' วัน)</span> '+
-               '<span class="chip" style="background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.4)">เฉลี่ยวันหยุด '+Math.round(avgHol).toLocaleString()+' '+UNIT+' ('+nHol+' วัน)</span>';
+    avgChips = '<span class="chip chip-green">เฉลี่ยวันทำงาน '+R(avgWork).toLocaleString()+' '+U+' ('+nWork+' วัน)</span> '+
+               '<span class="chip" style="background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.4)">เฉลี่ยวันหยุด '+R(avgHol).toLocaleString()+' '+U+' ('+nHol+' วัน)</span>';
   } else {
-    avgChips = '<span class="chip chip-green">เฉลี่ย '+Math.round(avg).toLocaleString()+' '+UNIT+'/'+pl+'</span>';
+    avgChips = '<span class="chip chip-green">เฉลี่ย '+R(avg).toLocaleString()+' '+U+'/'+pl+'</span>';
   }
-  const summaryHtml = '<span class="chip chip-green">'+UNIT_ICON+' รวม '+Math.round(total).toLocaleString()+' '+UNIT+'</span> ' +
+  // Readings don't add up: a level chart shows its highest value instead of a total.
+  const _pk = isLevel ? withData.reduce((a, d) => (!a || d.value > a.value) ? d : a, null) : null;
+  const headChip = isLevel
+    ? (_pk ? '<span class="chip chip-green">สูงสุด '+R(_pk.value).toLocaleString()+' '+U+' ('+esc(_pk.label)+')</span> ' : '')
+    : '<span class="chip chip-green">'+UNIT_ICON+' รวม '+Math.round(total).toLocaleString()+' '+U+'</span> ';
+  const normChips = !showNorm ? '' :
+    (nHigh ? ' <span class="chip" style="color:var(--red);border:1px solid var(--red)">🔺 สูงกว่าปกติ '+nHigh+' วัน</span>' : '') +
+    (nLow  ? ' <span class="chip" style="color:'+LOW_FILL+';border:1px solid '+LOW_FILL+'">🔻 ต่ำกว่าปกติ '+nLow+' วัน</span>' : '') +
+    ((!nHigh && !nLow) ? ' <span class="chip chip-green">✅ อยู่ในช่วงปกติ</span>' : '');
+  // How to read the chart, as one small line under the chips.
+  const notes = [];
+  if(showNorm) notes.push('ช่วงปกติ (เส้นประ) = ค่ากลาง '+rule.weeks+' สัปดาห์ของวันประเภทเดียวกัน'+(state.rule ? ' (รวมจากแต่ละมิเตอร์)' : '')+' ±'+rule.bandPct+'%'+(rule.minDiff > 0 ? ' และต่างอย่างน้อย '+Number(rule.minDiff).toLocaleString()+' '+esc(U) : ''));
+  if(isDay && !isLevel && usageOffset()) notes.push('วันทำงาน/วันหยุด นับตามวันที่ใช้จริง (วันถัดจากวันที่จด)');
+  if(hasGap) notes.push('▮ สีเทา = รวมหลายวัน (จดขาด) ขาดบางมิเตอร์ หรือยังไม่ปิดรอบ');
+  const summaryHtml = headChip +
     avgChips + ' ' +
-    '<span class="chip" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border)">'+withData.length+' '+pl+'</span>';
+    '<span class="chip" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border)">'+nDays+' '+pl+'</span>' +
+    normChips +
+    (notes.length ? '<div class="chart-notes" style="font-size:var(--fs-xs);color:var(--text-2);margin-top:6px;line-height:1.6">'+notes.join(' · ')+'</div>' : '');
 
   return { chartOpts, summaryHtml };
 }
 
-var subChartState = { period:'day', type:'bar', showAvg:true, showHol:true };
+var subChartState = { period:'day', type:'bar', showAvg:true, showHol:true, showNorm:true };
 function setSubQuick(key){
   var r = getQuickRange(key);
   document.getElementById('sub-from').value = r[0];
@@ -4936,6 +5826,8 @@ function setSubPeriod(p){
   });
   var holBtn = document.getElementById('sub-hol');
   if(holBtn) holBtn.style.display = p==='day' ? '' : 'none';
+  var normBtn = document.getElementById('sub-norm');
+  if(normBtn) normBtn.style.display = p==='day' ? '' : 'none';
   // Switch inputs to match period before the segment writes range values.
   setRangeInputType('sub', p);
   applySegmentForPeriod('sub-segment', p, function(slot){
@@ -4956,8 +5848,9 @@ function setSubType(t){
 function toggleSubOpt(opt){
   if(opt==='avg') subChartState.showAvg = !subChartState.showAvg;
   if(opt==='hol') subChartState.showHol = !subChartState.showHol;
+  if(opt==='norm') subChartState.showNorm = !subChartState.showNorm;
   var el = document.getElementById('sub-'+opt);
-  var on = opt==='avg' ? subChartState.showAvg : subChartState.showHol;
+  var on = opt==='avg' ? subChartState.showAvg : opt==='norm' ? subChartState.showNorm : subChartState.showHol;
   if(el) el.className = on ? 'ctrl-btn on' : 'ctrl-btn';
   renderSubChart();
 }
@@ -4966,52 +5859,52 @@ async function renderSubChart(){
   var meterId = document.getElementById('chart-sub').value;
   var el = document.getElementById('sub-chart-el');
   var sumEl = document.getElementById('sub-chart-summary');
-  if(!meterId){ el.innerHTML='<div class="section-empty">เลือก Meter เพื่อดูกราฟ</div>'; sumEl.innerHTML=''; return; }
-  el.innerHTML = chartSkeletonHTML();
+  if(!meterId){ chartPlaceholder(el, subChartInst, '<div class="section-empty">เลือก Meter เพื่อดูกราฟ</div>'); sumEl.innerHTML=''; return; }
+  chartPlaceholder(el, subChartInst, chartSkeletonHTML());
   var fromVal = _normRangeStart(document.getElementById('sub-from').value || '');
   var toVal = _normRangeEnd(document.getElementById('sub-to').value || '');
-  var recs = getSubRecs(meterId);
-  if(fromVal) recs = recs.filter(function(r){return r.date >= fromVal;});
-  if(toVal) recs = recs.filter(function(r){return r.date <= toVal;});
-  if(!recs.length){ el.innerHTML='<div class="section-empty">ไม่มีข้อมูลในช่วงที่เลือก</div>'; sumEl.innerHTML=''; return; }
-  var data = aggregateRecordsCached(recs, subChartState.period, fromVal, toVal, meterId);
-  if(!data.length){ el.innerHTML='<div class="section-empty">ไม่มีข้อมูล</div>'; sumEl.innerHTML=''; return; }
+  // A reading belongs to its report day (after-midnight readings: the day before).
+  var dayOf = function(r){ return r.rday || reportDayOf(r.date, r.time); };
+  var within = function(from){ return function(r){ var d = dayOf(r); return (!from || d >= from) && (!toVal || d <= toVal); }; };
+  var all = getSubRecs(meterId);
+  var recs = all.filter(within(fromVal));
+  if(!recs.length){ chartPlaceholder(el, subChartInst, '<div class="section-empty">ไม่มีข้อมูลในช่วงที่เลือก</div>'); sumEl.innerHTML=''; return; }
+  var _sub = subById(meterId), _vt = meterValueType(_sub);
+  var isLevel = _vt === 'demand' || _vt === 'snapshot';
+  // Daily use is compared with its normal, which needs the weeks before the range.
+  var wantNormal = subChartState.period === 'day' && !isLevel;
+  var look = normalWeeks() * 7;
+  var wideFrom = (wantNormal && fromVal) ? ymdAdd(fromVal, -look) : fromVal;
+  var data = isLevel ? aggregateLevels(recs, subChartState.period, fromVal, toVal, meterId)
+                     : aggregateRecordsCached(wantNormal ? all.filter(within(wideFrom)) : recs, subChartState.period, wideFrom, toVal, meterId);
+  if(wantNormal){
+    attachNormals(data, look);
+    if(fromVal) data = data.filter(function(d){ return d.date >= fromVal; });
+  }
+  if(!data.length){ chartPlaceholder(el, subChartInst, '<div class="section-empty">ไม่มีข้อมูล</div>'); sumEl.innerHTML=''; return; }
   var TC = getThemeColors();
-  var built = buildChartOpts(data, subChartState, TC);
+  // The meter's own unit: a demand meter is in kW, a counter in counts.
+  var _u = meterUnit(_sub) || UNIT;
+  var _st = Object.assign({}, subChartState, { unit:_u,
+    word: _vt === 'demand' ? 'ค่าสูงสุด' : _vt === 'snapshot' ? 'ค่าที่อ่าน' : _vt === 'counter' ? 'จำนวน' : UNIT_WORD,
+    level: isLevel ? _vt : null });
+  var built = buildChartOpts(data, _st, TC);
   ensureApex().then(function(){
     // Bail if a newer render started while ApexCharts was loading — prevents a
     // stale meter/range (from a quick switch) overwriting the current one.
     if(thisReq !== subReqId) return;
-    /* Reuse the existing chart instance via updateOptions when the structure
-       is unchanged — far smoother and cheaper than destroy+new+render on every
-       date-range tweak or refresh. But updateOptions cannot safely morph across
-       a chart-type change (bar<->line) or a series-count change (holiday split
-       on/off produces 1 vs 2 data series): ApexCharts leaves stale paths/state
-       behind. So we fingerprint those two structural traits and only reuse when
-       they match; otherwise fall back to a clean rebuild. The element must also
-       still belong to the current instance (not have been blanked out). */
-    var structKey = (built.chartOpts.chart.type) + ':' + built.chartOpts.series.length;
-    var canReuse = subChartInst && _subChartStructKey === structKey && el.querySelector('.apexcharts-canvas');
-    if(canReuse){
-      subChartInst.updateOptions({
-        series: built.chartOpts.series,
-        xaxis:  built.chartOpts.xaxis,
-        yaxis:  built.chartOpts.yaxis,
-        colors: built.chartOpts.colors,
-        stroke: built.chartOpts.stroke,
-        fill:   built.chartOpts.fill
-      }, false, true);   // (options, redrawPaths=false, animate=true)
-    } else {
-      safeDestroyChart(subChartInst);
-      el.innerHTML = '';
-      subChartInst = new ApexCharts(el, built.chartOpts);
-      subChartInst.render();
-      _subChartStructKey = structKey;
-    }
-  }).catch(function(e){ el.innerHTML = '<div class="warn-box">❌ โหลดกราฟไม่ได้: '+esc(e&&e.message||'')+'</div>'; });
+    // Always a fresh chart. (An updateOptions "reuse" path used to sit here, but
+    // the loading placeholder above removes the old canvas first, so it never ran.)
+    safeDestroyChart(subChartInst);
+    el.innerHTML = '';
+    subChartInst = new ApexCharts(el, built.chartOpts);
+    subChartInst.render();
+  }).catch(function(e){ if(thisReq !== subReqId) return; chartPlaceholder(el, subChartInst, '<div class="warn-box">❌ โหลดกราฟไม่ได้: '+esc(e&&e.message||'')+'</div>'); });
   sumEl.innerHTML = built.summaryHtml;
 }
-var g9State = { period:'day', sort:'default', showPct:false };
+// autoDay: the day picker still holds the default, not a day someone chose —
+// renderG9Chart may then move it back to the latest day that has figures.
+var g9State = { period:'day', sort:'default', showPct:false, autoDay:true };
 function setG9Period(p){
   g9State.period = p;
   ['day','month','year'].forEach(function(k){
@@ -5038,6 +5931,7 @@ function toggleG9Pct(){
   renderG9ChartDebounced();
 }
 function navG9(dir){
+  if(g9State.period === 'day') g9State.autoDay = false;
   if(g9State.period === 'day'){
     var el = document.getElementById('g9-date');
     var d = new Date(el.value); d.setDate(d.getDate()+dir);
@@ -5089,19 +5983,21 @@ function initG9Pickers(){
       var now = new Date();
       var curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
       var dEl = document.getElementById('g9-date');
-      if(dEl){
+      if(dEl && (!dEl.value || g9State.autoDay)){
         if(latestM === curM) dEl.value = ymdLocal(now);
         else { var pp=latestM.split('-'); var last=new Date(+pp[0], +pp[1], 0).getDate(); dEl.value = latestM+'-'+String(last).padStart(2,'0'); }
       }
-      var mEl = document.getElementById('g9-month'); if(mEl) mEl.value = latestM;
+      var mEl = document.getElementById('g9-month'); if(mEl && !mEl.value) mEl.value = latestM;
     }
     return;
   }
-  // Default to the latest day that has data (the most recent reading), so the
-  // main-group chart opens on current data instead of a day back.
-  document.getElementById('g9-date').value = dates[dates.length-1];
+  // Default to the latest reading day (renderG9Chart steps back from it to the
+  // latest day that has figures). Only fills a blank or still-default picker:
+  // a day or month someone chose is kept when the tab is reopened.
+  var gd = document.getElementById('g9-date'), gm = document.getElementById('g9-month');
+  if(!gd.value || g9State.autoDay) gd.value = dates[dates.length-1];
   var months = Array.from(new Set(dates.map(function(d){ return d.slice(0,7); }))).sort();
-  document.getElementById('g9-month').value = months[months.length-1] || '';
+  if(!gm.value) gm.value = months[months.length-1] || '';
 }
 
 let g9ReqId = 0;
@@ -5115,55 +6011,91 @@ async function renderG9Chart(){
   if(g9State.period === 'day') pick = document.getElementById('g9-date').value;
   else if(g9State.period === 'month') pick = document.getElementById('g9-month').value;
   else pick = document.getElementById('g9-year').value;
-  if(!pick){ el.innerHTML='<div class="section-empty">เลือกช่วงเวลา</div>'; return; }
+  if(!pick){ chartPlaceholder(el, g9ChartInst, '<div class="section-empty">เลือกช่วงเวลา</div>'); return; }
   var lbl = document.getElementById('g9-label');
   if(g9State.period==='day'){ var pp=pick.split('-'); lbl.textContent=parseInt(pp[2])+' '+MN[parseInt(pp[1])]+' '+pp[0]; }
   else if(g9State.period==='month'){ var pp=pick.split('-'); lbl.textContent=MN[parseInt(pp[1])]+' '+pp[0]; }
   else lbl.textContent = 'ปี '+pick;
-  el.innerHTML = chartSkeletonHTML();
-  var dateFrom, dateTo;
-  if(g9State.period==='day'){
-    dateFrom = pick;
-    var d = new Date(pick); d.setDate(d.getDate()+7);
-    dateTo = ymdLocal(d);
-  } else if(g9State.period==='month'){
-    var pp = pick.split('-');
-    dateFrom = pick+'-01';
-    var nd = new Date(parseInt(pp[0]),parseInt(pp[1]),7);
-    dateTo = ymdLocal(nd);
-  } else {
-    dateFrom = pick+'-01-01';
-    dateTo = (parseInt(pick)+1)+'-01-07';
-  }
+  chartPlaceholder(el, g9ChartInst, chartSkeletonHTML());
   try{
-    var res = await getSummaryCached(dateFrom, dateTo, 'day');
+    // Server figures (getGroupTotals). Day and month: that month by day — the
+    // same request the comparison chart makes for the month, so switching
+    // between the two costs nothing. Year: the month totals, so a year no
+    // longer downloads every day of 13 months.
+    var stale = function(){ return thisReq !== g9ReqId; };
+    var res, idx = [];
+    if(g9State.period === 'day'){
+      res = await getGroupTotalsCached(pick.slice(0,8)+'01', pick, 'day', stale);
+    } else if(g9State.period === 'month'){
+      res = await getGroupTotalsCached(pick+'-01', _normRangeEnd(pick), 'day', stale);
+    } else {
+      res = await getGroupTotalsCached(pick+'-01-01', pick+'-12-31', 'month', stale);
+    }
     if(thisReq !== g9ReqId) return;
     if(!res||!res.success) throw new Error(res&&res.error||'error');
-    var raw = res.summary || [];
-    var meterMap = {};
-    raw.forEach(function(r){ if(!meterMap[r.meterId]) meterMap[r.meterId]={}; meterMap[r.meterId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
-    var allPeriods = Array.from(new Set(raw.map(function(r){ return r.period; }))).sort();   // Set, not indexOf: O(rows) instead of O(rows × periods)
-    var countPeriods;
-    if(g9State.period==='day') countPeriods = [pick];
-    else countPeriods = allPeriods.filter(function(p){return p.startsWith(pick);});
     // "กลุ่มหลัก" chart — main groups only. In apps without a `type` column
     // (or where every row is 'main'), this behaves the same as showing all groups.
-    var _mainOnly = reportGroups.filter(function(g){ return !g.type || g.type === 'main'; });
-    var groupVals = _mainOnly.map(function(col){
-      var total = 0;
-      countPeriods.forEach(function(p){
-        (col.meters||[]).forEach(function(id){ if(!_countsTowardEnergy(id)) return; var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) total+=u; });
-        (col.minus||[]).forEach(function(id){ if(!_countsTowardEnergy(id)) return; var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) total-=u; });
-      });
-      return { name:col.name, value:total, color:col.color||TC.accent };
+    var _mainOnly = (res.groups || []).filter(function(g){ return !g.type || g.type === 'main'; });
+    if(g9State.period === 'day'){
+      var at = res.periods.indexOf(pick);
+      var anyOn = function(i){ return i >= 0 && _mainOnly.some(function(g){ return g.v[i] !== null; }); };
+      /* The newest day has no figures until the next reading exists. Opening
+         the chart on it showed every group at 0 and "สูงสุด" naming whichever
+         group came first. While the picker still holds the default, step back
+         to the latest day that has figures — the weeks before the month come
+         with the answer, so this also works on the 1st and 2nd. */
+      if(g9State.autoDay && !anyOn(at)){
+        for(var k = (at >= 0 ? at : res.periods.length) - 1; k >= 0; k--){
+          if(res.periods[k] < pick && anyOn(k)){
+            at = k; pick = res.periods[k];
+            document.getElementById('g9-date').value = pick;
+            var bp = pick.split('-'); lbl.textContent = parseInt(bp[2])+' '+MN[parseInt(bp[1])]+' '+bp[0];
+            break;
+          }
+        }
+      }
+      if(at >= 0) idx = [at];
+    } else {
+      res.periods.forEach(function(p, i){ if(p.startsWith(pick)) idx.push(i); });
+    }
+    var rule = res.rule || null, isDay = g9State.period === 'day';
+    var anyData = false;
+    var groupVals = _mainOnly.map(function(g){
+      var total = 0, has = false;
+      idx.forEach(function(i){ if(g.v[i] !== null){ total += g.v[i]; has = true; } });
+      if(has) anyData = true;
+      var o = { name:g.name, value:total, color:g.color||TC.accent, has:has };
+      if(isDay && has && rule){
+        var i0 = idx[0];
+        o.span = (g.s && g.s[i0]) || 1; o.missing = (g.m && g.m[i0]) || 0; o.open = !!(g.o && g.o[i0]); o.normal = g.n ? g.n[i0] : null;
+        // what is compared: the meters that have a whole single day (the server's c / cn where one is left out)
+        o.part = !!(g.c && Object.prototype.hasOwnProperty.call(g.c, i0));
+        o.cmp = o.part ? g.c[i0] : total;
+        o.cmpN = o.part ? (g.cn ? g.cn[i0] : null) : o.normal;
+        o.judge = judgeAgainstNormal(o.cmp, o.cmpN, rule.bandPct, rule.minDiff);
+      }
+      return o;
     });
     if(g9State.sort==='desc') groupVals.sort(function(a,b){return b.value-a.value;});
     else if(g9State.sort==='asc') groupVals.sort(function(a,b){return a.value-b.value;});
     var total = groupVals.reduce(function(a,g){return a+g.value;},0);
     var top = groupVals.reduce(function(a,g){return g.value>a.value?g:a;}, groupVals[0]);
+    // Against the normal of the same kind of day (daily view only).
+    var vsNormal = function(o){
+      var g = o && groupVals[o.dataPointIndex];
+      if(!g || !g.has || !isDay) return '';
+      var why = [];
+      if(g.span > 1) why.push('รวม '+g.span+' วันของบางมิเตอร์');
+      if(g.open) why.push('บางมิเตอร์ยังไม่ปิดรอบ');
+      if(g.missing) why.push('ขาด '+g.missing+' มิเตอร์');
+      if(g.cmp === null || g.cmp === undefined || g.cmpN === null || g.cmpN === undefined) return why.length ? ' (' + why.join(', ') + ')' : '';
+      return ' · ' + (g.judge === 'high' ? '🔺 สูงกว่าปกติ ' : g.judge === 'low' ? '🔻 ต่ำกว่าปกติ ' : 'ปกติ ') + _pctVsNormal(g.cmp, g.cmpN) +
+             (g.part ? '' : ' (ค่าปกติ ' + Math.round(g.cmpN).toLocaleString() + ')') +
+             (why.length ? ' (' + why.join(', ') + ' — ' + (g.part ? 'เทียบเฉพาะมิเตอร์ที่มีค่าเต็มวัน ' + Math.round(g.cmp).toLocaleString() + ' กับค่าปกติ ' + Math.round(g.cmpN).toLocaleString() : 'เทียบเฉพาะที่จดได้') + ')' : '');
+    };
     var tooltipFmt = g9State.showPct
-      ? function(v){ return Math.round(v).toLocaleString()+' '+UNIT+' ('+(total>0?((v/total)*100).toFixed(1):'0')+'%)'; }
-      : function(v){ return v!=null?Math.round(v).toLocaleString()+' '+UNIT:'—'; };
+      ? function(v, o){ return Math.round(v).toLocaleString()+' '+UNIT+' ('+(total>0?((v/total)*100).toFixed(1):'0')+'%)'+vsNormal(o); }
+      : function(v, o){ return v!=null?Math.round(v).toLocaleString()+' '+UNIT+vsNormal(o):'—'; };
     var opts = {
       chart:{ type:'bar', height: Math.max(320, groupVals.length * 34 + 90), fontFamily:'IBM Plex Mono,monospace', foreColor:TC.text2,
         toolbar:{ show:true, tools:{download:true,zoom:true,zoomin:true,zoomout:true,pan:true,reset:true} },
@@ -5190,7 +6122,10 @@ async function renderG9Chart(){
          their yaxis really is numeric, so their formatters stay as-is.) */
               labels:{style:{fontSize:'12px',colors:TC.text2}}, axisBorder:{show:false} },
       grid:{ borderColor:TC.border, strokeDashArray:3, xaxis:{lines:{show:false}}, yaxis:{lines:{show:true}} },
-      tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'}, y:{formatter:tooltipFmt} },
+      tooltip:{ theme:TC.isDark?'dark':'light', style:{fontSize:'12px'},
+                // The header is inserted as HTML: a group name from the sheet is escaped here.
+                x:{ formatter:function(val, o){ var g = o && groupVals[o.dataPointIndex]; return esc(g ? g.name : String(val)); } },
+                y:{formatter:tooltipFmt} },
       colors:groupVals.map(function(g){return g.color;}),
       responsive:[{ breakpoint:640, options:{ dataLabels:{style:{fontSize:'10px'}}, xaxis:{labels:{style:{fontSize:'10px'}}} } }],
       plotOptions:{ bar:{horizontal:true, borderRadius:6, barHeight:'70%', distributed:true, dataLabels:{position:'top'}} },
@@ -5207,16 +6142,25 @@ async function renderG9Chart(){
     el.innerHTML = '';
     g9ChartInst = new ApexCharts(el, opts);
     g9ChartInst.render();
-    sumEl.innerHTML = '<span class="chip chip-green">'+UNIT_ICON+' รวม '+Math.round(total).toLocaleString()+' kWh</span> '+
-      '<span class="chip" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border)">🏭 สูงสุด: '+top.name+'</span>';
-  }catch(e){ el.innerHTML='<div class="warn-box">❌ '+esc(e.message)+'</div>'; }
+    var names = function(state){ return groupVals.filter(function(g){ return g.judge === state; }).map(function(g){ return esc(g.name); }).join(', '); };
+    var hi = isDay ? names('high') : '', lo = isDay ? names('low') : '';
+    sumEl.innerHTML = '<span class="chip chip-green">'+UNIT_ICON+' รวม '+Math.round(total).toLocaleString()+' '+UNIT+'</span> '+
+      (anyData && top && total > 0 ? '<span class="chip" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border)">🏭 สูงสุด: '+esc(top.name)+'</span>'
+                                   : '<span class="chip" style="color:var(--text-2)">ยังไม่มีตัวเลขของช่วงนี้</span>') +
+      (hi ? ' <span class="chip" style="color:var(--red);border:1px solid var(--red)">🔺 สูงกว่าปกติ: '+hi+'</span>' : '') +
+      (lo ? ' <span class="chip" style="color:'+NORMAL_LOW_COLOR+';border:1px solid '+NORMAL_LOW_COLOR+'">🔻 ต่ำกว่าปกติ: '+lo+'</span>' : '');
+  }catch(e){
+    // A superseded render's failure (or skip) is not news: the newer one owns the box.
+    if(thisReq !== g9ReqId) return;
+    chartPlaceholder(el, g9ChartInst, '<div class="warn-box">❌ '+esc(e.message)+'</div>');
+  }
 }
 
 function buildCompareGroupOptions(){
   const sel = document.getElementById('cmp-group');
   if(!sel) return;
   const prev = sel.value;
-  sel.innerHTML = reportGroups.map(c => `<option value="${c.key}">${esc(c.name)}</option>`).join('')
+  sel.innerHTML = reportGroups.map(c => `<option value="${esc(c.key)}">${esc(c.name)}</option>`).join('')
     + '<option value="__TOTAL__">TOTAL (ทุกกลุ่ม)</option>';
   if(prev) sel.value = prev;
   const items = reportGroups.map(c => ({ key:c.key, label:c.name }));
@@ -5291,11 +6235,6 @@ function setCmpQuickSeg(slot){
   if(seg) seg.querySelectorAll('button').forEach((b,i) => b.classList.toggle('on', i===slot));
   renderCmpChartDebounced();
 }
-function getColIds(key){
-  if(key === '__TOTAL__') return reportGroups.flatMap(c => c.meters || []);
-  const col = reportGroups.find(c => c.key === key);
-  return col ? (col.meters || []) : [];
-}
 /* A totalising register that is in service never legitimately reads 0, so a 0
    here means "nobody wrote anything down", not "nothing was used". Treating it
    as a real reading is actively destructive: the day before it computes
@@ -5316,9 +6255,7 @@ function _isUsableReading(meterId, v){
    meterUsedOnDay() already returns null for demand/snapshot, but a counter
    legitimately returns a number (events elapsed), and if one is listed in a
    group's `meters` that count would be summed into the energy figure with no
-   visible sign. Every place that adds meters together goes through this.
-   Lives in core, not in a module: core-tail's chart aggregation calls it, so a
-   build without the Electric summary module would otherwise crash. */
+   visible sign. Every place that adds meters together goes through this. */
 function _countsTowardEnergy(meterId){
   return meterValueType(subById(meterId)) === 'cumulative';
 }
@@ -5357,10 +6294,61 @@ function meterUsedOnDay(meterMap, meterId, dateStr, allDates){
       return Math.max(0, next.firstKwh - cur.firstKwh) * mult;
     }
   }
-  return Math.max(0, cur.lastKwh - cur.firstKwh) * mult;
+  // No later reading yet. Only readings taken later the same day say anything;
+  // otherwise the figure does not exist yet (null, shown "—") rather than a 0
+  // that reads as "nothing was used".
+  if(_isUsableReading(meterId, cur.lastKwh) && cur.lastKwh !== cur.firstKwh) return Math.max(0, cur.lastKwh - cur.firstKwh) * mult;
+  return null;
+}
+/* Largest number of days any counted meter of a group covers on dateStr
+   (1 = normal; >1 = a reading was missed and one figure spans the gap). */
+/* Shared with the Electric page, where these live in the report module. The
+   charts here use them too (group totals with minus meters, gap days). */
+function meterSpanOnDay(meterMap, meterId, dateStr, allDates){
+  const cur = meterMap[meterId]?.[dateStr];
+  if(!cur || !_isUsableReading(meterId, cur.firstKwh)) return 0;
+  const idx = _dateIndex(allDates, dateStr);
+  for(let k = idx+1; k < allDates.length; k++){
+    const next = meterMap[meterId]?.[allDates[k]];
+    if(next && _isUsableReading(meterId, next.firstKwh)){
+      const d1 = new Date(dateStr + 'T00:00:00');
+      const d2 = new Date(allDates[k] + 'T00:00:00');
+      return Math.max(1, Math.round((d2 - d1) / 86400000));
+    }
+  }
+  return 1;
 }
 
-var cmpState = { period:'day', type:'bar', showAvg:true, showHol:true };
+function sumGroupOnDay(meterMap, col, dateStr, allDates){
+  const ids   = Array.isArray(col) ? col : (col.meters || []);
+  const minus = Array.isArray(col) ? []  : (col.minus  || []);
+  let total = 0, hasAny = false;
+  ids.forEach(id => {
+    if(!_countsTowardEnergy(id)) return;
+    const u = meterUsedOnDay(meterMap, id, dateStr, allDates);
+    if(u !== null){ total += u; hasAny = true; }
+  });
+  minus.forEach(id => {
+    if(!_countsTowardEnergy(id)) return;
+    const u = meterUsedOnDay(meterMap, id, dateStr, allDates);
+    if(u !== null){ total -= u; hasAny = true; }
+  });
+  return hasAny ? total : null;
+}
+
+function groupSpanOnDay(meterMap, col, dateStr, allDates){
+  let span = 1;
+  const ids = (Array.isArray(col) ? col : (col.meters || [])).concat(Array.isArray(col) ? [] : (col.minus || []));
+  ids.forEach(id => {
+    if(!_countsTowardEnergy(id)) return;
+    if(meterUsedOnDay(meterMap, id, dateStr, allDates) === null) return;
+    const s = meterSpanOnDay(meterMap, id, dateStr, allDates);
+    if(s > span) span = s;
+  });
+  return span;
+}
+
+var cmpState = { period:'day', type:'bar', showAvg:true, showHol:true, showNorm:true };
 /* Rounds a max value UP to a "nice" round number so the axis ticks land on
    clean figures (250,000 rather than 229,658). Uses a fine ladder of steps
    (1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10 × the power of ten) so the top of the axis
@@ -5386,6 +6374,9 @@ function _niceCeil(v){
   else               step = 10;
   return step * mag;
 }
+/* Axis numbers as plain comma-grouped integers (10,000 — not "10K"). The
+   readings are already in kWh, so a "K" suffix reads as ambiguous unit-on-unit
+   ("10K" looks like it could mean 10 kWh or 10,000). */
 function _fmtAxisNum(v){
   return Math.round(Number(v) || 0).toLocaleString();
 }
@@ -5483,18 +6474,14 @@ function applySegmentForPeriod(segId, period, applyFn){
   applyFn(activeSlot);
 }
 
-function setCmpQuick(key){
-  var r = getQuickRange(key);
-  document.getElementById('cmp-from').value = r[0];
-  document.getElementById('cmp-to').value = r[1];
-  renderCmpChartDebounced();
-}
 function setCmpPeriod(p){
   cmpState.period = p;
   ['day','month','year'].forEach(function(k){
     var el = document.getElementById('cmp-p-'+k);
     if(el) el.className = k===p ? 'ctrl-btn green' : 'ctrl-btn';
   });
+  var normBtnC = document.getElementById('cmp-norm');
+  if(normBtnC) normBtnC.style.display = p==='day' ? '' : 'none';   // the normal range is a daily comparison
   // Switch the from/to inputs to the right control BEFORE the segment writes
   // its range values, so the values land in a matching input type.
   setRangeInputType('cmp', p);
@@ -5524,6 +6511,13 @@ function toggleCmpOpt(opt){
     cmpState.showHol = !cmpState.showHol;
     var elH = document.getElementById('cmp-hol');
     if(elH) elH.className = cmpState.showHol ? 'ctrl-btn on' : 'ctrl-btn';
+    renderCmpChartDebounced();
+    return;
+  }
+  if(opt==='norm'){
+    cmpState.showNorm = !cmpState.showNorm;
+    var elN = document.getElementById('cmp-norm');
+    if(elN) elN.className = cmpState.showNorm ? 'ctrl-btn on' : 'ctrl-btn';
     renderCmpChartDebounced();
     return;
   }
@@ -5607,60 +6601,56 @@ async function renderCmpChart(){
   var groupKey = document.getElementById('cmp-group').value;
   var el = document.getElementById('cmp-chart-el');
   var sumEl = document.getElementById('cmp-chart-summary');
-  if(!groupKey){ el.innerHTML='<div class="section-empty">เลือกกลุ่ม</div>'; return; }
-  var ids = getColIds(groupKey);
+  if(!groupKey){ chartPlaceholder(el, cmpChartInst, '<div class="section-empty">เลือกกลุ่ม</div>'); return; }
   var fromVal = _normRangeStart(document.getElementById('cmp-from').value || '') || null;
   var toVal = _normRangeEnd(document.getElementById('cmp-to').value || '') || null;
   var TC = getThemeColors();
   var MN = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  el.innerHTML = chartSkeletonHTML();
+  chartPlaceholder(el, cmpChartInst, chartSkeletonHTML());
   try{
+    // Figures come from the server (getGroupTotals): daily ones with their
+    // normal, monthly ones as the sum of the month's days — the report's own
+    // total, where "next month's first reading − this month's" used to lose a
+    // whole month whenever a meter was replaced or reset.
     var gran = cmpState.period === 'day' ? 'day' : 'month';
-    var apiToVal = toVal;
-    if(toVal){
-      var extD = new Date(toVal+'T00:00:00');
-      extD.setDate(extD.getDate() + 7);
-      apiToVal = ymdLocal(extD);
-    }
-    var res = await getSummaryCached(fromVal, apiToVal, gran);
+    // By day with no start date: the last 90 days, not the whole history.
+    if(gran === 'day' && !fromVal) fromVal = ymdAdd(toVal || ymdLocal(), -89);
+    var res = await getGroupTotalsCached(fromVal, toVal, gran, function(){ return thisReq !== cmpReqId; });
     if(thisReq !== cmpReqId) return;
     if(!res||!res.success) throw new Error(res&&res.error||'error');
-    var raw = res.summary || [];
-    var meterMap = {};
-    raw.forEach(function(r){ if(!meterMap[r.meterId]) meterMap[r.meterId]={}; meterMap[r.meterId][r.period]={firstKwh:r.firstKwh,lastKwh:r.lastKwh}; });
-    var allPeriods = Array.from(new Set(raw.map(function(r){ return r.period; }))).sort();   // Set, not indexOf: O(rows) instead of O(rows × periods)
+    var ser = groupSeriesOf(res, groupKey);
+    if(!ser) throw new Error('ไม่พบกลุ่มนี้ในชีต — กด 🔄 โหลดใหม่');
+    var inRange = function(p){
+      if(fromVal && p < fromVal.slice(0, p.length)) return false;   // compare at the period's own length
+      if(toVal && p > toVal.slice(0, p.length)) return false;
+      return true;
+    };
     var dataPoints;
-    if(cmpState.period === 'year'){
-      var displayPeriods = allPeriods.filter(function(p){
-        if(fromVal && p < fromVal) return false;
-        if(toVal && p > toVal) return false;
-        return true;
+    if(cmpState.period === 'day'){
+      dataPoints = [];
+      res.periods.forEach(function(p, i){
+        if(p < (fromVal || res.from) || p > (toVal || res.to)) return;
+        var v = ser.v[i];
+        // hasData: this day has a figure (a future day, or one before the
+        // first reading, has none) so the averages divide by real days only.
+        var hasC = !!ser.c && Object.prototype.hasOwnProperty.call(ser.c, i);       // only sent where a meter is left out
+        dataPoints.push({ label: parseInt(p.split('-')[2])+'/'+parseInt(p.split('-')[1]), date: p, value: v === null ? 0 : v, hasData: v !== null, cmp: hasC ? ser.c[i] : v, cmpN: hasC ? (ser.cn ? ser.cn[i] : null) : undefined,
+                          span: (ser.s && ser.s[i]) || 1, missing: (ser.m && ser.m[i]) || 0, open: !!(ser.o && ser.o[i]), hol: !!res.hol[i], normal: ser.n ? ser.n[i] : null });
       });
+    } else if(cmpState.period === 'year'){
       var byYear = {};
-      displayPeriods.forEach(function(p){ ids.forEach(function(id){ if(!_countsTowardEnergy(id)) return; var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null) byYear[p.slice(0,4)]=(byYear[p.slice(0,4)]||0)+u; }); });
+      res.periods.forEach(function(p, i){ if(ser.v[i] !== null && inRange(p)) byYear[p.slice(0,4)] = (byYear[p.slice(0,4)]||0) + ser.v[i]; });
       dataPoints = Object.entries(byYear).map(function(e){return {label:e[0],value:e[1],hasData:true};});
     } else {
-      var valByPeriod = {}, hasByPeriod = {};
-      allPeriods.forEach(function(p){
-        var total=0, has=false;
-        ids.forEach(function(id){ if(!_countsTowardEnergy(id)) return; var u=meterUsedOnDay(meterMap,id,p,allPeriods); if(u!==null){total+=u;has=true;} });
-        valByPeriod[p] = has ? total : 0;
-        hasByPeriod[p] = has;
-      });
-      var fullPeriods = _cmpFillPeriods(allPeriods, fromVal, toVal, cmpState.period);
-      dataPoints = fullPeriods.map(function(p){
-        var label;
-        if(cmpState.period==='day') label=parseInt(p.split('-')[2])+'/'+parseInt(p.split('-')[1]);
-        else label=MN[parseInt(p.split('-')[1])]+' '+p.slice(0,4);
-        // hasData: this period actually had a reading (a filled-in gap from
-        // _cmpFillPeriods, or a future day in a this-month range, is false) so
-        // the average in buildChartOpts divides by real days only.
-        return { label:label, value:valByPeriod[p]||0, hol:(cmpState.period==='day' && getDayType(p)==='holiday'), hasData: !!hasByPeriod[p] };
+      var at = {}; res.periods.forEach(function(p, i){ at[p] = i; });
+      var withData = res.periods.filter(function(p){ return ser.v[at[p]] !== null; });
+      dataPoints = _cmpFillPeriods(withData, fromVal, toVal, 'month').map(function(p){
+        var v = at[p] === undefined ? null : ser.v[at[p]];
+        return { label: MN[parseInt(p.split('-')[1])]+' '+p.slice(0,4), date: p, value: v === null ? 0 : v, hasData: v !== null, span: 1 };
       });
     }
-    if(!dataPoints.length){ el.innerHTML='<div class="section-empty">ไม่มีข้อมูล</div>'; return; }
-    var TC = getThemeColors();
-    var built = buildChartOpts(dataPoints, cmpState, TC);
+    if(!dataPoints.length){ chartPlaceholder(el, cmpChartInst, '<div class="section-empty">ไม่มีข้อมูล</div>'); return; }
+    var built = buildChartOpts(dataPoints, Object.assign({}, cmpState, { rule: res.rule || null }), TC);
     await ensureApex();
     if(thisReq !== cmpReqId) return;
     safeDestroyChart(cmpChartInst);
@@ -5668,7 +6658,10 @@ async function renderCmpChart(){
     cmpChartInst = new ApexCharts(el, built.chartOpts);
     cmpChartInst.render();
     sumEl.innerHTML = built.summaryHtml;
-  }catch(e){ el.innerHTML='<div class="warn-box">❌ '+esc(e.message)+'</div>'; }
+  }catch(e){
+    if(thisReq !== cmpReqId) return;   // superseded — the newer render owns the box
+    chartPlaceholder(el, cmpChartInst, '<div class="warn-box">❌ '+esc(e.message)+'</div>');
+  }
 }
 
 
@@ -5779,13 +6772,11 @@ function rdShowViewer(){
   if (title) title.textContent = 'Sign in to view Reports & Analytics';
   if (sub)   sub.textContent   = 'สำหรับผู้บริหาร / ผู้ที่มาดูรายงานการใช้พลังงาน';
 }
-// Keyboard: Enter in recorder passcode → submit
+// Keyboard: Escape closes the drawer; search box Enter/Escape
 document.addEventListener('DOMContentLoaded', () => {
-  // NOTE: Enter-key handlers for #login-user / #login-pass / #recorder-pass
-  // are already bound by the ORIGINAL app.js (see its own DOMContentLoaded
-  // listener near the bottom of the file). Since our markup now reuses those
-  // exact IDs, binding them again here would double-fire handleLogin() /
-  // handleRecorderLogin() on every Enter press — so we deliberately don't.
+  // NOTE: Enter-key handlers for the login fields and #in-kwh are bound in the
+  // DOMContentLoaded listener next to toast(); binding them again here would
+  // fire twice per Enter.
 
   // ESC closes drawer
   document.addEventListener('keydown', e => {
