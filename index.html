@@ -2,7 +2,7 @@
 <html lang="th" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>💧 ระบบจดบันทึกมิเตอร์น้ำ Water Meter SR Plant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -10,12 +10,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 
-/* ═══════════════════════════════════════════════════════════
-   REDESIGN LAYER — SESSION 1
-   Design tokens matched to the IMCT Consumption hub (navy + cyan + off-white),
-   with dark-mode parity. Component styles for the new header + sidebar drawer +
-   centered login. All original panel/card/button styles below remain untouched.
-   =========================================================== */
 :root {
   --rd-ink:          #0A1628;
   --rd-ink-2:        #3A4A5F;
@@ -43,11 +37,6 @@
   --rd-font-body:    'Inter', 'Sarabun', 'IBM Plex Sans Thai', system-ui, sans-serif;
   --rd-font-mono:    'IBM Plex Mono', 'SF Mono', Consolas, monospace;
   --rd-font-th:      'Sarabun', 'IBM Plex Sans Thai', 'Inter', system-ui, sans-serif;
-  /* Button tokens — intentionally do NOT flip with theme. A primary button
-     stays "dark navy bg + white text" in light mode; in dark mode it becomes
-     the cyan accent (dark navy text) so it still reads as the loudest
-     actionable element on the page instead of blending into a light --rd-ink
-     that would otherwise turn white-on-white. */
   --rd-btn-bg:       var(--rd-ink);
   --rd-btn-bg-hover: #1A2B45;
   --rd-btn-text:     #FFFFFF;
@@ -1053,6 +1042,16 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
 .rd-role-btn-txt { display: flex; flex-direction: column; gap: 2px; }
 .rd-role-btn-txt strong { font-family: var(--rd-font-display); font-size: 15px; font-weight: 700; }
 .rd-role-btn-txt small { font-family: var(--rd-font-th); font-size: 12px; color: var(--rd-ink-3); }
+/* Pinch-zoom is allowed again (viewport, 2026-10-17). Phones zoom the page in
+   by themselves when a text field under 16px gets focus, so on touch screens
+   every typing field is at least 16px (the big reading box is larger already). */
+@media (pointer: coarse){
+  .f-input:not(.kwh-input), .rd-field-input, .rd-search-input, .rd-picker-search, .ctrl-date{font-size:16px}
+}
+/* People who asked their system for less motion get no slides or fades. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
+}
 </style>
 </head>
 <body>
@@ -1741,8 +1740,8 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
     <div class="modal-handle"></div>
     <div class="modal-head"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></i> แก้ไขรายการ<button class="modal-close" onclick="closeEdit()">✕</button></div>
     <div class="warn-box">⚠️ การแก้ไขค่ามิเตอร์จะกระทบค่า "ใช้ไป" ของรายการนี้และรายการก่อนหน้า</div>
-    <div class="f-row"><label class="f-label">Meter</label><select class="f-input" id="edit-sub"></select></div>
-    <div class="f-row"><label class="f-label">ค่ามิเตอร์ (m³ สะสม)</label><input class="f-input kwh-input" type="number" id="edit-kwh" step="1" inputmode="decimal"></div>
+    <div class="f-row"><label class="f-label">Meter</label><select class="f-input" id="edit-sub" onchange="updateEditKwhStep(this.value)"></select></div>
+    <div class="f-row"><label class="f-label" id="edit-kwh-label">ค่ามิเตอร์ (m³ สะสม)</label><input class="f-input kwh-input" type="number" id="edit-kwh" step="1" inputmode="decimal"></div>
     <div class="f-2col">
       <div class="f-row"><label class="f-label">วันที่</label><input class="f-input" type="date" id="edit-date"></div>
       <div class="f-row"><label class="f-label">เวลา</label><input class="f-input" type="time" id="edit-time"></div>
@@ -1793,7 +1792,7 @@ i svg{ width:1em; height:1em; display:inline-block; vertical-align:-0.12em; }
   </div>
 </div>
 
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 /* ════════════════════════════════════════════════════════════
@@ -1825,7 +1824,7 @@ const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // matches SESSION_TTL_SECONDS in Cod
    Code.gs does not have. Code.gs sends its own pair with doGet (`build`,
    `needsPage`); renderBuildInfo() shows both and tells the admin when the two
    sides do not fit — the usual cause is that one of the two was not deployed. */
-const PAGE_BUILD    = '2026-10-09.1';
+const PAGE_BUILD    = '2026-10-17.1';
 const NEEDS_BACKEND = '2026-10-07.1';
 let serverSeen = false;      // a doGet answer has arrived since this page was opened
 let serverBuild = '';        // its `build` ('' = a Code.gs from before release numbers)
@@ -2241,7 +2240,24 @@ let sessionExpiresAt = null;
 let pendingQrSub = null;
 let sessionExpiryWarned = false;
 
+/* Readings waiting to be sent live in this browser's storage. Ask the browser
+   to keep it: persistent storage is not evicted when the phone runs short of
+   space, and Safari lifts its 7-day limit for sites it grants this. Best
+   effort — browsers decide by their own rules; the queue banner says when
+   this device did not grant it. _persistState: true / false / null (no API). */
+let _persistState = null;
+async function requestPersistentStorage(){
+  try{
+    if(!navigator.storage || typeof navigator.storage.persist !== 'function'){ _persistState = null; return null; }
+    let ok = typeof navigator.storage.persisted === 'function' ? await navigator.storage.persisted() : false;
+    if(!ok) ok = await navigator.storage.persist();
+    _persistState = !!ok;
+  }catch(e){ _persistState = null; }
+  try { renderQueueBanner(); } catch(e){ /* banner not built yet */ }
+  return _persistState;
+}
 function persistSession(token, role, name){
+  requestPersistentStorage();   // not awaited — signing in never waits on it
   sessionExpiresAt = Date.now() + SESSION_TTL_MS;
   localStorage.setItem(nsKey('authSession'), JSON.stringify({ token, role, name, expiresAt: sessionExpiresAt }));
   sessionExpiryWarned = false;
@@ -3243,26 +3259,50 @@ function chartPlaceholder(el, inst, html){
 }
 
 const _scriptPromises = {};
-function loadScript(url){
+/* Subresource Integrity (2026-10-17). A library runs only if its bytes match
+   the hash of that exact version's file as published on npm — the same file
+   cdnjs and jsDelivr serve. A changed or tampered copy is refused by the
+   browser (onerror) and the next address is tried, so nothing unverified ever
+   runs. Hash of a file: openssl dgst -sha384 -binary FILE | base64 -w0.
+   crossorigin=anonymous is required for the check; both CDNs answer with
+   Access-Control-Allow-Origin: *. */
+function loadScript(url, integrity){
   if(_scriptPromises[url]) return _scriptPromises[url];
   _scriptPromises[url] = new Promise((resolve, reject) => {
     const s = document.createElement('script');
+    if(integrity){ s.integrity = integrity; s.crossOrigin = 'anonymous'; }
     s.src = url;
     s.onload = () => resolve();
-    s.onerror = () => { delete _scriptPromises[url]; reject(new Error('โหลด script ไม่ได้: '+url)); };
+    s.onerror = () => { delete _scriptPromises[url]; s.remove(); reject(new Error('โหลด script ไม่ได้: '+url)); };
     document.head.appendChild(s);
   });
   return _scriptPromises[url];
 }
+/* Each library: one hash and its addresses in order — cdnjs first like before,
+   jsDelivr when cdnjs is unreachable or its copy does not match the hash. */
 const CDN = {
-  qrcode:     'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
-  xlsx:       'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-  apexcharts: 'https://cdn.jsdelivr.net/npm/apexcharts@3.50.0/dist/apexcharts.min.js',
-  exceljs:    'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js'
+  qrcode:      { sri: 'sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU',
+               urls: ['https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js', 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'] },
+  xlsx:        { sri: 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw',
+               urls: ['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'] },
+  apexcharts:  { sri: 'sha384-t2NEo3tXGg5o3XZA6klB7RkzBkvmzEiUzxwB10ck/TiOoi8+vKtX3tF/rj3uQ4Wz',
+               urls: ['https://cdn.jsdelivr.net/npm/apexcharts@3.50.0/dist/apexcharts.min.js'] },
+  exceljs:     { sri: 'sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz',
+               urls: ['https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'] }
 };
-function ensureQRCode(){    return (typeof QRCode!=='undefined')    ? Promise.resolve() : loadScript(CDN.qrcode); }
-function ensureXLSX(){      return (typeof XLSX!=='undefined')      ? Promise.resolve() : loadScript(CDN.xlsx); }
-function ensureApex(){      return (typeof ApexCharts!=='undefined') ? Promise.resolve() : loadScript(CDN.apexcharts); }
+async function loadLib(lib, isLoaded){
+  if(isLoaded()) return;
+  let last = null;
+  for(const u of lib.urls){
+    try { await loadScript(u, lib.sri); if(isLoaded()) return; } catch(e){ last = e; }
+  }
+  throw last || new Error('โหลด script ไม่ได้');
+}
+function ensureQRCode(){      return loadLib(CDN.qrcode,     () => typeof QRCode     !== 'undefined'); }
+function ensureXLSX(){        return loadLib(CDN.xlsx,       () => typeof XLSX       !== 'undefined'); }
+function ensureApex(){        return loadLib(CDN.apexcharts, () => typeof ApexCharts !== 'undefined'); }
+/* Reduced motion asked for in the system settings: charts draw without animating. */
+function _reduceMotion(){ try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch(e){ return false; } }
 
 /* See the matching comment in the Electric app. */
 function chartSkeletonHTML(){
@@ -3512,7 +3552,7 @@ async function init(){
   // sweep now, so unsent readings go out (and show) as soon as there is a
   // session, instead of after the startup fetch — which may never come offline.
   loadQueue(); startQueueTimer();
-  if(hasSession) flushQueue();
+  if(hasSession){ flushQueue(); requestPersistentStorage(); }
   renderAll();
   document.getElementById('qr-url-preview').textContent = QR_BASE_URL + '?meter=WM-XX';
   const params = new URLSearchParams(location.search);
@@ -3872,6 +3912,13 @@ function meterUnit(sub){
   if(vt === 'snapshot') return unit;
   return unit || UNIT;
 }
+/* The unit of a meter's USE (difference between readings × multiplier), which
+   is not always its reading unit: a register read in MWh with multiplier 1000
+   gives use in kWh, and kWh is what the group totals add up. A counter counts
+   events; demand and snapshot meters have no use, so they keep the reading unit. */
+function usedUnit(sub){
+  return meterValueType(sub) === 'cumulative' ? UNIT : meterUnit(sub);
+}
 function applyReadingLabel(){
   const el = document.getElementById('in-kwh-label');
   if(!el || !activeSub) return;
@@ -4052,7 +4099,7 @@ function updateMeterSummary(){
   const _uTxt = _vtU === 'cumulative' ? _u + ' สะสม' : _u;
   document.getElementById('last-unit').textContent = _uTxt;
   document.getElementById('prev-unit').textContent = _uTxt;
-  document.getElementById('last-used-unit').textContent = _u;
+  document.getElementById('last-used-unit').textContent = usedUnit(activeSub);   // use, not the reading unit (MWh × 1000 → kWh)
   // For a demand or snapshot meter there is no "used since last time" to show.
   const _lu = document.getElementById('last-used');
   const _vt = activeValueType();
@@ -4377,6 +4424,9 @@ function updateEditKwhStep(meterId){
   const sub      = subs.find(s => s.id === meterId);
   const dec      = sub?.decimal !== undefined ? sub.decimal : 0;
   const inputKwh = document.getElementById('edit-kwh');
+  // The label follows the chosen meter: an MWh register is entered in MWh.
+  const lab = document.getElementById('edit-kwh-label');
+  if(lab){ const u = meterUnit(sub), vt = meterValueType(sub); lab.textContent = 'ค่ามิเตอร์ (' + (vt === 'cumulative' ? u + ' สะสม' : (u || 'หน่วยตามมิเตอร์')) + ')'; }
   if(dec === 0){ inputKwh.setAttribute('step','1'); inputKwh.setAttribute('placeholder','กรอกเลขจำนวนเต็มเท่านั้น'); }
   else { inputKwh.setAttribute('step',(1/Math.pow(10,dec)).toString()); inputKwh.setAttribute('placeholder',`กรอกทศนิยม ${dec} ตำแหน่ง`); }
 }
@@ -4631,7 +4681,7 @@ function renderQR(){
   // CDN could not be reached that was a new <script> and an unhandled rejection
   // for every meter, and the squares stayed blank without a word.
   const qrReady = ensureQRCode();
-  qrReady.catch(function(e){ grid.innerHTML = '<div class="warn-box">❌ โหลดตัวสร้าง QR ไม่ได้ (เครื่องนี้เข้า cdnjs.cloudflare.com ไม่ได้) — ลองใหม่เมื่อเครือข่ายปกติ</div>'; });
+  qrReady.catch(function(e){ grid.innerHTML = '<div class="warn-box">❌ โหลดตัวสร้าง QR ไม่ได้ (เครื่องนี้เข้า cdnjs.cloudflare.com และ cdn.jsdelivr.net ไม่ได้) — ลองใหม่เมื่อเครือข่ายปกติ</div>'; });
   list.forEach(sub => {
     const url = QR_BASE_URL.replace(/\/$/, '') + '?meter=' + encodeURIComponent(sub.id);   // ?sub= on older printed codes still works
     const qid = 'qr_' + sub.id.replace(/\W/g,'_');
@@ -4727,10 +4777,12 @@ async function exportExcel(){
   const ws = XLSX.utils.json_to_sheet(dataToExport.map(r => ({
     'ID': r.id, 'Meter ID': r.meterId, 'คำอธิบาย': r.meterName, 'หมวด': r.zone,
     'Date': fmtDate(r.date), 'Time': fmtTime(r.time),
-    [UNIT + ' (Cumulative)']: fmtNum(r.kwh, r.meterId), ['Used (' + UNIT + ')']: (r.used === null || r.used === undefined) ? '' : fmtNum(r.used, r.meterId),
-    'User': r.user, 'Note': r.note, 'Edited By': r.editedBy||'', 'Timestamp': r.ts
+    'Reading': fmtNum(r.kwh, r.meterId), 'Used': (r.used === null || r.used === undefined) ? '' : fmtNum(r.used, r.meterId),
+    'User': r.user, 'Note': r.note, 'Edited By': r.editedBy||'', 'Timestamp': r.ts,
+    // Units per row: readings are in the meter's unit (MWh, kW…), use in the app's unit unless it is a counter.
+    'Reading unit': meterUnit(subById(r.meterId)), 'Used unit': usedUnit(subById(r.meterId))
   })));
-  ws['!cols'] = Array(12).fill({ wch:18 });
+  ws['!cols'] = Array(14).fill({ wch:18 });
   XLSX.utils.book_append_sheet(wb, ws, hasFilter?'Filtered_Records':'All_Records');
   XLSX.writeFile(wb, `Meter_${hasFilter?'Filtered_':''}${ymdLocal()}.xlsx`);
   toast(`✅ Export ${dataToExport.length} rows${hasFilter?' (filtered)':''}`, 'ok');
@@ -4802,6 +4854,8 @@ function clearCache(){
 function toast(msg, type=''){
   const t = document.getElementById('toast');
   if(!t) return;
+  // Screen readers announce it (role=status); an error interrupts, the rest waits its turn.
+  t.setAttribute('aria-live', type === 'err' ? 'assertive' : 'polite');
   t.textContent = msg; t.className = 'on' + (type ? ' '+type : '');
   clearTimeout(t._t); t._t = setTimeout(() => { t.className = ''; }, 3200);
 }
@@ -5118,7 +5172,30 @@ function renderQueueBanner(){
              (stuck > refused ? ` — ยังส่งไม่ได้ ${stuck - refused} รายการ ระบบจะลองใหม่เองทุก 1 นาที` : '') + err
            : ' — กำลังส่งเบื้องหลัง') +
     ` <button class="btn btn-yellow btn-sm" style="margin-left:8px" onclick="flushQueue(true)">📤 ส่งเดี๋ยวนี้</button>` +
-    ` <button class="btn btn-ghost btn-sm" onclick="showQueueDetail()">ดูรายการ</button>`;
+    ` <button class="btn btn-ghost btn-sm" onclick="showQueueDetail()">ดูรายการ</button>` +
+    ` <button class="btn btn-ghost btn-sm" onclick="exportQueueCSV()">💾 บันทึกเป็นไฟล์</button>` +
+    (_persistState === false ? '<div style="margin-top:6px;font-size:13px">เครื่องนี้ไม่ได้เก็บข้อมูลแบบถาวร ถ้าจะค้างนาน กด "บันทึกเป็นไฟล์" ไว้ก่อน</div>' : '');
+}
+
+/* An emergency copy of what is still waiting to be sent: a CSV that opens in
+   Excel, so the readings can be keyed in by hand if this phone can no longer
+   send them (storage cleared, phone broken). Nothing leaves the queue. Text
+   that Excel would run as a formula (= + - @) is prefixed with ' . */
+function exportQueueCSV(){
+  if(!sendQueue.length) return toast('ไม่มีรายการค้าง','ok');
+  const cell = (v, isNum) => { let t = String(v === null || v === undefined ? '' : v); if(!isNum && /^[=+\-@\t\r]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
+  const head = ['Meter ID','Meter name','Date','Time','Reading','Reading unit','Recorded by','Note','Record ID','Attempts','Last error'];
+  const rows = sendQueue.map(it => { const r = it.rec || {}; const sub = subById(r.meterId);
+    return [cell(r.meterId), cell(r.meterName), cell(r.date), cell(r.time), cell(r.kwh, true), cell(meterUnit(sub)), cell(r.user), cell(r.note), cell(r.id), cell(it.attempts || 0, true), cell(it.lastError || '')].join(','); });
+  const csv = '\uFEFF' + [head.map(h => cell(h)).join(',')].concat(rows).join('\r\n');
+  try{
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'unsent_' + APP_NS + '_' + ymdLocal() + '.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('💾 บันทึกรายการค้าง ' + sendQueue.length + ' รายการเป็นไฟล์แล้ว (ยังอยู่ในคิว)', 'ok');
+  }catch(e){ toast('บันทึกไฟล์ไม่ได้: ' + (e && e.message || e), 'err'); }
 }
 
 function showQueueDetail(){
@@ -5875,7 +5952,7 @@ function buildChartOpts(dataPoints, state, TC){
     chart:{ type:chartType, height:340, fontFamily:'IBM Plex Mono,monospace', foreColor:TC.text2,
       stacked: useHolSplit,
       toolbar:{ show:true, tools:{download:true,zoom:true,zoomin:true,zoomout:true,pan:true,reset:true} },
-      background:'transparent', animations:{enabled:true,speed:400} },
+      background:'transparent', animations:{enabled:!_reduceMotion(),speed:400} },
     series: series,
     /* Same reasoning on both charts: a month of daily bars is too many labels
        for the width available, so only ~8 are drawn — every bar still shows,
@@ -6033,7 +6110,7 @@ async function renderSubChart(){
   if(!data.length){ chartPlaceholder(el, subChartInst, '<div class="section-empty">ไม่มีข้อมูล</div>'); sumEl.innerHTML=''; return; }
   var TC = getThemeColors();
   // The meter's own unit: a demand meter is in kW, a counter in counts.
-  var _u = meterUnit(_sub) || UNIT;
+  var _u = usedUnit(_sub) || UNIT;   // bars are use: an MWh register × 1000 is kWh; demand kW, counter counts
   var _st = Object.assign({}, subChartState, { unit:_u,
     word: _vt === 'demand' ? 'ค่าสูงสุด' : _vt === 'snapshot' ? 'ค่าที่อ่าน' : _vt === 'counter' ? 'จำนวน' : UNIT_WORD,
     level: isLevel ? _vt : null });
@@ -6248,7 +6325,7 @@ async function renderG9Chart(){
     var opts = {
       chart:{ type:'bar', height: Math.max(320, groupVals.length * 34 + 90), fontFamily:'IBM Plex Mono,monospace', foreColor:TC.text2,
         toolbar:{ show:true, tools:{download:true,zoom:true,zoomin:true,zoomout:true,pan:true,reset:true} },
-        background:'transparent', animations:{enabled:true,speed:400} },
+        background:'transparent', animations:{enabled:!_reduceMotion(),speed:400} },
       series:[{ name:UNIT_WORD+' ('+UNIT+')', data:groupVals.map(function(g){return Math.round(g.value);}) }],
       /* Horizontal bars: group names are words, not dates, and rotating them to
          -45° at 9px made the busiest chart on the page the hardest to read.
@@ -6974,9 +7051,6 @@ function rdOpenFirstMatch(){
 }
 
 async function onTabSummary(){
-  // Load the month list first — initSummaryMonth (called by renderSummary)
-  // reads availableMonths for the month picker's min/max, and records aren't
-  // loaded on this tab. See the matching comment in the Electric app.
   if(!availableMonths) await loadAvailableMonths();
   renderSummary();
 }
